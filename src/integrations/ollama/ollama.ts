@@ -28,6 +28,11 @@ export default class OllamaModel implements Model {
 			yield { complete_suggestion: completion, display_suggestion: completion }
 		}
     }
+
+    async abort() {
+        console.log("canceling completion");
+        this.ollama.abort();
+    }
 }
 
         

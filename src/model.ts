@@ -7,4 +7,5 @@ export interface Model {
     description : string;
     generate : (prefix : string, suffix : string) => AsyncGenerator<Suggestion>;
     load : () => Promise<void>;
+    abort : () => void;
 }
