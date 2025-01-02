@@ -1,6 +1,6 @@
 {
-	"id": "obsidaian-inscibe",
-	"name": "Inscribe Plugin",
+	"id": "obsidian-inscribe",
+	"name": "Inscribe",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "Inscribe is a plugin for Obsidian that completes your thoughts.",
