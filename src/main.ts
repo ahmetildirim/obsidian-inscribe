@@ -2,13 +2,17 @@ import { Editor, Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
 import { Model } from './model';
 import OllamaModel from './providers/ollama/ollama';
+import { InscribeSettingTab, InscribeSettings, DEFAULT_SETTINGS } from './settings';
 
 export default class Inscribe extends Plugin {
+	settings: InscribeSettings;
 	activeModel: Model
 
 	async onload() {
 		await this.loadModel();
 		await this.setupExtention();
+		this.addSettingTab(new InscribeSettingTab(this.app, this));
+		await this.loadSettings();
 	}
 
 	onunload() { }
@@ -59,5 +63,17 @@ export default class Inscribe extends Plugin {
 
 		this.activeModel.abort();
 		yield* this.activeModel.generate(beforeCursor, afterCursor);
+	}
+
+	async loadSettings() {
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.loadData()
+		);
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
 	}
 }
