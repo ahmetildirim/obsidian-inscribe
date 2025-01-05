@@ -2,7 +2,7 @@ import { Editor, Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
 import { Model } from './model';
 import OllamaModel from './providers/ollama/ollama';
-import { InscribeSettings, DEFAULT_SETTINGS } from './settings';
+import { InscribeSettings, DEFAULT_SETTINGS } from './settings/settings';
 import { InscribeSettingTab } from './settings/settings';
 
 export default class Inscribe extends Plugin {

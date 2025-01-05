@@ -2,7 +2,8 @@ import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import Inscribe from 'src/main';
 
 export interface InscribeSettings {
-    defaultProvider: string;
+    provider: string;
+    providerSettings: any;
     openAI: {
         apiKey: string;
         model: string;
@@ -19,7 +20,8 @@ export interface InscribeSettings {
 }
 
 export const DEFAULT_SETTINGS: InscribeSettings = {
-    defaultProvider: "openai",
+    provider: "openai",
+    providerSettings: {},
     openAI: {
         apiKey: "",
         model: "gpt-4",
@@ -57,28 +59,54 @@ export class InscribeSettingTab extends PluginSettingTab {
                     .addOption("anthropic", "Anthropic")
                     .addOption("huggingface", "Hugging Face")
                     .addOption("custom", "Custom")
-                    .setValue(this.plugin.settings.defaultProvider)
+                    .setValue(this.plugin.settings.provider)
                     .onChange(async (value) => {
-                        this.plugin.settings.defaultProvider = value;
+                        this.plugin.settings.provider = value;
                         await this.plugin.saveSettings();
                         this.display(); // Refresh settings to load dynamic options
                     });
             });
 
+        const ollamamodels = [
+            "mistral-nemo",
+            "mistral-gpt",
+            "mistral-gpt2",
+            "mistral-gpt3",
+        ]
+
+        new Setting(containerEl)
+            .setName("Provider Settings")
+            .setDesc("Select Ollama model and host.")
+            .addDropdown((dropdown) => {
+                ollamamodels.forEach((model) => {
+                    dropdown.addOption(model, model);
+                }
+                );
+                dropdown
+                    .setValue(this.plugin.settings.providerSettings.model)
+                    .onChange(async (value) => {
+                        this.plugin.settings.providerSettings.model = value;
+                        await this.plugin.saveSettings();
+                    });
+            }
+            );
+
+
         // Dynamic Provider Settings
-        if (this.plugin.settings.defaultProvider === "openai") {
+        if (this.plugin.settings.provider === "openai") {
             this.openAISettings(containerEl);
-        } else if (this.plugin.settings.defaultProvider === "anthropic") {
+        } else if (this.plugin.settings.provider === "anthropic") {
             this.anthropicSettings(containerEl);
-        } else if (this.plugin.settings.defaultProvider === "huggingface") {
+        } else if (this.plugin.settings.provider === "huggingface") {
             this.huggingFaceSettings(containerEl);
-        } else if (this.plugin.settings.defaultProvider === "custom") {
+        } else if (this.plugin.settings.provider === "custom") {
             this.customModelSettings(containerEl);
         }
     }
 
     openAISettings(containerEl: HTMLElement) {
         containerEl.createEl("h3", { text: "OpenAI Settings" });
+        // create a box 
         new Setting(containerEl)
             .setName("API Key")
             .setDesc("Enter your OpenAI API Key.")
