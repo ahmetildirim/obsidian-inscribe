@@ -1,10 +1,10 @@
-import { Provider } from "./provider";
+import { Provider, ProviderId } from "./provider";
 import { Ollama } from "ollama";
 import { Suggestion } from "codemirror-companion-extension";
 import { OllamaSettings } from "../settings/settings";
 
 export default class OllamaProvider implements Provider {
-    id = "ollama";
+    id = ProviderId.OLLAMA;
     name = "Ollama";
     description = "Ollama model for completion";
     ollama: Ollama

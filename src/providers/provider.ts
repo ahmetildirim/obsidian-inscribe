@@ -2,14 +2,14 @@ import { Suggestion } from "codemirror-companion-extension";
 
 
 export interface Provider {
-    name: string;
+    id: ProviderId;
     description: string;
     generate: (prefix: string, suffix: string) => AsyncGenerator<Suggestion>;
     load: () => Promise<void>;
     abort: () => void;
 }
 
-export enum ProviderType {
+export enum ProviderId {
     OLLAMA = "ollama",
     OPENAI = "openai",
 }
@@ -17,13 +17,11 @@ export enum ProviderType {
 // List of providers with their display name and description
 export const PROVIDERS = [
     {
-        id: ProviderType.OLLAMA,
+        id: ProviderId.OLLAMA,
         name: "Ollama",
-        description: "Ollama model for completion",
     },
     {
-        id: ProviderType.OPENAI,
-        name: "OpenAI",
-        description: "OpenAI model for completion",
+        id: ProviderId.OPENAI,
+        name: "Open AI",
     },
 ]
