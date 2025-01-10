@@ -1,26 +1,25 @@
 import { Editor, Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
-import { Model } from './model';
-import OllamaModel from './providers/ollama/ollama';
-import { InscribeSettings, DEFAULT_SETTINGS } from './settings/settings';
-import { InscribeSettingTab } from './settings/settings';
+import { Provider } from './providers/provider';
+import OllamaProvider from './providers/ollama';
+import { Settings, DEFAULT_SETTINGS } from './settings/settings';
+import { InscribeSettingsTab } from './settings/settings-tab';
 
 export default class Inscribe extends Plugin {
-	settings: InscribeSettings;
-	activeModel: Model
+	settings: Settings;
+	provider: Provider
 
 	async onload() {
+		await this.loadSettings();
 		await this.loadModel();
 		await this.setupExtention();
-		this.addSettingTab(new InscribeSettingTab(this.app, this));
-		await this.loadSettings();
+		this.addSettingTab(new InscribeSettingsTab(this.app, this));
 	}
 
 	onunload() { }
 
 	async loadModel() {
-		this.activeModel = new OllamaModel();
-		await this.activeModel.load();
+		this.provider = new OllamaProvider(this.settings.providerSettings.ollama);
 	}
 
 	async setupExtention() {
@@ -62,8 +61,8 @@ export default class Inscribe extends Plugin {
 		const afterCursor = editor.getRange(cursor,
 			{ line: editor.lastLine(), ch: editor.getLine(editor.lastLine()).length });
 
-		this.activeModel.abort();
-		yield* this.activeModel.generate(beforeCursor, afterCursor);
+		this.provider.abort();
+		yield* this.provider.generate(beforeCursor, afterCursor);
 	}
 
 	async loadSettings() {
@@ -76,5 +75,6 @@ export default class Inscribe extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		await this.loadModel();
 	}
 }
