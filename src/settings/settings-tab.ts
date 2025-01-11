@@ -1,6 +1,6 @@
 import { App, PluginSettingTab } from "obsidian";
 import Inscribe from "../main";
-import { ProviderSettings } from "./provider-settings";
+import { ProviderSettingsComponent } from "./provider-settings";
 
 export class InscribeSettingsTab extends PluginSettingTab {
     constructor(app: App, private plugin: Inscribe) {
@@ -9,6 +9,6 @@ export class InscribeSettingsTab extends PluginSettingTab {
 
     async display() {
         const { containerEl } = this;
-        new ProviderSettings(this.plugin, containerEl).display();
+        new ProviderSettingsComponent(this.plugin, containerEl).display();
     }
 }

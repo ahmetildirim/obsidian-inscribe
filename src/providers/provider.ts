@@ -25,3 +25,10 @@ export const PROVIDERS = [
         name: "Open AI",
     },
 ]
+
+export interface ProviderInfo {
+    id: ProviderId;
+    name: string;
+    description: string;
+    getModels: () => Promise<string[]>;
+}

@@ -1,8 +1,9 @@
 import { Setting } from "obsidian";
 import { PROVIDERS } from "../providers/provider";
-import { InscribeSettings } from "./inscribe-settings";
+import { InscribeSettingsComponent } from "./inscribe-settings";
+import { OllamaSettingsComponent } from "src/providers/ollama";
 
-export class ProviderSettings extends InscribeSettings {
+export class ProviderSettingsComponent extends InscribeSettingsComponent {
     public display(): void {
         const { containerEl } = this;
 
@@ -32,7 +33,7 @@ export class ProviderSettings extends InscribeSettings {
                 this.openAISettings(containerEl);
                 break;
             case "ollama":
-                this.ollamaSettings(containerEl);
+                new OllamaSettingsComponent(this.plugin, containerEl).display();
                 break;
         }
     }
@@ -40,7 +41,6 @@ export class ProviderSettings extends InscribeSettings {
     openAISettings(containerEl: HTMLElement) {
         containerEl.createEl("h3", { text: "OpenAI Settings" });
 
-        // create a box 
         new Setting(containerEl)
             .setName("API Key")
             .setDesc("Enter your OpenAI API Key.")
@@ -63,36 +63,6 @@ export class ProviderSettings extends InscribeSettings {
                     .setValue(this.plugin.settings.providerSettings.openai.model)
                     .onChange(async (value) => {
                         this.plugin.settings.providerSettings.openai.model = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
-    }
-
-    ollamaSettings(containerEl: HTMLElement) {
-        containerEl.createEl("h3", { text: "Ollama Settings" });
-
-        new Setting(containerEl)
-            .setName("Host")
-            .setDesc("Enter the Ollama host.")
-            .addText((text) =>
-                text
-                    .setPlaceholder(this.plugin.settings.providerSettings.ollama.host)
-                    .setValue(this.plugin.settings.providerSettings.ollama.host)
-                    .onChange(async (value) => {
-                        this.plugin.settings.providerSettings.ollama.host = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
-        new Setting(containerEl)
-            .setName("Model")
-            .setDesc("Choose the Ollama model.")
-            .addDropdown((dropdown) => {
-                dropdown
-                    .addOption("mistral-nemo", "Mistral-Nemo")
-                    .addOption("mistral-gpt", "Mistral-GPT")
-                    .setValue(this.plugin.settings.providerSettings.ollama.model)
-                    .onChange(async (value) => {
-                        this.plugin.settings.providerSettings.ollama.model = value;
                         await this.plugin.saveSettings();
                     });
             });

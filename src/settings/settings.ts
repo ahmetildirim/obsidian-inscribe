@@ -1,14 +1,12 @@
+import { OllamaSettings } from "src/providers/ollama";
+
 export interface Settings {
     provider: string,
     providerSettings: {
         ollama: OllamaSettings,
         openai: OpenAISettings,
-    }
-}
-
-export interface OllamaSettings {
-    host: string;
-    model: string;
+    },
+    promtty: boolean,
 }
 
 export interface OpenAISettings {
@@ -27,7 +25,8 @@ export const DEFAULT_SETTINGS: Settings = {
             host: "http://localhost:11434",
             model: "mistral-nemo"
         },
-    }
+    },
+    promtty: true,
 }
 
 

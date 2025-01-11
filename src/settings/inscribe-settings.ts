@@ -1,6 +1,6 @@
 import Inscribe from "src/main";
 
-export abstract class InscribeSettings {
+export abstract class InscribeSettingsComponent {
     protected plugin: Inscribe;
     protected containerEl: HTMLElement;
 
