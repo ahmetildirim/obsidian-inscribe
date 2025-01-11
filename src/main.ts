@@ -1,13 +1,13 @@
 import { Editor, Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
-import { Provider } from './providers/provider';
+import { Completer } from './providers/provider';
 import OllamaProvider from './providers/ollama/ollama';
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import { InscribeSettingsTab } from './settings/settings-tab';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
-	provider: Provider
+	provider: Completer
 
 	async onload() {
 		await this.loadSettings();

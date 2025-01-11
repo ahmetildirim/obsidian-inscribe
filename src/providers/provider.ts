@@ -1,8 +1,7 @@
 import { Suggestion } from "codemirror-companion-extension";
 
 
-export interface Provider {
-    id: ProviderId;
+export interface Completer {
     description: string;
     generate: (prefix: string, suffix: string) => AsyncGenerator<Suggestion>;
     load: () => Promise<void>;
@@ -26,7 +25,7 @@ export const PROVIDERS = [
     },
 ]
 
-export interface ProviderInfo {
+export interface Provider {
     id: ProviderId;
     name: string;
     description: string;

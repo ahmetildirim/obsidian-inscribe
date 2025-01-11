@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { InscribeSettingsComponent } from "src/settings/inscribe-settings";
+import { InscribeSettingsComponent } from "src/settings/settings-component";
 
 export interface OllamaSettings {
     host: string;

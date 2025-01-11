@@ -1,4 +1,5 @@
 import { OllamaSettings } from "src/providers/ollama";
+import { OpenAISettings } from "src/providers/openai/settings";
 
 export interface Settings {
     provider: string,
@@ -7,11 +8,6 @@ export interface Settings {
         openai: OpenAISettings,
     },
     promtty: boolean,
-}
-
-export interface OpenAISettings {
-    apiKey: string;
-    model: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {

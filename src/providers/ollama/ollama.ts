@@ -1,9 +1,9 @@
-import { Provider, ProviderId } from "../provider";
+import { Completer, ProviderId } from "../provider";
 import { Ollama } from "ollama";
 import { Suggestion } from "codemirror-companion-extension";
 import { OllamaSettings } from "./settings";
 
-export default class OllamaProvider implements Provider {
+export default class OllamaProvider implements Completer {
     id = ProviderId.OLLAMA;
     name = "Ollama";
     description = "Ollama model for completion";
