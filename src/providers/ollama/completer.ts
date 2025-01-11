@@ -1,12 +1,9 @@
-import { Completer, ProviderId } from "../provider";
-import { Ollama } from "ollama";
+import { Completer } from "../provider";
+import { ModelResponse, Ollama } from "ollama";
 import { Suggestion } from "codemirror-companion-extension";
 import { OllamaSettings } from "./settings";
 
-export default class OllamaProvider implements Completer {
-    id = ProviderId.OLLAMA;
-    name = "Ollama";
-    description = "Ollama model for completion";
+export default class OllamaCompleter implements Completer {
     ollama: Ollama
     settings: OllamaSettings;
 
@@ -18,6 +15,11 @@ export default class OllamaProvider implements Completer {
     async load() {
         console.log(`loading ollama ${this.settings.host} provider`);
         this.ollama = new Ollama({ host: this.settings.host });
+    }
+
+    async fetchModels(): Promise<string[]> {
+        const models = await this.ollama.list();
+        return models.models.map((model: ModelResponse) => model.name);
     }
 
     async *generate(prefix: string, suffix: string): AsyncGenerator<Suggestion> {

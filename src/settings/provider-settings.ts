@@ -1,5 +1,5 @@
 import { Setting } from "obsidian";
-import { ProviderId, PROVIDERS } from "../providers/provider";
+import { ProviderId } from "../providers/provider";
 import { InscribeSettingsComponent } from "./settings-component";
 import { OllamaSettingsComponent } from "src/providers/ollama";
 import { OpenAISettingsComponent } from "src/providers/openai";
@@ -16,7 +16,7 @@ export class ProviderSettingsComponent extends InscribeSettingsComponent {
             .setName("AI Provider")
             .setDesc("Choose your preferred AI provider.")
             .addDropdown((dropdown) => {
-                for (const provider of PROVIDERS) {
+                for (const provider of this.plugin.providers) {
                     dropdown.addOption(provider.id, provider.name);
                 }
                 dropdown

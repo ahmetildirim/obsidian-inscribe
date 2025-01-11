@@ -17,19 +17,8 @@ export interface Provider {
     id: ProviderId;
     name: string;
     description: string;
+    settings: any
+    completer: Completer;
     getModels: () => Promise<string[]>;
-    getSettingsComponent: (plugin: any, containerEl: HTMLElement) => void;
-    getCompleter: (settings: any) => Completer;
+    reloadCompleter: () => Promise<void>;
 }
-
-// List of providers with their display name and description
-export const PROVIDERS = [
-    {
-        id: ProviderId.OLLAMA,
-        name: "Ollama",
-    },
-    {
-        id: ProviderId.OPENAI,
-        name: "Open AI",
-    },
-]
