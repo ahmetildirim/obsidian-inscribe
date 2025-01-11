@@ -16,7 +16,7 @@ export default class OllamaProvider implements Completer {
     }
 
     async load() {
-        console.log("Loading Ollama model");
+        console.log(`loading ollama ${this.settings.host} provider`);
         this.ollama = new Ollama({ host: this.settings.host });
     }
 
