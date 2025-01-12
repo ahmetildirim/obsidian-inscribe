@@ -26,14 +26,15 @@ export class OllamaSettingsComponent extends InscribeSettingsComponent {
             .setName("Model")
             .setDesc("Choose the Ollama model.")
             .addDropdown((dropdown) => {
+                this.plugin.provider.models.forEach((model) => {
+                    dropdown.addOption(model, model);
+                });
                 dropdown
-                    .addOption("mistral-nemo", "Mistral-Nemo")
-                    .addOption("mistral-gpt", "Mistral-GPT")
                     .setValue(this.plugin.settings.providerSettings.ollama.model)
                     .onChange(async (value) => {
                         this.plugin.settings.providerSettings.ollama.model = value;
                         await this.plugin.saveSettings();
-                    });
+                    })
             });
     }
 }

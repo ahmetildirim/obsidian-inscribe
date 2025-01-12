@@ -8,6 +8,7 @@ export class OllamaProvider implements Provider {
     description: string;
     settings: OllamaSettings;
     completer: OllamaCompleter;
+    models: string[] = [];
 
     constructor(settings: OllamaSettings) {
         this.id = ProviderId.OLLAMA;
@@ -15,17 +16,13 @@ export class OllamaProvider implements Provider {
         this.description = "Ollama is a language model that can generate text based on a prompt.";
         this.settings = settings;
 
+        this.loadCompleter();
         console.log("OllamaProvider created");
-        this.completer = new OllamaCompleter(settings);
     }
 
-    async getModels(): Promise<string[]> {
-        return await this.completer.fetchModels();
-    }
-
-    async reloadCompleter(): Promise<void> {
-        console.log("reloading ollama completer");
+    async loadCompleter(): Promise<void> {
+        console.log("loading ollama completer");
         this.completer = new OllamaCompleter(this.settings);
-        await this.completer.load();
+        this.models = await this.completer.fetchModels();
     }
 }

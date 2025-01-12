@@ -1,11 +1,4 @@
-import { Suggestion } from "codemirror-companion-extension";
-
-// Completer interface for ai integrations
-export interface Completer {
-    generate: (prefix: string, suffix: string) => AsyncGenerator<Suggestion>;
-    load: () => Promise<void>;
-    abort: () => void;
-}
+import { Completer } from "./completer";
 
 export enum ProviderId {
     OLLAMA = "ollama",
@@ -19,6 +12,6 @@ export interface Provider {
     description: string;
     settings: any
     completer: Completer;
-    getModels: () => Promise<string[]>;
-    reloadCompleter: () => Promise<void>;
+    models: string[];
+    loadCompleter: () => Promise<void>;
 }

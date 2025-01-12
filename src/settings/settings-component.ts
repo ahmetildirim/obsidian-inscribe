@@ -9,5 +9,5 @@ export abstract class InscribeSettingsComponent {
         this.containerEl = containerEl;
     }
 
-    public abstract display(): void;
+    public abstract display(): void
 }

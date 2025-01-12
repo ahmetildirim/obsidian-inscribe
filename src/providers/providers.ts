@@ -1,5 +1,5 @@
 import { Settings } from "src/settings/settings";
-import { Provider } from "./provider";
+import { Provider, ProviderId } from "./provider";
 import { OllamaProvider } from "./ollama";
 
 // builder function for providers

@@ -1,7 +1,7 @@
-import { Completer } from "../provider";
 import { ModelResponse, Ollama } from "ollama";
 import { Suggestion } from "codemirror-companion-extension";
 import { OllamaSettings } from "./settings";
+import { Completer } from "..";
 
 export default class OllamaCompleter implements Completer {
     ollama: Ollama
@@ -9,11 +9,6 @@ export default class OllamaCompleter implements Completer {
 
     constructor(settins: OllamaSettings) {
         this.settings = settins;
-        this.ollama = new Ollama({ host: this.settings.host });
-    }
-
-    async load() {
-        console.log(`loading ollama ${this.settings.host} provider`);
         this.ollama = new Ollama({ host: this.settings.host });
     }
 
