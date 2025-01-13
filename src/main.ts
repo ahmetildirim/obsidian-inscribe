@@ -1,10 +1,7 @@
 import { Editor, Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
 import { Provider } from './providers/provider';
-import { Completer } from "./providers";
-import OllamaCompleter from './providers/ollama/completer';
-import { Settings, DEFAULT_SETTINGS } from './settings/settings';
-import { InscribeSettingsTab } from './settings-tab';
+import { Settings, DEFAULT_SETTINGS, InscribeSettingsTab } from './settings/settings';
 import { buildProviders } from './providers';
 
 export default class Inscribe extends Plugin {
@@ -19,11 +16,9 @@ export default class Inscribe extends Plugin {
 		this.addSettingTab(new InscribeSettingsTab(this.app, this));
 	}
 
-	onunload() { }
-
 	async buildProviders() {
 		this.providers = buildProviders(this.settings);
-		const selectedProvider = this.providers.find(provider => provider.id === this.settings.provider);
+		const selectedProvider = this.providers.find(provider => provider.integration === this.settings.provider);
 		if (selectedProvider) {
 			this.provider = selectedProvider;
 		}
