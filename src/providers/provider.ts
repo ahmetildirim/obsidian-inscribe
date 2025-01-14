@@ -8,9 +8,5 @@ export interface Provider {
     settings: any
     completer: Completer;
     loadCompleter: () => Promise<void>;
-    displaySettings: (
-        plugin: Inscribe,
-        containerEl: HTMLElement,
-        display: () => Promise<void>) => void;
     availableModels(): Promise<string[]> | string[];
 }
