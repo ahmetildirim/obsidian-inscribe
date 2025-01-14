@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import { OllamaSettings } from "src/providers/ollama";
 import Inscribe from "src/main";
+import { OllamaSettings } from "src/providers/ollama";
 import { OpenAISettings } from "src/providers/openai";
 import { Integration } from "src/providers";
 
