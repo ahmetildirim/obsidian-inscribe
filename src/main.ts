@@ -20,6 +20,7 @@ export default class Inscribe extends Plugin {
 		this.providers = buildProviders(this.settings);
 		const selectedProvider = this.providers.find(provider => provider.integration === this.settings.provider);
 		if (selectedProvider) {
+			selectedProvider.loadCompleter();
 			this.provider = selectedProvider;
 		}
 	}
@@ -31,7 +32,6 @@ export default class Inscribe extends Plugin {
 			continue_suggesting: false,
 			accept_shortcut: 'Tab',
 		});
-
 		this.registerEditorExtension(extension);
 	}
 
@@ -84,5 +84,6 @@ export default class Inscribe extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		await this.buildProviders();
+		console.log(this.settings.providers.ollama.description);
 	}
 }

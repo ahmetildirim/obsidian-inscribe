@@ -13,7 +13,7 @@ export class OpenAIProvider implements Provider {
     constructor(settings: OpenAISettings) {
         this.settings = settings;
     }
-    loadCompleter: () => Promise<void>;
+    loadCompleter: () => Promise<void> = async () => { };
     displaySettings(plugin: Inscribe, containerEl: HTMLElement): void {
         containerEl.createEl("h3", { text: "OpenAI Settings" });
 
@@ -42,5 +42,9 @@ export class OpenAIProvider implements Provider {
                         await plugin.saveSettings();
                     });
             });
+    }
+
+    availableModels(): string[] {
+        return ["gpt-4", "davinci"];
     }
 }

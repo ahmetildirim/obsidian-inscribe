@@ -7,14 +7,9 @@ export default class OllamaCompleter implements Completer {
     client: Ollama
     settings: OllamaSettings;
 
-    constructor(settins: OllamaSettings) {
+    constructor(settins: OllamaSettings, client: Ollama) {
         this.settings = settins;
-        this.client = new Ollama({ host: this.settings.host });
-    }
-
-    async fetchModels(): Promise<string[]> {
-        const response: ListResponse = await this.client.list();
-        return response.models.map((model: ModelResponse) => model.name);
+        this.client = client;
     }
 
     async *generate(prefix: string, suffix: string): AsyncGenerator<Suggestion> {

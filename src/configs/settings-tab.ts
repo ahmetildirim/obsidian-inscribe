@@ -68,9 +68,9 @@ export class ProviderSettings extends InscribeSettings {
             .addText((text) =>
                 text
                     .setPlaceholder("sk-...")
-                    .setValue(this.plugin.settings.providerSettings.openai.apiKey)
+                    .setValue(this.plugin.settings.providers.openai.apiKey)
                     .onChange(async (value) => {
-                        this.plugin.settings.providerSettings.openai.apiKey = value;
+                        this.plugin.settings.providers.openai.apiKey = value;
                         await this.plugin.saveSettings();
                     })
             );
@@ -81,9 +81,9 @@ export class ProviderSettings extends InscribeSettings {
                 dropdown
                     .addOption("gpt-4", "GPT-4")
                     .addOption("gpt-3.5", "GPT-3.5")
-                    .setValue(this.plugin.settings.providerSettings.openai.model)
+                    .setValue(this.plugin.settings.providers.openai.model)
                     .onChange(async (value) => {
-                        this.plugin.settings.providerSettings.openai.model = value;
+                        this.plugin.settings.providers.openai.model = value;
                         await this.plugin.saveSettings();
                     });
             });
@@ -97,10 +97,10 @@ export class ProviderSettings extends InscribeSettings {
             .setDesc("Enter the Ollama host.")
             .addText((text) =>
                 text
-                    .setPlaceholder(this.plugin.settings.providerSettings.ollama.host)
-                    .setValue(this.plugin.settings.providerSettings.ollama.host)
+                    .setPlaceholder(this.plugin.settings.providers.ollama.host)
+                    .setValue(this.plugin.settings.providers.ollama.host)
                     .onChange(async (value) => {
-                        this.plugin.settings.providerSettings.ollama.host = value;
+                        this.plugin.settings.providers.ollama.host = value;
                         await this.plugin.saveSettings();
                     })
             );
@@ -111,9 +111,9 @@ export class ProviderSettings extends InscribeSettings {
                 dropdown
                     .addOption("mistral-nemo", "Mistral-Nemo")
                     .addOption("mistral-gpt", "Mistral-GPT")
-                    .setValue(this.plugin.settings.providerSettings.ollama.model)
+                    .setValue(this.plugin.settings.providers.ollama.model)
                     .onChange(async (value) => {
-                        this.plugin.settings.providerSettings.ollama.model = value;
+                        this.plugin.settings.providers.ollama.model = value;
                         await this.plugin.saveSettings();
                     });
             });

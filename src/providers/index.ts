@@ -14,8 +14,8 @@ export enum Integration {
 // builder function for providers
 export const buildProviders = (settings: Settings): Provider[] => {
     return [
-        new OllamaProvider(settings.providerSettings.ollama),
-        new OpenAIProvider(settings.providerSettings.openai),
+        new OllamaProvider(settings.providers.ollama),
+        new OpenAIProvider(settings.providers.openai),
     ];
 }
 
@@ -23,9 +23,9 @@ export const buildProviders = (settings: Settings): Provider[] => {
 export const createProvider = (settings: Settings): Provider => {
     switch (settings.provider) {
         case Integration.OLLAMA:
-            return new OllamaProvider(settings.providerSettings.ollama);
+            return new OllamaProvider(settings.providers.ollama);
         case Integration.OPENAI:
-            return new OpenAIProvider(settings.providerSettings.openai);
+            return new OpenAIProvider(settings.providers.openai);
         default:
             throw new Error("Invalid provider");
     }

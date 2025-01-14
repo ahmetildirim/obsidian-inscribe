@@ -1,9 +1,10 @@
-import { Setting } from "obsidian";
+import { addIcon, Setting } from "obsidian";
 import { Integration } from "..";
 import { Provider } from "../provider";
 import OllamaCompleter from "./completer";
 import { OllamaSettings } from "./settings";
 import Inscribe from "src/main";
+import { ListResponse, ModelResponse, Ollama } from "ollama";
 
 export class OllamaProvider implements Provider {
     integration: Integration = Integration.OLLAMA;
@@ -11,21 +12,24 @@ export class OllamaProvider implements Provider {
     description: "Ollama is a language model that can generate text based on a prompt.";
     settings: OllamaSettings;
     completer: OllamaCompleter;
-    models: string[] = [];
+    client: Ollama;
 
     constructor(settings: OllamaSettings) {
         this.settings = settings;
-
-        this.loadCompleter();
-        console.log("OllamaProvider created");
+        this.client = new Ollama({ host: this.settings.host });
     }
 
     async loadCompleter(): Promise<void> {
         console.log("loading ollama completer");
-        this.completer = new OllamaCompleter(this.settings);
+        this.completer = new OllamaCompleter(this.settings, this.client);
     }
 
-    displaySettings(plugin: Inscribe, containerEl: HTMLElement): void {
+    async availableModels(): Promise<string[]> {
+        const response: ListResponse = await this.client.list();
+        return response.models.map((model: ModelResponse) => model.name);
+    }
+
+    displaySettings(plugin: Inscribe, containerEl: HTMLElement, display: () => Promise<void>): void {
         containerEl.createEl("h3", { text: "Ollama Settings" });
 
         new Setting(containerEl)
@@ -44,17 +48,21 @@ export class OllamaProvider implements Provider {
         new Setting(containerEl)
             .setName("Model")
             .setDesc("Choose the Ollama model.")
-            .addDropdown((dropdown) => {
-                this.completer.fetchModels().then((models) => {
-                    models.forEach((model) => {
-                        dropdown.addOption(model, model);
-                    });
+            .addExtraButton((button) => {
+                button.setTooltip("Refresh model list").onClick(async () => {
+                    this.settings.models = await this.availableModels();
+                    await plugin.saveSettings();
+                    display();
                 });
+            })
+            .addDropdown((dropdown) => {
                 dropdown
+                    .addOptions(Object.fromEntries(this.settings.models.map(model => [model, model])))
                     .setValue(this.settings.model)
                     .onChange(async (value) => {
                         this.settings.model = value;
                         await plugin.saveSettings();
+                        display();
                     })
             });
     }
