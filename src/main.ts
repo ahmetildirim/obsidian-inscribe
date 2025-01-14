@@ -81,9 +81,9 @@ export default class Inscribe extends Plugin {
 		);
 	}
 
+
 	async saveSettings() {
 		await this.saveData(this.settings);
 		await this.buildProviders();
-		console.log(this.settings.providers.ollama.description);
 	}
 }

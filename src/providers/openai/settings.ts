@@ -6,4 +6,5 @@ export interface OpenAISettings {
     description: string;
     apiKey: string;
     model: string;
+    models: string[];
 }

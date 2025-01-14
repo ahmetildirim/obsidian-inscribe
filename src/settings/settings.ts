@@ -21,7 +21,8 @@ export const DEFAULT_SETTINGS: Settings = {
             name: "Open AI",
             description: "OpenAI is an artificial intelligence research laboratory consisting of the for-profit OpenAI LP and the non-profit OpenAI Inc.",
             apiKey: "",
-            model: "gpt-4"
+            model: "gpt-4",
+            models: ["gpt-4", "gpt-3.5-turbo", "gpt-3.5", "gpt-3", "gpt-2", "gpt-1"],
         },
         ollama: {
             integration: Integration.OLLAMA,
@@ -29,7 +30,7 @@ export const DEFAULT_SETTINGS: Settings = {
             description: "Ollama is an AI provider that offers a variety of models for different use cases.",
             host: "http://localhost:11434",
             model: "mistral-nemo",
-            models: ["llama3.2:latest"],
+            models: ["llama3.2:latest", "mistral-nemo"],
         },
     },
     promtty: true,
@@ -94,7 +95,6 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     })
             );
-
         new Setting(containerEl)
             .setName("Model")
             .setDesc("Choose the Ollama model.")
@@ -140,8 +140,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
             .setDesc("Choose the OpenAI model.")
             .addDropdown((dropdown) => {
                 dropdown
-                    .addOption("gpt-4", "GPT-4")
-                    .addOption("davinci", "Davinci")
+                    .addOptions(Object.fromEntries(settings.models.map(model => [model, model])))
                     .setValue(settings.model)
                     .onChange(async (value) => {
                         settings.model = value;
