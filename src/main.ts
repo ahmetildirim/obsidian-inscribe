@@ -2,34 +2,28 @@ import { Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
 import { Provider } from './providers/provider';
 import { Settings, DEFAULT_SETTINGS, InscribeSettingsTab } from './settings/settings';
-import { buildProviders } from './providers';
+import { createProvider } from './providers';
 import { generateCompletion } from './completion';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	provider: Provider
-	providers: Provider[]
 
 	async onload() {
 		await this.loadSettings();
-		await this.buildProviders();
+		await this.buildProvider();
 		await this.setupExtention();
 		this.addSettingTab(new InscribeSettingsTab(this.app, this));
 	}
 
-	async buildProviders() {
-		this.providers = buildProviders(this.settings);
-		const selectedProvider = this.providers.find(provider => provider.integration === this.settings.provider);
-		if (selectedProvider) {
-			selectedProvider.loadCompleter();
-			this.provider = selectedProvider;
-		}
+	async buildProvider() {
+		this.provider = createProvider(this.settings);
 	}
 
 	async setupExtention() {
 		const extension = inlineSuggestion({
 			fetchFn: () => this.fetchSuggestions(),
-			delay: 100,
+			delay: 500,
 			continue_suggesting: false,
 			accept_shortcut: 'Tab',
 		});
@@ -56,6 +50,6 @@ export default class Inscribe extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-		await this.buildProviders();
+		await this.buildProvider();
 	}
 }

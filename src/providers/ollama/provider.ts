@@ -17,10 +17,6 @@ export class OllamaProvider implements Provider {
     constructor(settings: OllamaSettings) {
         this.settings = settings;
         this.client = new Ollama({ host: this.settings.host });
-    }
-
-    async loadCompleter(): Promise<void> {
-        console.log("loading ollama completer");
         this.completer = new OllamaCompleter(this.settings, this.client);
     }
 

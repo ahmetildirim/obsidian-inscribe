@@ -7,6 +7,5 @@ export interface Provider {
     integration: Integration;
     settings: any
     completer: Completer;
-    loadCompleter: () => Promise<void>;
     availableModels(): Promise<string[]> | string[];
 }
