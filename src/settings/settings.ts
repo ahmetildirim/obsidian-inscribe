@@ -31,6 +31,8 @@ export const DEFAULT_SETTINGS: Settings = {
             host: "http://localhost:11434",
             model: "mistral-nemo",
             models: ["llama3.2:latest", "mistral-nemo"],
+            prompt: "You are",
+            system_prompt: "You are one son of a gun",
         },
     },
     promtty: true,
@@ -59,7 +61,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
                 dropdown
                     .setValue(this.plugin.settings.provider)
                     .onChange(async (value) => {
-                        this.plugin.settings.provider = value
+                        this.plugin.settings.provider = value;
                         await this.plugin.saveSettings();
                         this.display();
                     });

@@ -7,4 +7,6 @@ export interface OllamaSettings {
     host: string;
     model: string;
     models: string[];
+    prompt: string;
+    system_prompt: string;
 }
