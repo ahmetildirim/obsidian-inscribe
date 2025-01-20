@@ -1,17 +1,18 @@
-import { Ollama } from "ollama";
+import { ModelResponse, Ollama } from "ollama";
 import { Suggestion } from "codemirror-companion-extension";
 import { OllamaSettings } from "./settings";
-import { Completer } from "..";
+import { Completer, Provider } from "..";
 import { activeEditor } from "src/completion";
 
 export default class OllamaCompleter implements Completer {
+    integration: Provider = Provider.OLLAMA;
     client: Ollama
     settings: OllamaSettings;
     aborted: boolean = false;
 
-    constructor(settins: OllamaSettings, client: Ollama) {
+    constructor(settins: OllamaSettings) {
         this.settings = settins;
-        this.client = client;
+        this.client = new Ollama({ host: this.settings.host });
     }
 
     async *generate(prefix: string, suffix: string): AsyncGenerator<Suggestion> {
@@ -48,6 +49,11 @@ export default class OllamaCompleter implements Completer {
         this.client.abort();
         this.aborted = true;
         console.log("aborted completion");
+    }
+
+    async availableModels(): Promise<string[]> {
+        const response = await this.client.list();
+        return response.models.map((model: ModelResponse) => model.name);
     }
 }
 

@@ -1,13 +1,12 @@
 import { Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
-import { Provider } from './providers/provider';
 import { Settings, DEFAULT_SETTINGS, InscribeSettingsTab } from './settings/settings';
-import { createProvider } from './providers';
+import { buildCompleter, Completer, Provider } from './providers';
 import { generateCompletion } from './completion';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
-	provider: Provider
+	completer: Completer
 
 	async onload() {
 		await this.loadSettings();
@@ -17,7 +16,7 @@ export default class Inscribe extends Plugin {
 	}
 
 	async buildProvider() {
-		this.provider = createProvider(this.settings);
+		this.completer = buildCompleter(this.settings);
 	}
 
 	async setupExtention() {
@@ -32,11 +31,11 @@ export default class Inscribe extends Plugin {
 
 	async *fetchSuggestions(): AsyncGenerator<Suggestion, void, unknown> {
 		console.log("triggered fetch");
-		const fileInfo = this.app.workspace.activeEditor;
-		if (!fileInfo) return;
-		if (!fileInfo.editor) return;
+		const activeEditor = this.app.workspace.activeEditor;
+		if (!activeEditor) return;
+		if (!activeEditor.editor) return;
 
-		yield* generateCompletion(fileInfo.editor, this.provider.completer);
+		yield* generateCompletion(activeEditor.editor, this.completer);
 	}
 
 	async loadSettings() {

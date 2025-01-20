@@ -1,31 +1,22 @@
 import { Settings } from "src/settings/settings";
-import { Provider } from "./provider";
-import { OllamaProvider } from "./ollama";
-import { OpenAIProvider } from "./openai/provider";
+import { OpenAICompleter } from "./openai/provider";
+import { Completer } from "./completer";
+import OllamaCompleter from "./ollama/completer";
 
-export * from "./provider";
 export * from "./completer";
 
-export enum Integration {
+export enum Provider {
     OLLAMA = "ollama",
     OPENAI = "openai",
 }
 
-// builder function for providers
-export const buildProviders = (settings: Settings): Provider[] => {
-    return [
-        new OllamaProvider(settings.providers.ollama),
-        new OpenAIProvider(settings.providers.openai),
-    ];
-}
-
 // builder function for provider
-export const createProvider = (settings: Settings): Provider => {
+export const buildCompleter = (settings: Settings): Completer => {
     switch (settings.provider) {
-        case Integration.OLLAMA:
-            return new OllamaProvider(settings.providers.ollama);
-        case Integration.OPENAI:
-            return new OpenAIProvider(settings.providers.openai);
+        case Provider.OLLAMA:
+            return new OllamaCompleter(settings.providers.ollama);
+        case Provider.OPENAI:
+            return new OpenAICompleter(settings.providers.openai);
         default:
             throw new Error("Invalid provider");
     }

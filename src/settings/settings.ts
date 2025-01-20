@@ -2,7 +2,7 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 import Inscribe from "src/main";
 import { OllamaSettings } from "src/providers/ollama";
 import { OpenAISettings } from "src/providers/openai";
-import { Integration } from "src/providers";
+import { Provider } from "src/providers";
 
 export interface Settings {
     provider: string,
@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
     provider: "ollama",
     providers: {
         openai: {
-            integration: Integration.OPENAI,
+            integration: Provider.OPENAI,
             name: "Open AI",
             description: "OpenAI is an artificial intelligence research laboratory consisting of the for-profit OpenAI LP and the non-profit OpenAI Inc.",
             apiKey: "",
@@ -25,7 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
             models: ["gpt-4", "gpt-3.5-turbo", "gpt-3.5", "gpt-3", "gpt-2", "gpt-1"],
         },
         ollama: {
-            integration: Integration.OLLAMA,
+            integration: Provider.OLLAMA,
             name: "Ollama",
             description: "Ollama is an AI provider that offers a variety of models for different use cases.",
             host: "http://localhost:11434",
@@ -68,10 +68,10 @@ export class InscribeSettingsTab extends PluginSettingTab {
             });
 
         switch (this.plugin.settings.provider) {
-            case Integration.OLLAMA:
+            case Provider.OLLAMA:
                 await this.displayOllamaSettings();
                 break;
-            case Integration.OPENAI:
+            case Provider.OPENAI:
                 await this.displayOpenAISettings();
                 break;
             default:
