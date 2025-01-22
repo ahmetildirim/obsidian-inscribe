@@ -10,12 +10,12 @@ export default class Inscribe extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		await this.buildProvider();
+		await this.loadCompleter();
 		await this.setupExtention();
 		this.addSettingTab(new InscribeSettingsTab(this.app, this));
 	}
 
-	async buildProvider() {
+	async loadCompleter() {
 		this.completer = buildCompleter(this.settings);
 	}
 
@@ -46,9 +46,8 @@ export default class Inscribe extends Plugin {
 		);
 	}
 
-
 	async saveSettings() {
 		await this.saveData(this.settings);
-		await this.buildProvider();
+		await this.loadCompleter();
 	}
 }

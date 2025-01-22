@@ -102,7 +102,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
             .setDesc("Choose the Ollama model.")
             .addExtraButton((button) => {
                 button.setTooltip("Refresh model list").onClick(async () => {
-                    settings.models = await this.plugin.provider.availableModels();
+                    settings.models = await this.plugin.completer.availableModels();
                     await this.plugin.saveSettings();
                     this.display();
                 });

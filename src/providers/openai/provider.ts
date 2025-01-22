@@ -1,6 +1,5 @@
-import Inscribe from "src/main";
 import { Completer, Provider } from "..";
-import { Setting } from "obsidian";
+import { Editor } from "obsidian";
 import { OpenAISettings } from ".";
 import { Suggestion } from "codemirror-companion-extension";
 
@@ -14,7 +13,7 @@ export class OpenAICompleter implements Completer {
     constructor(settings: OpenAISettings) {
         this.settings = settings;
     }
-    generate: (prefix: string, suffix: string) => AsyncGenerator<Suggestion>;
+    generate: (editor: Editor, prefix: string, suffix: string) => AsyncGenerator<Suggestion>;
     abort: () => void;
     availableModels(): string[] {
         return ["gpt-4", "davinci"];

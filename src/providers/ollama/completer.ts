@@ -2,7 +2,7 @@ import { ModelResponse, Ollama } from "ollama";
 import { Suggestion } from "codemirror-companion-extension";
 import { OllamaSettings } from "./settings";
 import { Completer, Provider } from "..";
-import { activeEditor } from "src/completion";
+import { Editor } from "obsidian";
 
 export default class OllamaCompleter implements Completer {
     integration: Provider = Provider.OLLAMA;
@@ -15,9 +15,9 @@ export default class OllamaCompleter implements Completer {
         this.client = new Ollama({ host: this.settings.host });
     }
 
-    async *generate(prefix: string, suffix: string): AsyncGenerator<Suggestion> {
+    async *generate(editor: Editor, prefix: string, suffix: string): AsyncGenerator<Suggestion> {
         this.aborted = false;
-        const initialCursor = activeEditor.getCursor();
+        const initialCursor = editor.getCursor();
 
         const completionIterator = await this.client.generate({
             model: this.settings.model,
@@ -32,7 +32,7 @@ export default class OllamaCompleter implements Completer {
                 yield { complete_suggestion: "", display_suggestion: "" };
                 return;
             }
-            const currentCursor = activeEditor.getCursor();
+            const currentCursor = editor.getCursor();
             if (currentCursor.line !== initialCursor.line || currentCursor.ch !== initialCursor.ch) {
                 console.log("cursor moved, aborting completion");
                 this.abort();
