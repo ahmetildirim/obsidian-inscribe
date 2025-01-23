@@ -13,7 +13,7 @@ export interface Settings {
     promtty: boolean,
 }
 
-export const DEFAULT_SETTINGS: Settings = {
+export const DEFAULT_SETTINGS: Partial<Settings> = {
     provider: "ollama",
     providers: {
         openai: {
@@ -31,8 +31,8 @@ export const DEFAULT_SETTINGS: Settings = {
             host: "http://localhost:11434",
             model: "mistral-nemo",
             models: ["llama3.2:latest", "mistral-nemo"],
-            prompt: "You are",
-            system_prompt: "You are one son of a gun",
+            user_prompt: 'Complete the last sentence: {{leading_context}}}',
+            system_prompt: "You are a writer. Write a sentence that follows the last sentence.",
         },
     },
     promtty: true,
@@ -117,6 +117,30 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         this.display();
                     })
             });
+        new Setting(containerEl)
+            .setName("User Prompt")
+            .setDesc("Enter the user prompt.")
+            .addTextArea((text) =>
+                text
+                    .setPlaceholder(settings.user_prompt)
+                    .setValue(settings.user_prompt)
+                    .onChange(async (value) => {
+                        settings.user_prompt = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
+        new Setting(containerEl)
+            .setName("System Prompt")
+            .setDesc("Enter the system prompt.")
+            .addTextArea((text) =>
+                text
+                    .setPlaceholder(settings.system_prompt)
+                    .setValue(settings.system_prompt)
+                    .onChange(async (value) => {
+                        settings.system_prompt = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
     }
 
     async displayOpenAISettings(): Promise<void> {

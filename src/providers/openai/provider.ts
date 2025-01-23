@@ -13,7 +13,7 @@ export class OpenAICompleter implements Completer {
     constructor(settings: OpenAISettings) {
         this.settings = settings;
     }
-    generate: (editor: Editor, prefix: string, suffix: string) => AsyncGenerator<Suggestion>;
+    generate: (editor: Editor) => AsyncGenerator<Suggestion>;
     abort: () => void;
     availableModels(): string[] {
         return ["gpt-4", "davinci"];

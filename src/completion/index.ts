@@ -18,9 +18,6 @@ export async function* generateCompletion(editor: Editor, completer: Completer):
         yield { display_suggestion: "", complete_suggestion: "" };
         return;
     }
-
-    const afterCursor = editor.getRange(cursor, { line: editor.lastLine(), ch: editor.getLine(editor.lastLine()).length });
-    const beforeCursor = editor.getRange({ line: 0, ch: 0 }, cursor);
-
-    yield* completer.generate(editor, beforeCursor, afterCursor);
+    yield* completer.generate(editor);
 }
+

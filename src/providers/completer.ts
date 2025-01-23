@@ -6,7 +6,7 @@ import { Editor } from "obsidian";
 export interface Completer {
     integration: Provider;
     settings: any
-    generate: (editor: Editor, refix: string, suffix: string) => AsyncGenerator<Suggestion>;
+    generate: (editor: Editor) => AsyncGenerator<Suggestion>;
     abort: () => void;
     availableModels(): Promise<string[]> | string[];
 }
