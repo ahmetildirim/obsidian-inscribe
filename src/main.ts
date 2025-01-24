@@ -1,6 +1,7 @@
 import { Plugin } from 'obsidian';
 import { inlineSuggestion, Suggestion } from "codemirror-companion-extension";
-import { Settings, DEFAULT_SETTINGS, InscribeSettingsTab } from './settings/settings';
+import { Settings, DEFAULT_SETTINGS } from './settings';
+import { InscribeSettingsTab } from "./settings";
 import { buildCompleter, Completer, Provider } from './providers';
 import { generateCompletion } from './completion';
 

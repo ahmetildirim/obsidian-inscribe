@@ -1,7 +1,7 @@
 import Mustache from 'mustache';
 import { Editor } from 'obsidian';
 
-const DEFAULT_TEMPLATE = `{{pre_cursor}} {{active_sentence}} {{post_cursor}}`;
+export const TEMPLATE_VARIABLES = `{{pre_cursor}}\n{{post_cursor}} \n{{active_sentence}} \n{{last_line}}`;
 
 interface TemplateArgs {
     pre_cursor: string;
@@ -14,7 +14,7 @@ export function buildPrompt(template: string, args: TemplateArgs): string {
     return Mustache.render(template, args);
 }
 
-export function preparePrompt(editor: Editor, template: string = DEFAULT_TEMPLATE): string {
+export function preparePrompt(editor: Editor, template: string = TEMPLATE_VARIABLES): string {
     const cursor = editor.getCursor();
     const preCursor = editor.getRange({ line: 0, ch: 0 }, cursor);
     const postCursor = editor.getRange(cursor, { line: editor.lastLine(), ch: editor.getLine(editor.lastLine()).length });

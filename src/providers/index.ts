@@ -1,4 +1,4 @@
-import { Settings } from "src/settings/settings";
+import { Settings } from "src/settings";
 import { OpenAICompleter } from "./openai/provider";
 import { Completer } from "./completer";
 import OllamaCompleter from "./ollama/completer";

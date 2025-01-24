@@ -1,8 +1,9 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
-import Inscribe from "src/main";
 import { OllamaSettings } from "src/providers/ollama";
 import { OpenAISettings } from "src/providers/openai";
 import { Provider } from "src/providers";
+import { PluginSettingTab, App, Setting } from "obsidian";
+import { TEMPLATE_VARIABLES } from "src/completion/prompt";
+import Inscribe from "src/main";
 
 export interface Settings {
     provider: string,
@@ -88,14 +89,13 @@ export class InscribeSettingsTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName("Host")
             .setDesc("Enter the Ollama host.")
-            .addText((text) =>
-                text
-                    .setPlaceholder(settings.host)
-                    .setValue(settings.host)
-                    .onChange(async (value) => {
-                        settings.host = value;
-                        await this.plugin.saveSettings();
-                    })
+            .addText((text) => text
+                .setPlaceholder(settings.host)
+                .setValue(settings.host)
+                .onChange(async (value) => {
+                    settings.host = value;
+                    await this.plugin.saveSettings();
+                })
             );
         new Setting(containerEl)
             .setName("Model")
@@ -115,32 +115,43 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         settings.model = value;
                         await this.plugin.saveSettings();
                         this.display();
-                    })
+                    });
             });
         new Setting(containerEl)
             .setName("User Prompt")
             .setDesc("Enter the user prompt.")
-            .addTextArea((text) =>
+            .addExtraButton((button) => {
+                button.setTooltip("Insert variables").onClick(() => {
+                    settings.user_prompt = `${settings.user_prompt}\n${TEMPLATE_VARIABLES}`;
+                    this.display();
+                });
+            })
+            .addTextArea((text) => {
+                text.inputEl.setAttr("rows", "5");
+                text.inputEl.setCssStyles({ width: "100%", resize: "vertical", position: "relative" });
                 text
                     .setPlaceholder(settings.user_prompt)
                     .setValue(settings.user_prompt)
                     .onChange(async (value) => {
                         settings.user_prompt = value;
                         await this.plugin.saveSettings();
-                    })
+                    });
+            }
             );
         new Setting(containerEl)
             .setName("System Prompt")
             .setDesc("Enter the system prompt.")
-            .addTextArea((text) =>
+            .addTextArea((text) => {
+                text.inputEl.setAttr("rows", "2");
+                text.inputEl.setCssStyles({ width: "100%", resize: "vertical", position: "relative" });
                 text
                     .setPlaceholder(settings.system_prompt)
                     .setValue(settings.system_prompt)
                     .onChange(async (value) => {
                         settings.system_prompt = value;
                         await this.plugin.saveSettings();
-                    })
-            );
+                    });
+            });
     }
 
     async displayOpenAISettings(): Promise<void> {
@@ -152,14 +163,13 @@ export class InscribeSettingsTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName("API Key")
             .setDesc("Enter the OpenAI API key.")
-            .addText((text) =>
-                text
-                    .setPlaceholder(settings.apiKey)
-                    .setValue(settings.apiKey)
-                    .onChange(async (value) => {
-                        settings.apiKey = value;
-                        await this.plugin.saveSettings();
-                    })
+            .addText((text) => text
+                .setPlaceholder(settings.apiKey)
+                .setValue(settings.apiKey)
+                .onChange(async (value) => {
+                    settings.apiKey = value;
+                    await this.plugin.saveSettings();
+                })
             );
         new Setting(containerEl)
             .setName("Model")
@@ -175,5 +185,4 @@ export class InscribeSettingsTab extends PluginSettingTab {
             });
     }
 }
-
 
