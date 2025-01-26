@@ -23,7 +23,7 @@ export default class Inscribe extends Plugin {
 	async setupExtention() {
 		const extension = inlineSuggestion({
 			fetchFn: () => this.fetchSuggestions(),
-			delay: 500,
+			delay: this.settings.delay_ms,
 			continue_suggesting: false,
 			accept_shortcut: 'Tab',
 		});

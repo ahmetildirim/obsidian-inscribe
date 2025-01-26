@@ -11,7 +11,7 @@ export interface Settings {
         ollama: OllamaSettings,
         openai: OpenAISettings,
     },
-    promtty: boolean,
+    delay_ms: number,
 }
 
 export const DEFAULT_SETTINGS: Partial<Settings> = {
@@ -20,23 +20,23 @@ export const DEFAULT_SETTINGS: Partial<Settings> = {
         openai: {
             integration: Provider.OPENAI,
             name: "Open AI",
-            description: "OpenAI is an artificial intelligence research laboratory consisting of the for-profit OpenAI LP and the non-profit OpenAI Inc.",
+            description: "Use OpenAI APIs to generate text.",
             apiKey: "",
-            model: "gpt-4",
+            model: "gpt-4o",
             models: ["gpt-4", "gpt-3.5-turbo", "gpt-3.5", "gpt-3", "gpt-2", "gpt-1"],
         },
         ollama: {
             integration: Provider.OLLAMA,
             name: "Ollama",
-            description: "Ollama is an AI provider that offers a variety of models for different use cases.",
+            description: "Use your own Ollama instance to generate text.",
             host: "http://localhost:11434",
             model: "mistral-nemo",
             models: ["llama3.2:latest", "mistral-nemo"],
-            user_prompt: 'Complete the last sentence: {{leading_context}}}',
-            system_prompt: "You are a writer. Write a sentence that follows the last sentence.",
+            user_prompt: 'Complete following text:\n {{pre_cursor}}}',
+            system_prompt: "You are an helpful AI completer. Follow instructions",
         },
     },
-    promtty: true,
+    delay_ms: 500,
 }
 
 export class InscribeSettingsTab extends PluginSettingTab {
@@ -48,9 +48,24 @@ export class InscribeSettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        // AI PROVIDER SELECTOR
-        containerEl.createEl("h1", { text: "Provider Settings" });
+        await this.displayGeneralSettings();
+        switch (this.plugin.settings.provider) {
+            case Provider.OLLAMA:
+                await this.displayOllamaSettings();
+                break;
+            case Provider.OPENAI:
+                await this.displayOpenAISettings();
+                break;
+            default:
+                break;
+        }
+    }
 
+    async displayGeneralSettings(): Promise<void> {
+        const { containerEl } = this;
+        const settings = this.plugin.settings;
+
+        containerEl.createEl("h1", { text: "General" });
         new Setting(containerEl)
             .setName("AI Provider")
             .setDesc("Choose your preferred AI provider.")
@@ -67,17 +82,19 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         this.display();
                     });
             });
-
-        switch (this.plugin.settings.provider) {
-            case Provider.OLLAMA:
-                await this.displayOllamaSettings();
-                break;
-            case Provider.OPENAI:
-                await this.displayOpenAISettings();
-                break;
-            default:
-                break;
-        }
+        new Setting(containerEl)
+            .setName("Delay (ms)")
+            .setDesc("Set the delay in milliseconds before fetching suggestions.")
+            .addText((text) => {
+                text.inputEl.setAttrs({ type: "number", min: "0" });
+                text
+                    .setPlaceholder(settings.delay_ms.toString())
+                    .setValue(settings.delay_ms.toString())
+                    .onChange(async (value) => {
+                        settings.delay_ms = parseInt(value);
+                        await this.plugin.saveSettings();
+                    })
+            });
     }
 
     async displayOllamaSettings(): Promise<void> {
