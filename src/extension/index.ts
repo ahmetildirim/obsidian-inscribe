@@ -6,8 +6,6 @@
 import { ViewPlugin, EditorView, ViewUpdate, Decoration, WidgetType, keymap } from '@codemirror/view';
 import { StateEffect, Text, Prec, StateField, EditorState, EditorSelection } from '@codemirror/state';
 
-/* ------------------------- Split Strategies Configuration ------------------------- */
-
 /**
  * Built-in strategies for splitting suggestions into accepted/remaining portions
  */
@@ -44,8 +42,6 @@ const SplitStrategies = {
  * Available strategies for splitting accepted suggestions from remaining text
  */
 export type SplitStrategy = keyof typeof SplitStrategies;
-
-/* ---------------------------- Core Interfaces & Types ---------------------------- */
 
 /**
  * Represents a suggestion to be displayed inline in the editor
@@ -169,8 +165,6 @@ const SuggestionStateField = StateField.define<SuggestionState>({
     }
 });
 
-/* ----------------------------- Rendering System ----------------------------- */
-
 /**
  * Custom widget implementation for displaying inline suggestions
  */
@@ -215,8 +209,6 @@ const suggestionRenderer = ViewPlugin.fromClass(
     },
     { decorations: (v) => v.decorations }
 );
-
-/* ---------------------------- Suggestion Fetching --------------------------- */
 
 /**
  * Creates suggestion fetching system with debouncing and cancellation
@@ -279,8 +271,6 @@ function createFetchSystem(
     };
 }
 
-/* --------------------------- Input Handling System -------------------------- */
-
 /**
  * Generates transaction for inserting suggestion text
  */
@@ -328,8 +318,6 @@ function createInputHandlers(cancelFetch: () => void, acceptKey: string) {
         }])
     );
 }
-
-/* -------------------------- Main Extension Function ------------------------- */
 
 /**
  * Main extension function for inline suggestions
