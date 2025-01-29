@@ -4,6 +4,7 @@ import { Provider } from "src/providers";
 import { PluginSettingTab, App, Setting } from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/completion/prompt";
 import Inscribe from "src/main";
+import { SplitStrategy } from "src/extension";
 
 export interface Settings {
     provider: string,
@@ -12,7 +13,7 @@ export interface Settings {
         openai: OpenAISettings,
     },
     delay_ms: number,
-    splitStrategy: 'word' | 'sentence' | 'paragraph' | 'full',
+    splitStrategy: SplitStrategy
 }
 
 export const DEFAULT_SETTINGS: Partial<Settings> = {
@@ -112,7 +113,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
                 dropdown
                     .setValue(this.plugin.settings.splitStrategy)
                     .onChange(async (value) => {
-                        this.plugin.settings.splitStrategy = value as 'word' | 'sentence' | 'paragraph' | 'full';
+                        this.plugin.settings.splitStrategy = value as SplitStrategy;
                         await this.plugin.saveSettings();
                     });
             });

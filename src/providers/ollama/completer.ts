@@ -16,7 +16,7 @@ export default class OllamaCompleter implements Completer {
         this.client = new Ollama({ host: this.settings.host });
     }
 
-    async *generate(editor: Editor): AsyncGenerator<Suggestion> {
+    async *generate(editor: Editor): AsyncGenerator<string> {
         this.aborted = false;
         const prompt = preparePrompt(editor, this.settings.user_prompt);
 
@@ -31,18 +31,16 @@ export default class OllamaCompleter implements Completer {
         let completion = "";
         for await (let response of completionIterator) {
             if (this.aborted) {
-                yield { complete_suggestion: "", display_suggestion: "" };
                 return;
             }
             const currentPosition = editor.getCursor();
             if (currentPosition.line !== initialPosition.line || currentPosition.ch !== initialPosition.ch) {
                 console.log("cursor moved, aborting completion");
                 this.abort();
-                yield { complete_suggestion: "", display_suggestion: "" };
                 return;
             }
             completion += response.response;
-            yield { complete_suggestion: completion, display_suggestion: completion }
+            yield completion;
         }
     }
 

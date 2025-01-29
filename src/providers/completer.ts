@@ -1,4 +1,3 @@
-import { Suggestion } from "codemirror-companion-extension";
 import { Provider } from ".";
 import { Editor } from "obsidian";
 
@@ -6,7 +5,7 @@ import { Editor } from "obsidian";
 export interface Completer {
     integration: Provider;
     settings: any
-    generate: (editor: Editor) => AsyncGenerator<Suggestion>;
+    generate: (editor: Editor) => AsyncGenerator<string>;
     abort: () => void;
     availableModels(): Promise<string[]> | string[];
 }
