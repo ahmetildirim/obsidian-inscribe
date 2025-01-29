@@ -47,8 +47,6 @@ function sentenceAtCursor(editor: Editor): string {
         sentenceLines.unshift(line);
     }
 
-    console.log(sentenceLines);
-
     // Join lines and clean up whitespace
     return sentenceLines
         .join(' ')

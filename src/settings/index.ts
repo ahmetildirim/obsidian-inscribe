@@ -12,6 +12,7 @@ export interface Settings {
         openai: OpenAISettings,
     },
     delay_ms: number,
+    splitStrategy: 'word' | 'sentence' | 'paragraph' | 'full',
 }
 
 export const DEFAULT_SETTINGS: Partial<Settings> = {
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: Partial<Settings> = {
         },
     },
     delay_ms: 500,
+    splitStrategy: "word",
 }
 
 export class InscribeSettingsTab extends PluginSettingTab {
@@ -94,6 +96,25 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         settings.delay_ms = parseInt(value);
                         await this.plugin.saveSettings();
                     })
+            });
+
+        new Setting(containerEl)
+            .setName("Accept Strategy")
+            .setDesc("Choose the accept strategy.")
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOptions({
+                        "word": "Word",
+                        "sentence": "Sentence",
+                        "paragraph": "Paragraph",
+                        "full": "Full",
+                    });
+                dropdown
+                    .setValue(this.plugin.settings.splitStrategy)
+                    .onChange(async (value) => {
+                        this.plugin.settings.splitStrategy = value as 'word' | 'sentence' | 'paragraph' | 'full';
+                        await this.plugin.saveSettings();
+                    });
             });
     }
 

@@ -1,8 +1,8 @@
 import { Plugin } from 'obsidian';
-import { inlineSuggestion, Suggestion } from "./extension";
+import { inlineSuggestion, splitStrategies } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings';
 import { InscribeSettingsTab } from "./settings";
-import { buildCompleter, Completer, Provider } from './providers';
+import { buildCompleter, Completer } from './providers';
 import { generateCompletion } from './completion';
 
 export default class Inscribe extends Plugin {
@@ -23,15 +23,13 @@ export default class Inscribe extends Plugin {
 	async setupExtention() {
 		const extension = inlineSuggestion({
 			fetchFn: () => this.fetchSuggestions(),
-			delay: this.settings.delay_ms,
-			continue_suggesting: false,
-			accept_shortcut: 'Tab',
+			delay_ms: this.settings.delay_ms,
+			splitStrategy: splitStrategies[this.settings.splitStrategy],
 		});
 		this.registerEditorExtension(extension);
 	}
 
-	async *fetchSuggestions(): AsyncGenerator<Suggestion, void, unknown> {
-		console.log("triggered fetch");
+	async * fetchSuggestions(): AsyncGenerator<string> {
 		const activeEditor = this.app.workspace.activeEditor;
 		if (!activeEditor) return;
 		if (!activeEditor.editor) return;

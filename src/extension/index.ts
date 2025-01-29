@@ -1,107 +1,108 @@
-import {
-    ViewPlugin,
-    DecorationSet,
-    EditorView,
-    ViewUpdate,
-    Decoration,
-    WidgetType,
-    keymap,
-} from '@codemirror/view';
-import {
-    StateEffect,
-    Text,
-    Prec,
-    StateField,
-    EditorState,
-    EditorSelection,
-    TransactionSpec,
-} from '@codemirror/state';
-import { debounceAsyncGenerator } from './utils';
+import { ViewPlugin, EditorView, ViewUpdate, Decoration, WidgetType, keymap } from '@codemirror/view';
+import { StateEffect, Text, Prec, StateField, EditorState, EditorSelection } from '@codemirror/state';
 
-// Splitting this up to allow  someone to display a whole sentence as a suggestion
-// while only letting the tab key insert the next word etc.
-export type Suggestion = {
-    complete_suggestion: string;
-    display_suggestion: string;
-    accept_hook?: () => void;
-};
-
-// Current state of the autosuggestion
-const InlineSuggestionState = StateField.define<{
-    suggestion: null | Suggestion;
-}>({
-    create() {
-        return { suggestion: null };
-    },
-    update(__: any, tr: any) {
-        const inlineSuggestion = tr.effects.find((e: any) =>
-            e.is(InlineSuggestionEffect)
-        );
-        if (tr.state.doc)
-            if (
-                inlineSuggestion &&
-                (inlineSuggestion.value.doc == null ||
-                    tr.state.doc == inlineSuggestion.value.doc)
-            ) {
-                return { suggestion: inlineSuggestion.value.suggestion };
-            }
-        return { suggestion: null };
-    },
-});
-
+//#region State Management
+/**
+ * State effect for updating inline suggestions. Carries:
+ * - suggestion: Current suggestion text or null to clear
+ * - doc: Snapshot of document when suggestion was generated
+ */
 const InlineSuggestionEffect = StateEffect.define<{
-    suggestion: Suggestion | null;
+    suggestion: string | null;
     doc: Text | null;
 }>();
 
 /**
- * Provides a suggestion for the next word
+ * State field tracking current inline suggestion state:
+ * - fullSuggestion: The full suggestion text
+ * - remainingSuggestion: The remaining portion of the suggestion
+ * - originalDoc: The document state when the suggestion was generated
  */
-function inlineSuggestionDecoration(view: EditorView, prefix: string) {
-    const pos = view.state.selection.main.head;
-    const widgets = [];
-    const widget = Decoration.widget({
-        widget: new InlineSuggestionWidget(prefix),
-        side: 1,
-    });
-    widgets.push(widget.range(pos));
-    return Decoration.set(widgets);
+const InlineSuggestionState = StateField.define<{
+    fullSuggestion: string | null;
+    remainingSuggestion: string | null;
+    originalDoc: Text | null;
+}>({
+    create: () => ({ fullSuggestion: null, remainingSuggestion: null, originalDoc: null }),
+    update(oldState, transaction) {
+        // Check for suggestion update effect
+        const effect = transaction.effects.find(e => e.is(InlineSuggestionEffect));
+        if (effect) {
+            return effect.value.suggestion === null
+                ? { fullSuggestion: null, remainingSuggestion: null, originalDoc: null }
+                : {
+                    fullSuggestion: effect.value.suggestion,
+                    remainingSuggestion: effect.value.suggestion,
+                    originalDoc: effect.value.doc,
+                };
+        }
+
+        // Clear suggestions on document changes
+        return transaction.docChanged ? { ...oldState, remainingSuggestion: null } : oldState;
+    },
+});
+//#endregion
+
+//#region Decoration & Widget
+/**
+ * Creates a decoration with inline suggestion widget at current cursor position
+ */
+function createSuggestionDecoration(view: EditorView, suggestionText: string) {
+    const cursorPos = view.state.selection.main.head;
+    return Decoration.set([
+        Decoration.widget({
+            widget: new InlineSuggestionWidget(suggestionText),
+            side: 1, // Display after cursor
+        }).range(cursorPos),
+    ]);
 }
 
+/**
+ * Widget that renders suggestion text with reduced opacity
+ */
 class InlineSuggestionWidget extends WidgetType {
-    suggestion: string;
-    constructor(suggestion: string) {
+    constructor(readonly suggestion: string) {
         super();
-        this.suggestion = suggestion;
     }
+
     toDOM() {
-        const div = document.createElement('span');
-        div.style.opacity = '0.4';
-        div.className = 'cm-inline-suggestion';
-        div.textContent = this.suggestion;
-        return div;
+        const element = document.createElement('span');
+        element.className = 'cm-inline-suggestion';
+        element.style.opacity = '0.4';
+        element.textContent = this.suggestion;
+        return element;
     }
 }
+//#endregion
 
-type InlineFetchFn = (state: EditorState) => AsyncGenerator<Suggestion>;
+//#region Suggestion Fetching
+/**
+ * Creates view plugin that manages suggestion fetching:
+ * - Debounces input
+ * - Cancels outdated requests
+ * - Updates suggestions via state effects
+ */
+const createFetchPlugin = (fetchFn: InlineFetchFn) => {
+    let currentRequestId = 0;
 
-export const fetchSuggestion = (fetchFn: InlineFetchFn) => {
-    let suggestionId = 0;
     return ViewPlugin.fromClass(
-        class FetchPlugin {
+        class {
             async update(update: ViewUpdate) {
-                const doc = update.state.doc;
-                // Only fetch if the document has changed
-                if (!update.docChanged) {
-                    return;
-                }
-                const currentSuggestionId = ++suggestionId;
-                for await (const result of fetchFn(update.state)) {
-                    if (currentSuggestionId != suggestionId) return;
+                const state = update.state;
+                const hasExistingSuggestions = state.field(InlineSuggestionState).remainingSuggestion;
+
+                // Skip if no changes or existing suggestions
+                if (!update.docChanged || hasExistingSuggestions) return;
+
+                const requestId = ++currentRequestId;
+                for await (const suggestion of fetchFn(state)) {
+                    // Cancel if newer request started
+                    if (requestId !== currentRequestId) return;
+
                     update.view.dispatch({
                         effects: InlineSuggestionEffect.of({
-                            suggestion: result,
-                            doc: doc,
+                            suggestion,
+                            doc: state.doc,
                         }),
                     });
                 }
@@ -110,210 +111,178 @@ export const fetchSuggestion = (fetchFn: InlineFetchFn) => {
     );
 };
 
-class RenderPlugin {
-    decorations: DecorationSet;
-    constructor() {
-        // Empty decorations
-        this.decorations = Decoration.none;
-    }
-    update(update: ViewUpdate) {
-        const suggestion: Suggestion | null = update.state.field(
-            InlineSuggestionState
-        )?.suggestion;
-        if (!suggestion) {
-            this.decorations = Decoration.none;
-            return;
-        }
-        this.decorations = inlineSuggestionDecoration(
-            update.view,
-            suggestion.display_suggestion
-        );
-    }
-}
+/**
+ * Wraps fetch function with debouncing and cancellation
+ */
+function debounceAsyncGenerator<T>(generatorFn: (...args: any[]) => AsyncGenerator<T>, delay: number) {
+    let timeoutId: NodeJS.Timeout;
+    let cancelDebounce: () => void;
 
-const renderInlineSuggestionPlugin = ViewPlugin.fromClass(RenderPlugin, {
-    decorations: (v: RenderPlugin) => v.decorations,
-});
+    const debouncedGenerator = async function* (...args: any[]) {
+        clearTimeout(timeoutId);
+        let isActive = true;
 
-class InlineSuggestionKeymap {
-    suggestFn: InlineFetchFn | null;
-    keymap: any;
-    completionId: number;
-
-    constructor(suggestFn: InlineFetchFn | null, accept_shortcut: string) {
-        this.suggestFn = suggestFn;
-        this.keymap = Prec.highest(
-            keymap.of([
-                {
-                    key: accept_shortcut,
-                    run: (view: EditorView) => {
-                        return this.run(view);
-                    },
-                },
-            ])
-        );
-        this.completionId = 0;
-    }
-
-    run = (view: EditorView) => {
-        const suggestion: Suggestion | null = view.state.field(
-            InlineSuggestionState
-        )?.suggestion;
-
-        // If there is no suggestion, do nothing and let the default keymap handle it
-        if (!suggestion) {
-            return false;
-        }
-
-        view.dispatch({
-            ...insertCompletionText(
-                view.state,
-                suggestion.complete_suggestion,
-                view.state.selection.main.head,
-                view.state.selection.main.head
-            ),
-        });
-        suggestion.accept_hook?.();
-
-        // Re-trigger the suggestion
-        const retrigger = async () => {
-            if (this.suggestFn == null) return;
-            const completionId = ++this.completionId;
-            for await (const result of this.suggestFn(view.state)) {
-                if (completionId != this.completionId) return;
-                view.dispatch({
-                    effects: InlineSuggestionEffect.of({
-                        suggestion: {
-                            complete_suggestion: result.complete_suggestion,
-                            display_suggestion: result.display_suggestion,
-                            accept_hook: result.accept_hook,
-                        },
-                        doc: null,
-                    }),
-                });
-            }
-        };
-        retrigger();
-
-        return true;
-    };
-}
-
-function insertCompletionText(
-    state: EditorState,
-    text: string,
-    from: number,
-    to: number
-): TransactionSpec {
-    return {
-        ...state.changeByRange((range) => {
-            if (range == state.selection.main)
-                return {
-                    changes: { from: from, to: to, insert: text },
-                    range: EditorSelection.cursor(from + text.length),
-                };
-            const len = to - from;
-            if (
-                !range.empty ||
-                (len &&
-                    state.sliceDoc(range.from - len, range.from) !=
-                    state.sliceDoc(from, to))
-            )
-                return { range };
-            return {
-                changes: { from: range.from - len, to: range.from, insert: text },
-                range: EditorSelection.cursor(range.from - len + text.length),
+        await new Promise((resolve) => {
+            timeoutId = setTimeout(resolve, delay);
+            cancelDebounce = () => {
+                isActive = false;
+                resolve(null);
             };
-        }),
+        });
+
+        if (!isActive) return;
+        yield* generatorFn(...args);
+    };
+
+    return { debouncedGenerator, cancelDebounce: () => cancelDebounce?.() };
+}
+//#endregion
+
+//#region Rendering
+/**
+ * View plugin that manages suggestion decoration updates
+ */
+const renderPlugin = ViewPlugin.fromClass(
+    class {
+        decorations = Decoration.none;
+
+        update(update: ViewUpdate) {
+            const remaining = update.state.field(InlineSuggestionState).remainingSuggestion;
+            this.decorations = remaining
+                ? createSuggestionDecoration(update.view, remaining)
+                : Decoration.none;
+        }
+    },
+    { decorations: (v) => v.decorations }
+);
+//#endregion
+
+//#region Keyboard Handling
+/**
+ * Creates keymap handler for accepting suggestion parts
+ */
+function createSuggestionKeymap(acceptKey: string, forceFetch: () => void, splitStrategy: SplitStrategy) {
+    return Prec.highest(
+        keymap.of([
+            {
+                key: acceptKey,
+                run: (view: EditorView) => {
+                    const state = view.state.field(InlineSuggestionState);
+                    if (!state.remainingSuggestion) return false;
+
+                    // Validate document hasn't changed
+                    // if (!state.originalDoc?.eq(view.state.doc)) return false;
+
+                    const split = splitStrategy(state.remainingSuggestion);
+                    if (!split.accept) return false;
+
+                    view.dispatch({
+                        ...insertSuggestionText(view.state, split.accept),
+                        effects: InlineSuggestionEffect.of({
+                            suggestion: split.remaining || null,
+                            doc: split.remaining ? state.originalDoc : null,
+                        }),
+                    });
+
+                    if (!split.remaining) forceFetch();
+                    return true;
+                },
+            },
+        ])
+    );
+}
+
+/**
+ * Helper to create transaction for inserting suggestion text
+ */
+function insertSuggestionText(state: EditorState, text: string) {
+    const cursorPos = state.selection.main.head;
+    return {
+        ...state.changeByRange((range) => ({
+            changes: { from: cursorPos, to: cursorPos, insert: text },
+            range: EditorSelection.cursor(cursorPos + text.length),
+        })),
         userEvent: 'input.complete',
     };
 }
+//#endregion
 
+//#region Types and Configuration
+type SplitStrategy = (remaining: string) => { accept: string; remaining: string };
+type InlineFetchFn = (state: EditorState) => AsyncGenerator<string>;
 type InlineSuggestionOptions = {
-    fetchFn: (
-        state: EditorState
-    ) => Promise<string | Suggestion> | AsyncGenerator<Suggestion>;
-    delay?: number;
-    continue_suggesting?: boolean;
-    accept_shortcut?: string | null;
+    fetchFn: (state: EditorState) => AsyncGenerator<string> | Promise<string>;
+    splitStrategy?: SplitStrategy;
+    delay_ms?: number;
+    acceptShortcut?: string;
 };
 
-// This is for backwards compatibility
-function toSuggestion(suggestion: string | Suggestion): Suggestion {
-    if (typeof suggestion === 'string') {
-        return {
-            complete_suggestion: suggestion,
-            display_suggestion: suggestion,
-        };
-    }
-    return suggestion;
-}
+const defaultSplitStrategy: SplitStrategy = (remaining) => {
+    // Split by first whitespace for word-by-word
+    const firstSpace = remaining.indexOf(' ');
+    return firstSpace === -1
+        ? { accept: remaining, remaining: '' }
+        : { accept: remaining.slice(0, firstSpace + 1), remaining: remaining.slice(firstSpace + 1) };
+};
 
-function toSuggestionFn(
-    fetchFn: (
-        state: EditorState
-    ) => Promise<string | Suggestion> | AsyncGenerator<Suggestion>
-): InlineFetchFn {
-    return async function* (state: EditorState) {
-        const suggestion = await fetchFn(state);
-        if (typeof suggestion === 'string') {
-            yield toSuggestion(suggestion);
-            return;
-        } else if (suggestion && typeof suggestion === 'object' && 'complete_suggestion' in suggestion) {
-            yield toSuggestion(suggestion);
-            return;
-        }
-        for await (const s of suggestion) {
-            yield toSuggestion(s);
-        }
-    };
-}
+// Example split strategies that can be provided by users:
+export const splitStrategies = {
+    word: defaultSplitStrategy,
 
+    sentence: (remaining: string) => {
+        const sentenceEnd = remaining.match(/[.!?]\s+/);
+        return sentenceEnd
+            ? {
+                accept: remaining.slice(0, sentenceEnd.index! + 1),
+                remaining: remaining.slice(sentenceEnd.index! + 1),
+            }
+            : { accept: remaining, remaining: '' };
+    },
+
+    paragraph: (remaining: string) => {
+        const paragraphEnd = remaining.indexOf('\n\n');
+        return paragraphEnd === -1
+            ? { accept: remaining, remaining: '' }
+            : {
+                accept: remaining.slice(0, paragraphEnd + 2),
+                remaining: remaining.slice(paragraphEnd + 2),
+            };
+    },
+
+    full: (remaining: string) => ({
+        accept: remaining,
+        remaining: '',
+    }),
+};
+//#endregion
+
+//#region Public API
+/**
+ * Main extension function combining all components
+ */
 export function inlineSuggestion(options: InlineSuggestionOptions) {
-    const { delay = 500, accept_shortcut = 'Tab' } = options;
-    const fetchFn = toSuggestionFn(options.fetchFn);
-    const { debounced: debounced_fetchFn } = debounceAsyncGenerator(
-        fetchFn,
-        delay
-    );
-    return accept_shortcut
-        ? [
-            InlineSuggestionState,
-            fetchSuggestion(debounced_fetchFn),
-            renderInlineSuggestionPlugin,
-            new InlineSuggestionKeymap(
-                options.continue_suggesting ? fetchFn : null,
-                accept_shortcut
-            ).keymap,
-        ]
-        : [
-            InlineSuggestionState,
-            fetchSuggestion(debounced_fetchFn),
-            renderInlineSuggestionPlugin,
-        ];
-}
+    const {
+        delay_ms = 500,
+        acceptShortcut = 'Tab',
+        fetchFn: userFetchFn,
+        splitStrategy = defaultSplitStrategy,
+    } = options;
 
-export function forceableInlineSuggestion(options: InlineSuggestionOptions) {
-    const { delay = 500, accept_shortcut = 'Tab' } = options;
-    const fetchFn = toSuggestionFn(options.fetchFn);
-    const { debounced: debounced_fetchFn, force: force_fetch } =
-        debounceAsyncGenerator(fetchFn, delay);
-    return {
-        extension: accept_shortcut
-            ? [
-                InlineSuggestionState,
-                fetchSuggestion(debounced_fetchFn),
-                renderInlineSuggestionPlugin,
-                new InlineSuggestionKeymap(
-                    options.continue_suggesting ? fetchFn : null,
-                    accept_shortcut
-                ).keymap,
-            ]
-            : [
-                InlineSuggestionState,
-                fetchSuggestion(debounced_fetchFn),
-                renderInlineSuggestionPlugin,
-            ],
-        force_fetch: force_fetch,
+    // Normalize fetch function to always return AsyncGenerator
+    const normalizedFetch = async function* (state: EditorState) {
+        const result = await userFetchFn(state);
+        if (typeof result === 'string') yield result;
+        else yield* result;
     };
+
+    // Add debouncing to fetch function
+    const { debouncedGenerator: debouncedFetch, cancelDebounce } = debounceAsyncGenerator(normalizedFetch, delay_ms);
+
+    return [
+        InlineSuggestionState,
+        createFetchPlugin(debouncedFetch),
+        renderPlugin,
+        createSuggestionKeymap(acceptShortcut, cancelDebounce, splitStrategy),
+    ];
 }
+//#endregion
