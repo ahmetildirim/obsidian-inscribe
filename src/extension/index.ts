@@ -4,7 +4,7 @@
  */
 
 import { ViewPlugin, EditorView, ViewUpdate, Decoration, WidgetType, keymap } from '@codemirror/view';
-import { StateEffect, Text, Prec, StateField, EditorState, EditorSelection } from '@codemirror/state';
+import { StateEffect, Text, Prec, StateField, EditorState, EditorSelection, Transaction } from '@codemirror/state';
 
 /**
  * Built-in strategies for splitting suggestions into accepted/remaining portions
@@ -97,7 +97,7 @@ const SuggestionEffect = StateEffect.define<{
 }>();
 
 /**
- * State field maintaining current suggestion state
+ * State field for managing inline suggestion state
  */
 const SuggestionStateField = StateField.define<SuggestionState>({
     create: () => ({
@@ -109,61 +109,101 @@ const SuggestionStateField = StateField.define<SuggestionState>({
     }),
 
     update(oldState, transaction) {
-        // Handle suggestion effect updates
-        const effect = transaction.effects.find(e => e.is(SuggestionEffect));
-        if (effect) {
-            return effect.value.suggestion === null
-                ? { // Reset state
-                    fullSuggestion: null,
-                    remainingSuggestion: null,
-                    originalDocument: null,
-                    splitStrategy: null,
-                    originalCursorPos: null,
-                }
-                : { // Initialize new suggestion
-                    fullSuggestion: effect.value.suggestion,
-                    remainingSuggestion: effect.value.suggestion,
-                    originalDocument: effect.value.document,
-                    splitStrategy: effect.value.splitStrategy,
-                    originalCursorPos: effect.value.originalCursorPos,
-                };
+        // Check if there's a suggestion effect in the transaction
+        const suggestionEffect = transaction.effects.find(e => e.is(SuggestionEffect));
+        if (suggestionEffect) {
+            return handleSuggestionEffect(suggestionEffect.value);
         }
 
-        // Handle user input that affects current suggestion
+        // Handle document changes while a suggestion is active
         if (transaction.docChanged && oldState.remainingSuggestion && oldState.originalCursorPos !== null) {
-            let insertedText = '';
-            let isInsertionAtCursor = false;
-
-            // Analyze document changes to detect user input
-            transaction.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-                if (fromA === oldState.originalCursorPos && toA === fromA) {
-                    insertedText = inserted.toString();
-                    isInsertionAtCursor = true;
-                }
-            });
-
-            if (isInsertionAtCursor) {
-                // Validate if input matches current suggestion
-                if (oldState.remainingSuggestion.startsWith(insertedText)) {
-                    const newRemaining = oldState.remainingSuggestion.slice(insertedText.length);
-                    return {
-                        ...oldState,
-                        remainingSuggestion: newRemaining || null,
-                        originalCursorPos: oldState.originalCursorPos + insertedText.length,
-                    };
-                } else {
-                    // Invalid input - discard suggestion
-                    return { ...oldState, remainingSuggestion: null, originalCursorPos: null };
-                }
-            } else {
-                // Input occurred elsewhere - discard suggestion
-                return { ...oldState, remainingSuggestion: null, originalCursorPos: null };
-            }
+            return handleDocumentChange(oldState, transaction);
         }
 
+        // Handle cursor movement without document changes
+        if (oldState.remainingSuggestion !== null && oldState.originalCursorPos !== null) {
+            return handleCursorMovement(oldState, transaction);
+        }
+
+        // No relevant changes
         return oldState;
     }
 });
+
+function handleSuggestionEffect(effectValue: {
+    suggestion: string | null;
+    splitStrategy: SplitStrategy | null;
+    document: Text | null;
+    originalCursorPos: number | null;
+}): SuggestionState {
+    // CASE 1: Reset or CASE 2: Initialize new suggestion
+    return effectValue.suggestion === null
+        ? {
+            fullSuggestion: null,
+            remainingSuggestion: null,
+            originalDocument: null,
+            splitStrategy: null,
+            originalCursorPos: null,
+        }
+        : {
+            fullSuggestion: effectValue.suggestion,
+            remainingSuggestion: effectValue.suggestion,
+            originalDocument: effectValue.document,
+            splitStrategy: effectValue.splitStrategy,
+            originalCursorPos: effectValue.originalCursorPos,
+        };
+}
+
+function handleDocumentChange(oldState: SuggestionState, transaction: Transaction): SuggestionState {
+    let insertedText = '';
+    let isInsertionAtCursor = false;
+
+    transaction.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+        if (fromA === oldState.originalCursorPos && toA === fromA) {
+            insertedText = inserted.toString();
+            isInsertionAtCursor = true;
+        }
+    });
+
+    // CASE 5: Input elsewhere
+    if (!isInsertionAtCursor) {
+        return {
+            ...oldState,
+            remainingSuggestion: null,
+            originalCursorPos: null,
+        };
+    }
+
+    if (oldState.remainingSuggestion === null || oldState.originalCursorPos === null) {
+        return {
+            ...oldState,
+            remainingSuggestion: null,
+            originalCursorPos: null,
+        };
+    }
+
+    // CASE 3: Valid partial acceptance or CASE 4: Invalid input
+    return oldState.remainingSuggestion.startsWith(insertedText)
+        ? {
+            ...oldState,
+            remainingSuggestion: oldState.remainingSuggestion.slice(insertedText.length) || null,
+            originalCursorPos: oldState.originalCursorPos + insertedText.length,
+        }
+        : {
+            ...oldState,
+            remainingSuggestion: null,
+            originalCursorPos: null,
+        };
+}
+
+function handleCursorMovement(oldState: SuggestionState, transaction: Transaction): SuggestionState {
+    const currentCursorPos = transaction.state.selection.main.head;
+    // CASE 6: Cursor moved from original position
+    return currentCursorPos !== oldState.originalCursorPos
+        ? { ...oldState, remainingSuggestion: null, originalCursorPos: null }
+        : oldState;
+}
+
 
 /**
  * Custom widget implementation for displaying inline suggestions
