@@ -9,4 +9,5 @@ export interface OllamaSettings {
     models: string[];
     user_prompt: string;
     system_prompt: string;
+    temperature: number;
 }

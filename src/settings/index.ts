@@ -36,6 +36,7 @@ export const DEFAULT_SETTINGS: Partial<Settings> = {
             models: ["llama3.2:latest", "mistral-nemo"],
             user_prompt: 'Complete following text:\n {{pre_cursor}}}',
             system_prompt: "You are an helpful AI completer. Follow instructions",
+            temperature: 0.5,
         },
     },
     delay_ms: 500,
@@ -188,6 +189,19 @@ export class InscribeSettingsTab extends PluginSettingTab {
                     .setValue(settings.system_prompt)
                     .onChange(async (value) => {
                         settings.system_prompt = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+        new Setting(containerEl)
+            .setName("Temperature")
+            .setDesc("Set the temperature.")
+            .addSlider((slider) => {
+                slider
+                    .setLimits(0, 1, 0.01)
+                    .setValue(settings.temperature)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        settings.temperature = value;
                         await this.plugin.saveSettings();
                     });
             });

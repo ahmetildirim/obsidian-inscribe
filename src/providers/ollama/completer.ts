@@ -25,6 +25,9 @@ export default class OllamaCompleter implements Completer {
             prompt: prompt,
             system: this.settings.system_prompt,
             stream: true,
+            options: {
+                temperature: this.settings.temperature,
+            }
         });
 
         const initialPosition = editor.getCursor();
