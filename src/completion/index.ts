@@ -3,7 +3,7 @@ import { SplitStrategy, Suggestion } from "src/extension";
 import { Completer } from "src/providers";
 
 export async function* generateCompletion(editor: Editor, completer: Completer, splitStrategy: SplitStrategy): AsyncGenerator<Suggestion> {
-    completer.abort();
+    await completer.abort();
     const cursor = editor.getCursor();
 
     // If the current line is empty, don't suggest anything.

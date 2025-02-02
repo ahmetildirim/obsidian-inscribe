@@ -6,6 +6,6 @@ export interface Completer {
     integration: Provider;
     settings: any
     generate: (editor: Editor) => AsyncGenerator<string>;
-    abort: () => void;
+    abort: () => Promise<void>;
     availableModels(): Promise<string[]> | string[];
 }

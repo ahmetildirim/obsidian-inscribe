@@ -14,7 +14,7 @@ export class OpenAICompleter implements Completer {
         this.settings = settings;
     }
     generate: (editor: Editor) => AsyncGenerator<string>;
-    abort: () => void;
+    abort: () => Promise<void>;
     availableModels(): string[] {
         return ["gpt-4", "davinci"];
     }
