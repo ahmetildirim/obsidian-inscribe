@@ -1,30 +1,54 @@
 /**
  * Intelligent Inline Completions for CodeMirror
- * 
- * A sophisticated extension offering AI-powered inline suggestions with:
+ *
+ * This extension offers AI-powered inline suggestions with:
  * - Configurable suggestion fetching strategies
  * - Multiple text segmentation approaches
  * - Debounced network requests
  * - Non-invasive suggestion rendering
  */
 
-import { ViewPlugin, EditorView, ViewUpdate, Decoration, WidgetType, keymap } from '@codemirror/view';
-import { StateEffect, Text, Prec, StateField, EditorState, EditorSelection, Transaction } from '@codemirror/state';
+import {
+    ViewPlugin,
+    EditorView,
+    ViewUpdate,
+    Decoration,
+    WidgetType,
+    keymap,
+} from '@codemirror/view';
+import {
+    StateEffect,
+    Text,
+    StateField,
+    EditorState,
+    EditorSelection,
+    Transaction,
+    Prec,
+} from '@codemirror/state';
 
-// ---------------------------------- Type Definitions ----------------------------------
+/* --------------------------------------------------------------------------
+   Type Definitions
+---------------------------------------------------------------------------- */
+
+/** Supported segmentation strategies */
 export type SplitStrategy = keyof typeof TextSplitStrategies;
 
+/** Inline suggestion structure */
 export interface Suggestion {
     text: string;
     splitStrategy: SplitStrategy;
 }
 
+/** Inline completion configuration */
 export interface InlineCompletionConfig {
-    fetchFunc: (state: EditorState) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
+    fetchFunc: (
+        state: EditorState
+    ) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
     delayMs?: number;
     acceptanceHotkey?: string;
 }
 
+/** Internal state for the current suggestion session */
 interface SuggestionSession {
     fullText: string | null;
     remainingText: string | null;
@@ -33,37 +57,45 @@ interface SuggestionSession {
     anchorPosition: number | null;
 }
 
-// ---------------------------------- Text Segmentation Strategies ----------------------------------
+/* --------------------------------------------------------------------------
+   Text Segmentation Strategies
+---------------------------------------------------------------------------- */
+
+/**
+ * A set of text splitting functions used to determine how much of the
+ * suggestion to accept when triggered.
+ */
 const TextSplitStrategies = {
     /**
-     * Word-level segmentation (space-delimited)
-     * Accepts until next whitespace, including trailing space
+     * Word-level segmentation (space-delimited).
+     * Accepts text until (and including) the first space.
      */
     word: (text: string) => {
-        const nextWhitespace = text.indexOf(' ');
-        return nextWhitespace === -1
+        const nextSpace = text.indexOf(' ');
+        return nextSpace === -1
             ? { accepted: text, remaining: '' }
             : {
-                accepted: text.slice(0, nextWhitespace + 1),
-                remaining: text.slice(nextWhitespace + 1)
+                accepted: text.slice(0, nextSpace + 1),
+                remaining: text.slice(nextSpace + 1),
             };
     },
 
     /**
-     * Sentence-level segmentation (punctuation followed by whitespace)
+     * Sentence-level segmentation (punctuation followed by whitespace).
      */
     sentence: (text: string) => {
-        const sentenceTerminus = text.match(/[.!?]\s+/);
-        return sentenceTerminus
-            ? {
-                accepted: text.slice(0, sentenceTerminus.index! + 1),
-                remaining: text.slice(sentenceTerminus.index! + 1)
-            }
-            : { accepted: text, remaining: '' };
+        const match = text.match(/[.!?]\s+/);
+        if (match && match.index !== undefined) {
+            return {
+                accepted: text.slice(0, match.index + 1),
+                remaining: text.slice(match.index + 1),
+            };
+        }
+        return { accepted: text, remaining: '' };
     },
 
     /**
-     * Paragraph-level segmentation (double newline)
+     * Paragraph-level segmentation (double newline).
      */
     paragraph: (text: string) => {
         const paragraphEnd = text.indexOf('\n\n');
@@ -71,17 +103,24 @@ const TextSplitStrategies = {
             ? { accepted: text, remaining: '' }
             : {
                 accepted: text.slice(0, paragraphEnd + 2),
-                remaining: text.slice(paragraphEnd + 2)
+                remaining: text.slice(paragraphEnd + 2),
             };
     },
 
     /**
-     * Atomic acceptance - consume entire suggestion
+     * Atomic acceptance – consume the entire suggestion.
      */
     full: (text: string) => ({ accepted: text, remaining: '' }),
 } as const;
 
-// ---------------------------------- State Management ----------------------------------
+/* --------------------------------------------------------------------------
+   Suggestion Session State Management
+---------------------------------------------------------------------------- */
+
+/**
+ * Effect to update the suggestion session state.
+ * A `null` content signals a reset.
+ */
 const SuggestionUpdateEffect = StateEffect.define<{
     content: string | null;
     strategy: SplitStrategy | null;
@@ -89,169 +128,247 @@ const SuggestionUpdateEffect = StateEffect.define<{
     anchor: number | null;
 }>();
 
+/**
+ * The state field that holds the current suggestion session.
+ */
 const suggestionSessionState = StateField.define<SuggestionSession>({
-    create: () => ({
+    create: () => getResetSession(),
+
+    update(session, transaction) {
+        // Process explicit session update effects.
+        const effect = transaction.effects.find(e => e.is(SuggestionUpdateEffect));
+        if (effect) return updateSessionFromEffect(effect.value);
+
+        // If the document has changed, adjust the session.
+        if (transaction.docChanged && session.remainingText && session.anchorPosition !== null) {
+            return updateSessionOnDocumentChange(session, transaction);
+        }
+
+        // If there is an active suggestion but the cursor has moved, cancel it.
+        if (session.remainingText !== null && session.anchorPosition !== null) {
+            return updateSessionOnCursorDrift(session, transaction);
+        }
+
+        return session;
+    },
+});
+
+/**
+ * Creates a fresh, empty suggestion session.
+ */
+function getResetSession(): SuggestionSession {
+    return {
         fullText: null,
         remainingText: null,
         baselineDocument: null,
         segmentation: null,
         anchorPosition: null,
-    }),
+    };
+}
 
-    update(currentSession, transaction) {
-        const effect = transaction.effects.find(e => e.is(SuggestionUpdateEffect));
-        if (effect) return handleEffectUpdate(effect.value);
-
-        if (transaction.docChanged && currentSession.remainingText && currentSession.anchorPosition !== null) {
-            return handleDocumentMutation(currentSession, transaction);
-        }
-
-        if (currentSession.remainingText !== null && currentSession.anchorPosition !== null) {
-            return handleCursorDrift(currentSession, transaction);
-        }
-
-        return currentSession;
-    }
-});
-
-const handleEffectUpdate = (effect: {
+/**
+ * Update session state based on an incoming effect.
+ */
+function updateSessionFromEffect(effect: {
     content: string | null;
     strategy: SplitStrategy | null;
     document: Text | null;
     anchor: number | null;
-}): SuggestionSession => effect.content === null
-        ? createNewSession()
-        : initializeSession(effect as { content: string; strategy: SplitStrategy; document: Text; anchor: number });
+}): SuggestionSession {
+    return effect.content === null
+        ? getResetSession()
+        : initializeSession(effect as {
+            content: string;
+            strategy: SplitStrategy;
+            document: Text;
+            anchor: number;
+        });
+}
 
-const createNewSession = (): SuggestionSession => ({
-    fullText: null,
-    remainingText: null,
-    baselineDocument: null,
-    segmentation: null,
-    anchorPosition: null,
-});
-
-const initializeSession = (effect: {
+/**
+ * Initializes a new suggestion session with provided effect data.
+ */
+function initializeSession(effect: {
     content: string;
     strategy: SplitStrategy;
     document: Text;
     anchor: number;
-}): SuggestionSession => ({
-    fullText: effect.content,
-    remainingText: effect.content,
-    baselineDocument: effect.document,
-    segmentation: effect.strategy,
-    anchorPosition: effect.anchor,
-});
+}): SuggestionSession {
+    return {
+        fullText: effect.content,
+        remainingText: effect.content,
+        baselineDocument: effect.document,
+        segmentation: effect.strategy,
+        anchorPosition: effect.anchor,
+    };
+}
 
-const handleDocumentMutation = (
+/**
+ * Adjust the suggestion session in response to document changes.
+ */
+function updateSessionOnDocumentChange(
     session: SuggestionSession,
     transaction: Transaction
-): SuggestionSession => {
+): SuggestionSession {
     let insertedContent = '';
     let insertionAtAnchor = false;
 
-    transaction.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+    // Iterate over document changes to detect an insertion at the suggestion's anchor.
+    transaction.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
         if (fromA === session.anchorPosition && toA === fromA) {
             insertedContent = inserted.toString();
             insertionAtAnchor = true;
         }
     });
 
-    if (!insertionAtAnchor || !session.remainingText) return invalidateSession(session);
+    if (!insertionAtAnchor || !session.remainingText) {
+        return invalidateSession(session);
+    }
 
-    return session.remainingText.startsWith(insertedContent)
-        ? advanceSession(session, insertedContent.length)
-        : invalidateSession(session);
-};
+    // Verify the inserted text matches the pending suggestion.
+    if (session.remainingText.startsWith(insertedContent)) {
+        return advanceSession(session, insertedContent.length);
+    }
 
-const advanceSession = (session: SuggestionSession, consumedLength: number): SuggestionSession => ({
-    ...session,
-    remainingText: session.remainingText!.slice(consumedLength) || null,
-    anchorPosition: session.anchorPosition! + consumedLength,
-});
+    return invalidateSession(session);
+}
 
-const invalidateSession = (session: SuggestionSession): SuggestionSession => ({
-    ...session,
-    remainingText: null,
-    anchorPosition: null,
-});
+/**
+ * Advance the session by consuming accepted text.
+ */
+function advanceSession(
+    session: SuggestionSession,
+    consumedLength: number
+): SuggestionSession {
+    return {
+        ...session,
+        remainingText:
+            session.remainingText!.slice(consumedLength).length > 0
+                ? session.remainingText!.slice(consumedLength)
+                : null,
+        anchorPosition: session.anchorPosition! + consumedLength,
+    };
+}
 
-const handleCursorDrift = (session: SuggestionSession, transaction: Transaction): SuggestionSession =>
-    transaction.state.selection.main.head !== session.anchorPosition
+/**
+ * Invalidate the session, effectively cancelling any pending suggestion.
+ */
+function invalidateSession(session: SuggestionSession): SuggestionSession {
+    return {
+        ...session,
+        remainingText: null,
+        anchorPosition: null,
+    };
+}
+
+/**
+ * Cancel the suggestion if the cursor has drifted away.
+ */
+function updateSessionOnCursorDrift(
+    session: SuggestionSession,
+    transaction: Transaction
+): SuggestionSession {
+    return transaction.state.selection.main.head !== session.anchorPosition
         ? invalidateSession(session)
         : session;
+}
 
-// ---------------------------------- Visualization Layer ----------------------------------
+/* --------------------------------------------------------------------------
+   Suggestion Rendering (Visualization Layer)
+---------------------------------------------------------------------------- */
+
+/**
+ * Widget for rendering inline suggestion text.
+ */
 class SuggestionWidget extends WidgetType {
-    static readonly STYLE_OPACITY = 0.4;
+    static readonly OPACITY = 0.4;
     static readonly CSS_CLASS = 'cm-inline-prediction';
 
-    constructor(private readonly content: string) { super(); }
+    constructor(private readonly content: string) {
+        super();
+    }
 
-    toDOM() {
-        const element = document.createElement('span');
-        element.className = SuggestionWidget.CSS_CLASS;
-        element.style.opacity = SuggestionWidget.STYLE_OPACITY.toString();
-        element.textContent = this.content;
-        return element;
+    toDOM(): HTMLElement {
+        const span = document.createElement('span');
+        span.className = SuggestionWidget.CSS_CLASS;
+        span.style.opacity = SuggestionWidget.OPACITY.toString();
+        span.textContent = this.content;
+        return span;
     }
 }
 
-const renderSuggestions = ViewPlugin.fromClass(
+/**
+ * Plugin that renders inline suggestion decorations.
+ */
+const suggestionRenderer = ViewPlugin.fromClass(
     class {
         decorations = Decoration.none;
 
         update(update: ViewUpdate) {
-            const remaining = update.state.field(suggestionSessionState).remainingText;
-            this.decorations = remaining
-                ? this.createDecoration(update.view, remaining)
+            const session = update.state.field(suggestionSessionState);
+            this.decorations = session.remainingText
+                ? this.createDecoration(update.view, session.remainingText)
                 : Decoration.none;
         }
 
-        private createDecoration(view: EditorView, text: string) {
-            const cursorPos = view.state.selection.main.head;
+        private createDecoration(view: EditorView, suggestionText: string) {
+            const cursorPosition = view.state.selection.main.head;
             return Decoration.set([
                 Decoration.widget({
-                    widget: new SuggestionWidget(text),
+                    widget: new SuggestionWidget(suggestionText),
                     side: 1,
-                }).range(cursorPos),
+                }).range(cursorPosition),
             ]);
         }
     },
     { decorations: v => v.decorations }
 );
 
-// ---------------------------------- Suggestion Fetching System ----------------------------------
+/* --------------------------------------------------------------------------
+   Suggestion Fetching (Debounced Fetcher)
+---------------------------------------------------------------------------- */
+
+/**
+ * Creates a debounced fetcher for suggestions.
+ *
+ * @param fetch - The suggestion fetch function.
+ * @param delay - The debounce delay in milliseconds.
+ */
 const createDebouncedFetcher = (
     fetch: (state: EditorState) => AsyncGenerator<Suggestion>,
     delay: number
 ) => {
-    let activeRequestId = 0;
-    let timeout: NodeJS.Timeout;
-    let isActive = true;
+    let activeRequest = true;
+    let timeoutId: NodeJS.Timeout;
 
+    /**
+     * Throttled fetch that waits for the debounce interval.
+     */
     const throttledFetch = async function* (state: EditorState) {
-        clearTimeout(timeout);
-        isActive = true;
-
+        clearTimeout(timeoutId);
+        activeRequest = true;
         await new Promise(resolve => {
-            timeout = setTimeout(resolve, delay);
+            timeoutId = setTimeout(resolve, delay);
         });
-
-        if (isActive) yield* fetch(state);
+        if (activeRequest) yield* fetch(state);
     };
 
+    /**
+     * Plugin that initiates suggestion fetching on document changes.
+     */
     const fetcherPlugin = ViewPlugin.fromClass(
         class {
             private currentRequestId = 0;
 
             async update(update: ViewUpdate) {
                 const state = update.state;
-                if (!update.docChanged || state.field(suggestionSessionState).remainingText) return;
+                // Only trigger fetch if there is no active suggestion.
+                if (!update.docChanged || state.field(suggestionSessionState).remainingText)
+                    return;
 
                 const requestId = ++this.currentRequestId;
                 for await (const suggestion of throttledFetch(state)) {
+                    // Ignore stale requests.
                     if (requestId !== this.currentRequestId) return;
                     update.view.dispatch({
                         effects: SuggestionUpdateEffect.of({
@@ -269,62 +386,90 @@ const createDebouncedFetcher = (
     return {
         fetcherPlugin,
         terminate: () => {
-            isActive = false;
-            clearTimeout(timeout);
-        }
+            activeRequest = false;
+            clearTimeout(timeoutId);
+        },
     };
 };
 
-// ---------------------------------- User Interaction Handling ----------------------------------
-const createAcceptanceHandler = (terminateFetch: () => void, hotkey: string) => {
-    return Prec.highest(
-        keymap.of([{
-            key: hotkey,
-            run: (view: EditorView) => {
-                const session = view.state.field(suggestionSessionState);
-                if (!session.remainingText) return false;
+/* --------------------------------------------------------------------------
+   User Interaction (Acceptance Handler)
+---------------------------------------------------------------------------- */
 
-                const strategy = session.segmentation ?? 'word';
-                const { accepted, remaining } = TextSplitStrategies[strategy](session.remainingText);
+/**
+ * Returns a key binding that accepts the current suggestion.
+ *
+ * @param terminateFetch - Function to stop further fetching.
+ * @param hotkey - The key that triggers acceptance.
+ */
+const createAcceptanceHandler = (
+    terminateFetch: () => void,
+    hotkey: string
+) =>
+    Prec.highest(
+        keymap.of([
+            {
+                key: hotkey,
+                run: (view: EditorView) => {
+                    const session = view.state.field(suggestionSessionState);
+                    if (!session.remainingText) return false;
 
-                if (!accepted) return false;
+                    const segmentationKey = session.segmentation ?? 'word';
+                    const { accepted, remaining } =
+                        TextSplitStrategies[segmentationKey](session.remainingText);
 
-                view.dispatch({
-                    ...insertCompletion(view.state, accepted),
-                    effects: SuggestionUpdateEffect.of({
-                        content: remaining || null,
-                        document: remaining ? session.baselineDocument : null,
-                        strategy: remaining ? session.segmentation : null,
-                        anchor: remaining ? (session.anchorPosition! + accepted.length) : null,
-                    }),
-                });
+                    if (!accepted) return false;
 
-                if (!remaining) terminateFetch();
-                return true;
+                    // Insert the accepted suggestion text.
+                    view.dispatch({
+                        ...insertCompletion(view.state, accepted),
+                        effects: SuggestionUpdateEffect.of({
+                            content: remaining || null,
+                            document: remaining ? session.baselineDocument : null,
+                            strategy: remaining ? session.segmentation : null,
+                            anchor: remaining
+                                ? session.anchorPosition! + accepted.length
+                                : null,
+                        }),
+                    });
+
+                    if (!remaining) terminateFetch();
+                    return true;
+                },
             },
-        }])
+        ])
     );
-};
 
+/**
+ * Helper to create a transaction that inserts completion text.
+ */
 const insertCompletion = (state: EditorState, text: string) => {
-    const cursor = state.selection.main.head;
+    const cursorPos = state.selection.main.head;
     return {
-        ...state.changeByRange(range => ({
-            changes: { from: cursor, insert: text },
-            range: EditorSelection.cursor(cursor + text.length)
+        ...state.changeByRange(() => ({
+            changes: { from: cursorPos, insert: text },
+            range: EditorSelection.cursor(cursorPos + text.length),
         })),
         userEvent: 'completion.accept',
     };
 };
 
-// ---------------------------------- Public API ----------------------------------
+/* --------------------------------------------------------------------------
+   Public API
+---------------------------------------------------------------------------- */
+
+/**
+ * The main extension function. It wires up session state management,
+ * suggestion fetching, rendering, and user interaction.
+ */
 export function inlineSuggestions(config: InlineCompletionConfig) {
     const {
         delayMs: debounceInterval = 300,
         acceptanceHotkey = 'Tab',
-        fetchFunc: fetchSuggestions
+        fetchFunc: fetchSuggestions,
     } = config;
 
+    // Normalize the fetch function to always return an async generator.
     const normalizeFetch = async function* (state: EditorState) {
         const result = await fetchSuggestions(state);
         if (Symbol.asyncIterator in result) {
@@ -334,13 +479,16 @@ export function inlineSuggestions(config: InlineCompletionConfig) {
         }
     };
 
-    const { fetcherPlugin, terminate } = createDebouncedFetcher(normalizeFetch, debounceInterval);
+    const { fetcherPlugin, terminate } = createDebouncedFetcher(
+        normalizeFetch,
+        debounceInterval
+    );
     const acceptanceHandler = createAcceptanceHandler(terminate, acceptanceHotkey);
 
     return [
         suggestionSessionState,
         fetcherPlugin,
-        renderSuggestions,
-        acceptanceHandler
+        suggestionRenderer,
+        acceptanceHandler,
     ];
 }
