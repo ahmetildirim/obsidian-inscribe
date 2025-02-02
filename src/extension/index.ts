@@ -1,300 +1,264 @@
 /**
- * A CodeMirror extension providing intelligent inline code suggestions with configurable
- * behavior for suggestion fetching, display, and acceptance.
+ * Intelligent Inline Completions for CodeMirror
+ * 
+ * A sophisticated extension offering AI-powered inline suggestions with:
+ * - Configurable suggestion fetching strategies
+ * - Multiple text segmentation approaches
+ * - Debounced network requests
+ * - Non-invasive suggestion rendering
  */
 
 import { ViewPlugin, EditorView, ViewUpdate, Decoration, WidgetType, keymap } from '@codemirror/view';
 import { StateEffect, Text, Prec, StateField, EditorState, EditorSelection, Transaction } from '@codemirror/state';
 
-/**
- * Built-in strategies for splitting suggestions into accepted/remaining portions
- */
-const SplitStrategies = {
-    /** Split at word boundaries (space-separated) */
-    word: (remaining: string) => {
-        const firstSpace = remaining.indexOf(' ');
-        return firstSpace === -1
-            ? { accept: remaining, remaining: '' }
-            : { accept: remaining.slice(0, firstSpace + 1), remaining: remaining.slice(firstSpace + 1) };
-    },
+// ---------------------------------- Type Definitions ----------------------------------
+export type SplitStrategy = keyof typeof TextSplitStrategies;
 
-    /** Split at sentence boundaries (punctuation followed by whitespace) */
-    sentence: (remaining: string) => {
-        const sentenceEnd = remaining.match(/[.!?]\s+/);
-        return sentenceEnd
-            ? { accept: remaining.slice(0, sentenceEnd.index! + 1), remaining: remaining.slice(sentenceEnd.index! + 1) }
-            : { accept: remaining, remaining: '' };
-    },
-
-    /** Split at paragraph boundaries (double newline) */
-    paragraph: (remaining: string) => {
-        const paragraphEnd = remaining.indexOf('\n\n');
-        return paragraphEnd === -1
-            ? { accept: remaining, remaining: '' }
-            : { accept: remaining.slice(0, paragraphEnd + 2), remaining: remaining.slice(paragraphEnd + 2) };
-    },
-
-    /** Accept entire suggestion at once */
-    full: (remaining: string) => ({ accept: remaining, remaining: '' }),
-} as const;
-
-/**
- * Available strategies for splitting accepted suggestions from remaining text
- */
-export type SplitStrategy = keyof typeof SplitStrategies;
-
-/**
- * Represents a suggestion to be displayed inline in the editor
- */
 export interface Suggestion {
-    /** The full suggestion text to display */
     text: string;
-    /** Strategy for splitting the suggestion into accept/remain portions */
     splitStrategy: SplitStrategy;
 }
 
-/**
- * Configuration options for the inline suggestion extension
- */
-export interface InlineSuggestionOptions {
-    /** Async function to fetch suggestions based on current editor state */
-    fetchFn: (state: EditorState) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
-    /** Debounce delay for suggestion fetches (ms) */
+export interface InlineCompletionConfig {
+    fetchFunc: (state: EditorState) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
     delayMs?: number;
-    /** Keyboard shortcut to accept current suggestion */
-    acceptShortcut?: string;
+    acceptanceHotkey?: string;
 }
 
-/**
- * Internal state tracking for suggestion management
- */
-interface SuggestionState {
-    fullSuggestion: string | null;
-    remainingSuggestion: string | null;
-    originalDocument: Text | null;
-    splitStrategy: SplitStrategy | null;
-    originalCursorPos: number | null;
+interface SuggestionSession {
+    fullText: string | null;
+    remainingText: string | null;
+    baselineDocument: Text | null;
+    segmentation: SplitStrategy | null;
+    anchorPosition: number | null;
 }
 
-/**
- * Empty suggestion constant used for initialization and reset operations
- */
-export const EmptySuggestion: Suggestion = {
-    text: '',
-    splitStrategy: 'word',
-};
+// ---------------------------------- Text Segmentation Strategies ----------------------------------
+const TextSplitStrategies = {
+    /**
+     * Word-level segmentation (space-delimited)
+     * Accepts until next whitespace, including trailing space
+     */
+    word: (text: string) => {
+        const nextWhitespace = text.indexOf(' ');
+        return nextWhitespace === -1
+            ? { accepted: text, remaining: '' }
+            : {
+                accepted: text.slice(0, nextWhitespace + 1),
+                remaining: text.slice(nextWhitespace + 1)
+            };
+    },
 
-/* ----------------------------- State Management ----------------------------- */
+    /**
+     * Sentence-level segmentation (punctuation followed by whitespace)
+     */
+    sentence: (text: string) => {
+        const sentenceTerminus = text.match(/[.!?]\s+/);
+        return sentenceTerminus
+            ? {
+                accepted: text.slice(0, sentenceTerminus.index! + 1),
+                remaining: text.slice(sentenceTerminus.index! + 1)
+            }
+            : { accepted: text, remaining: '' };
+    },
 
-/**
- * State effect for updating suggestion information
- */
-const SuggestionEffect = StateEffect.define<{
-    suggestion: string | null;
-    splitStrategy: SplitStrategy | null;
+    /**
+     * Paragraph-level segmentation (double newline)
+     */
+    paragraph: (text: string) => {
+        const paragraphEnd = text.indexOf('\n\n');
+        return paragraphEnd === -1
+            ? { accepted: text, remaining: '' }
+            : {
+                accepted: text.slice(0, paragraphEnd + 2),
+                remaining: text.slice(paragraphEnd + 2)
+            };
+    },
+
+    /**
+     * Atomic acceptance - consume entire suggestion
+     */
+    full: (text: string) => ({ accepted: text, remaining: '' }),
+} as const;
+
+// ---------------------------------- State Management ----------------------------------
+const SuggestionUpdateEffect = StateEffect.define<{
+    content: string | null;
+    strategy: SplitStrategy | null;
     document: Text | null;
-    originalCursorPos: number | null;
+    anchor: number | null;
 }>();
 
-/**
- * State field for managing inline suggestion state
- */
-const SuggestionStateField = StateField.define<SuggestionState>({
+const suggestionSessionState = StateField.define<SuggestionSession>({
     create: () => ({
-        fullSuggestion: null,
-        remainingSuggestion: null,
-        originalDocument: null,
-        splitStrategy: null,
-        originalCursorPos: null,
+        fullText: null,
+        remainingText: null,
+        baselineDocument: null,
+        segmentation: null,
+        anchorPosition: null,
     }),
 
-    update(oldState, transaction) {
-        // Check if there's a suggestion effect in the transaction
-        const suggestionEffect = transaction.effects.find(e => e.is(SuggestionEffect));
-        if (suggestionEffect) {
-            return handleSuggestionEffect(suggestionEffect.value);
+    update(currentSession, transaction) {
+        const effect = transaction.effects.find(e => e.is(SuggestionUpdateEffect));
+        if (effect) return handleEffectUpdate(effect.value);
+
+        if (transaction.docChanged && currentSession.remainingText && currentSession.anchorPosition !== null) {
+            return handleDocumentMutation(currentSession, transaction);
         }
 
-        // Handle document changes while a suggestion is active
-        if (transaction.docChanged && oldState.remainingSuggestion && oldState.originalCursorPos !== null) {
-            return handleDocumentChange(oldState, transaction);
+        if (currentSession.remainingText !== null && currentSession.anchorPosition !== null) {
+            return handleCursorDrift(currentSession, transaction);
         }
 
-        // Handle cursor movement without document changes
-        if (oldState.remainingSuggestion !== null && oldState.originalCursorPos !== null) {
-            return handleCursorMovement(oldState, transaction);
-        }
-
-        // No relevant changes
-        return oldState;
+        return currentSession;
     }
 });
 
-function handleSuggestionEffect(effectValue: {
-    suggestion: string | null;
-    splitStrategy: SplitStrategy | null;
+const handleEffectUpdate = (effect: {
+    content: string | null;
+    strategy: SplitStrategy | null;
     document: Text | null;
-    originalCursorPos: number | null;
-}): SuggestionState {
-    // CASE 1: Reset or CASE 2: Initialize new suggestion
-    return effectValue.suggestion === null
-        ? {
-            fullSuggestion: null,
-            remainingSuggestion: null,
-            originalDocument: null,
-            splitStrategy: null,
-            originalCursorPos: null,
-        }
-        : {
-            fullSuggestion: effectValue.suggestion,
-            remainingSuggestion: effectValue.suggestion,
-            originalDocument: effectValue.document,
-            splitStrategy: effectValue.splitStrategy,
-            originalCursorPos: effectValue.originalCursorPos,
-        };
-}
+    anchor: number | null;
+}): SuggestionSession => effect.content === null
+        ? createNewSession()
+        : initializeSession(effect as { content: string; strategy: SplitStrategy; document: Text; anchor: number });
 
-function handleDocumentChange(oldState: SuggestionState, transaction: Transaction): SuggestionState {
-    let insertedText = '';
-    let isInsertionAtCursor = false;
+const createNewSession = (): SuggestionSession => ({
+    fullText: null,
+    remainingText: null,
+    baselineDocument: null,
+    segmentation: null,
+    anchorPosition: null,
+});
+
+const initializeSession = (effect: {
+    content: string;
+    strategy: SplitStrategy;
+    document: Text;
+    anchor: number;
+}): SuggestionSession => ({
+    fullText: effect.content,
+    remainingText: effect.content,
+    baselineDocument: effect.document,
+    segmentation: effect.strategy,
+    anchorPosition: effect.anchor,
+});
+
+const handleDocumentMutation = (
+    session: SuggestionSession,
+    transaction: Transaction
+): SuggestionSession => {
+    let insertedContent = '';
+    let insertionAtAnchor = false;
 
     transaction.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
-        if (fromA === oldState.originalCursorPos && toA === fromA) {
-            insertedText = inserted.toString();
-            isInsertionAtCursor = true;
+        if (fromA === session.anchorPosition && toA === fromA) {
+            insertedContent = inserted.toString();
+            insertionAtAnchor = true;
         }
     });
 
-    // CASE 5: Input elsewhere
-    if (!isInsertionAtCursor) {
-        return {
-            ...oldState,
-            remainingSuggestion: null,
-            originalCursorPos: null,
-        };
-    }
+    if (!insertionAtAnchor || !session.remainingText) return invalidateSession(session);
 
-    if (oldState.remainingSuggestion === null || oldState.originalCursorPos === null) {
-        return {
-            ...oldState,
-            remainingSuggestion: null,
-            originalCursorPos: null,
-        };
-    }
+    return session.remainingText.startsWith(insertedContent)
+        ? advanceSession(session, insertedContent.length)
+        : invalidateSession(session);
+};
 
-    // CASE 3: Valid partial acceptance or CASE 4: Invalid input
-    return oldState.remainingSuggestion.startsWith(insertedText)
-        ? {
-            ...oldState,
-            remainingSuggestion: oldState.remainingSuggestion.slice(insertedText.length) || null,
-            originalCursorPos: oldState.originalCursorPos + insertedText.length,
-        }
-        : {
-            ...oldState,
-            remainingSuggestion: null,
-            originalCursorPos: null,
-        };
-}
+const advanceSession = (session: SuggestionSession, consumedLength: number): SuggestionSession => ({
+    ...session,
+    remainingText: session.remainingText!.slice(consumedLength) || null,
+    anchorPosition: session.anchorPosition! + consumedLength,
+});
 
-function handleCursorMovement(oldState: SuggestionState, transaction: Transaction): SuggestionState {
-    const currentCursorPos = transaction.state.selection.main.head;
-    // CASE 6: Cursor moved from original position
-    return currentCursorPos !== oldState.originalCursorPos
-        ? { ...oldState, remainingSuggestion: null, originalCursorPos: null }
-        : oldState;
-}
+const invalidateSession = (session: SuggestionSession): SuggestionSession => ({
+    ...session,
+    remainingText: null,
+    anchorPosition: null,
+});
 
+const handleCursorDrift = (session: SuggestionSession, transaction: Transaction): SuggestionSession =>
+    transaction.state.selection.main.head !== session.anchorPosition
+        ? invalidateSession(session)
+        : session;
 
-/**
- * Custom widget implementation for displaying inline suggestions
- */
+// ---------------------------------- Visualization Layer ----------------------------------
 class SuggestionWidget extends WidgetType {
-    constructor(readonly suggestion: string) { super(); }
+    static readonly STYLE_OPACITY = 0.4;
+    static readonly CSS_CLASS = 'cm-inline-prediction';
+
+    constructor(private readonly content: string) { super(); }
 
     toDOM() {
         const element = document.createElement('span');
-        element.className = 'cm-inline-suggestion';
-        element.style.opacity = '0.5';
-        element.textContent = this.suggestion;
+        element.className = SuggestionWidget.CSS_CLASS;
+        element.style.opacity = SuggestionWidget.STYLE_OPACITY.toString();
+        element.textContent = this.content;
         return element;
     }
 }
 
-/**
- * Creates decoration set for current suggestion position
- */
-function createSuggestionDecoration(view: EditorView, suggestionText: string) {
-    const cursorPos = view.state.selection.main.head;
-    return Decoration.set([
-        Decoration.widget({
-            widget: new SuggestionWidget(suggestionText),
-            side: 1, // Display after cursor position
-        }).range(cursorPos),
-    ]);
-}
-
-/**
- * View plugin handling suggestion decoration updates
- */
-const suggestionRenderer = ViewPlugin.fromClass(
+const renderSuggestions = ViewPlugin.fromClass(
     class {
         decorations = Decoration.none;
 
         update(update: ViewUpdate) {
-            const remaining = update.state.field(SuggestionStateField).remainingSuggestion;
+            const remaining = update.state.field(suggestionSessionState).remainingText;
             this.decorations = remaining
-                ? createSuggestionDecoration(update.view, remaining)
+                ? this.createDecoration(update.view, remaining)
                 : Decoration.none;
         }
+
+        private createDecoration(view: EditorView, text: string) {
+            const cursorPos = view.state.selection.main.head;
+            return Decoration.set([
+                Decoration.widget({
+                    widget: new SuggestionWidget(text),
+                    side: 1,
+                }).range(cursorPos),
+            ]);
+        }
     },
-    { decorations: (v) => v.decorations }
+    { decorations: v => v.decorations }
 );
 
-/**
- * Creates suggestion fetching system with debouncing and cancellation
- */
-function createFetchSystem(
-    fetchFn: (state: EditorState) => AsyncGenerator<Suggestion>,
+// ---------------------------------- Suggestion Fetching System ----------------------------------
+const createDebouncedFetcher = (
+    fetch: (state: EditorState) => AsyncGenerator<Suggestion>,
     delay: number
-) {
-    let currentRequestId = 0;
-    let timeoutId: NodeJS.Timeout;
-    let activeGenerator = true;
+) => {
+    let activeRequestId = 0;
+    let timeout: NodeJS.Timeout;
+    let isActive = true;
 
-    /**
-     * Debounced generator with cancellation support
-     */
-    async function* debouncedGenerator(state: EditorState) {
-        clearTimeout(timeoutId);
-        activeGenerator = true;
+    const throttledFetch = async function* (state: EditorState) {
+        clearTimeout(timeout);
+        isActive = true;
 
         await new Promise(resolve => {
-            timeoutId = setTimeout(resolve, delay);
+            timeout = setTimeout(resolve, delay);
         });
 
-        if (activeGenerator) {
-            yield* fetchFn(state);
-        }
-    }
+        if (isActive) yield* fetch(state);
+    };
 
-    /**
-     * View plugin handling suggestion fetching logic
-     */
-    const fetchPlugin = ViewPlugin.fromClass(
+    const fetcherPlugin = ViewPlugin.fromClass(
         class {
+            private currentRequestId = 0;
+
             async update(update: ViewUpdate) {
                 const state = update.state;
-                if (!update.docChanged || state.field(SuggestionStateField).remainingSuggestion) return;
+                if (!update.docChanged || state.field(suggestionSessionState).remainingText) return;
 
-                const requestId = ++currentRequestId;
-                for await (const suggestion of debouncedGenerator(state)) {
-                    if (requestId !== currentRequestId) return;
+                const requestId = ++this.currentRequestId;
+                for await (const suggestion of throttledFetch(state)) {
+                    if (requestId !== this.currentRequestId) return;
                     update.view.dispatch({
-                        effects: SuggestionEffect.of({
-                            suggestion: suggestion.text,
-                            splitStrategy: suggestion.splitStrategy,
+                        effects: SuggestionUpdateEffect.of({
+                            content: suggestion.text,
+                            strategy: suggestion.splitStrategy,
                             document: state.doc,
-                            originalCursorPos: state.selection.main.head,
+                            anchor: state.selection.main.head,
                         }),
                     });
                 }
@@ -303,71 +267,66 @@ function createFetchSystem(
     );
 
     return {
-        fetchPlugin,
-        cancelDebounce: () => {
-            activeGenerator = false;
-            clearTimeout(timeoutId);
+        fetcherPlugin,
+        terminate: () => {
+            isActive = false;
+            clearTimeout(timeout);
         }
     };
-}
+};
 
-/**
- * Generates transaction for inserting suggestion text
- */
-function insertSuggestionText(state: EditorState, text: string) {
-    const cursorPos = state.selection.main.head;
-    return {
-        ...state.changeByRange(range => ({
-            changes: { from: cursorPos, insert: text },
-            range: EditorSelection.cursor(cursorPos + text.length)
-        })),
-        userEvent: 'input.complete',
-    };
-}
-
-/**
- * Creates input handlers for suggestion acceptance
- */
-function createInputHandlers(cancelFetch: () => void, acceptKey: string) {
+// ---------------------------------- User Interaction Handling ----------------------------------
+const createAcceptanceHandler = (terminateFetch: () => void, hotkey: string) => {
     return Prec.highest(
         keymap.of([{
-            key: acceptKey,
+            key: hotkey,
             run: (view: EditorView) => {
-                const state = view.state.field(SuggestionStateField);
-                if (!state.remainingSuggestion) return false;
+                const session = view.state.field(suggestionSessionState);
+                if (!session.remainingText) return false;
 
-                const strategyName = state.splitStrategy || 'word';
-                const splitter = SplitStrategies[strategyName];
-                const { accept, remaining } = splitter(state.remainingSuggestion);
+                const strategy = session.segmentation ?? 'word';
+                const { accepted, remaining } = TextSplitStrategies[strategy](session.remainingText);
 
-                if (!accept) return false;
+                if (!accepted) return false;
 
                 view.dispatch({
-                    ...insertSuggestionText(view.state, accept),
-                    effects: SuggestionEffect.of({
-                        suggestion: remaining || null,
-                        document: remaining ? state.originalDocument : null,
-                        splitStrategy: remaining ? state.splitStrategy : null,
-                        originalCursorPos: null,
+                    ...insertCompletion(view.state, accepted),
+                    effects: SuggestionUpdateEffect.of({
+                        content: remaining || null,
+                        document: remaining ? session.baselineDocument : null,
+                        strategy: remaining ? session.segmentation : null,
+                        anchor: remaining ? (session.anchorPosition! + accepted.length) : null,
                     }),
                 });
 
-                if (!remaining) cancelFetch();
+                if (!remaining) terminateFetch();
                 return true;
             },
         }])
     );
-}
+};
 
-/**
- * Main extension function for inline suggestions
- */
-export function inlineSuggestion(options: InlineSuggestionOptions) {
-    const { delayMs = 500, acceptShortcut = 'Tab', fetchFn: userFetchFn } = options;
+const insertCompletion = (state: EditorState, text: string) => {
+    const cursor = state.selection.main.head;
+    return {
+        ...state.changeByRange(range => ({
+            changes: { from: cursor, insert: text },
+            range: EditorSelection.cursor(cursor + text.length)
+        })),
+        userEvent: 'completion.accept',
+    };
+};
 
-    // Normalize fetch function to handle both async generators and promises
-    const normalizedFetch = async function* (state: EditorState) {
-        const result = await userFetchFn(state);
+// ---------------------------------- Public API ----------------------------------
+export function inlineSuggestions(config: InlineCompletionConfig) {
+    const {
+        delayMs: debounceInterval = 300,
+        acceptanceHotkey = 'Tab',
+        fetchFunc: fetchSuggestions
+    } = config;
+
+    const normalizeFetch = async function* (state: EditorState) {
+        const result = await fetchSuggestions(state);
         if (Symbol.asyncIterator in result) {
             yield* result as AsyncGenerator<Suggestion>;
         } else {
@@ -375,14 +334,13 @@ export function inlineSuggestion(options: InlineSuggestionOptions) {
         }
     };
 
-    // Initialize system components
-    const { fetchPlugin, cancelDebounce } = createFetchSystem(normalizedFetch, delayMs);
-    const suggestionKeymap = createInputHandlers(cancelDebounce, acceptShortcut);
+    const { fetcherPlugin, terminate } = createDebouncedFetcher(normalizeFetch, debounceInterval);
+    const acceptanceHandler = createAcceptanceHandler(terminate, acceptanceHotkey);
 
     return [
-        SuggestionStateField,
-        fetchPlugin,
-        suggestionRenderer,
-        suggestionKeymap
+        suggestionSessionState,
+        fetcherPlugin,
+        renderSuggestions,
+        acceptanceHandler
     ];
 }

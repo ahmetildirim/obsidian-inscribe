@@ -1,5 +1,5 @@
 import { Plugin } from 'obsidian';
-import { Suggestion, inlineSuggestion } from "./extension";
+import { Suggestion, inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings';
 import { InscribeSettingsTab } from "./settings";
 import { buildCompleter, Completer } from './providers';
@@ -21,8 +21,8 @@ export default class Inscribe extends Plugin {
 	}
 
 	async setupExtention() {
-		const extension = inlineSuggestion({
-			fetchFn: () => this.fetchSuggestions(),
+		const extension = inlineSuggestions({
+			fetchFunc: () => this.fetchSuggestions(),
 			delayMs: this.settings.delay_ms,
 		});
 		this.registerEditorExtension(extension);
