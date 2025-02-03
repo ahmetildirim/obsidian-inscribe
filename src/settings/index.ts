@@ -6,6 +6,21 @@ import { TEMPLATE_VARIABLES } from "src/completion/prompt";
 import Inscribe from "src/main";
 import { SplitStrategy } from "src/extension";
 
+export interface Profile {
+    provider: string,
+    providers: {
+        ollama: OllamaSettings,
+        openai: OpenAISettings,
+    },
+    delay_ms: number,
+    splitStrategy: SplitStrategy
+}
+
+export type ProfileName = string;
+export interface ProfileSettings {
+    [profile: ProfileName]: Profile
+}
+
 export interface Settings {
     provider: string,
     providers: {
@@ -16,7 +31,7 @@ export interface Settings {
     splitStrategy: SplitStrategy
 }
 
-export const DEFAULT_SETTINGS: Partial<Settings> = {
+export const DEFAULT_SETTINGS: Settings = {
     provider: "ollama",
     providers: {
         openai: {
@@ -41,6 +56,11 @@ export const DEFAULT_SETTINGS: Partial<Settings> = {
     },
     delay_ms: 500,
     splitStrategy: "word",
+}
+
+export const DEFAULT_PROFILE: ProfileSettings = {
+    "default": DEFAULT_SETTINGS,
+    "ollama": DEFAULT_SETTINGS,
 }
 
 export class InscribeSettingsTab extends PluginSettingTab {

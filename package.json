@@ -25,7 +25,6 @@
 	"dependencies": {
 		"@types/react": "^19.0.2",
 		"@types/react-dom": "^19.0.2",
-		"codemirror-companion-extension": "^0.0.11",
 		"mustache": "^4.2.0",
 		"ollama": "^0.5.12",
 		"react": "^19.0.0",
