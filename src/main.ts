@@ -1,12 +1,13 @@
 import { Plugin } from 'obsidian';
 import { Suggestion, inlineSuggestions } from "./extension";
-import { Settings, DEFAULT_SETTINGS } from './settings';
+import { Settings, DEFAULT_SETTINGS, Profile } from './settings';
 import { InscribeSettingsTab } from "./settings";
 import { buildCompleter, Completer } from './providers';
 import { generateCompletion } from './completion';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
+	profile: Profile;
 	completer: Completer
 
 	async onload() {
@@ -17,13 +18,20 @@ export default class Inscribe extends Plugin {
 	}
 
 	async loadCompleter() {
-		this.completer = buildCompleter(this.settings);
+		this.completer = buildCompleter(this.profile);
 	}
 
 	async setupExtention() {
+		const getOptions = () => {
+			return {
+				delayMs: this.profile.delay_ms,
+				splitStrategy: this.profile.splitStrategy,
+			};
+		};
+
 		const extension = inlineSuggestions({
 			fetchFunc: () => this.fetchSuggestions(),
-			delayMs: this.settings.delay_ms,
+			getOptions: getOptions,
 		});
 		this.registerEditorExtension(extension);
 	}
@@ -33,7 +41,7 @@ export default class Inscribe extends Plugin {
 		if (!activeEditor) return;
 		if (!activeEditor.editor) return;
 
-		yield* generateCompletion(activeEditor.editor, this.completer, this.settings.splitStrategy);
+		yield* generateCompletion(activeEditor.editor, this.completer);
 	}
 
 	async loadSettings() {
@@ -42,6 +50,8 @@ export default class Inscribe extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
+
+		this.profile = this.settings.profiles[this.settings.profile];
 	}
 
 	async saveSettings() {

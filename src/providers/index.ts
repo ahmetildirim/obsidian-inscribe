@@ -1,4 +1,4 @@
-import { Settings } from "src/settings";
+import { Profile, Settings } from "src/settings";
 import { OpenAICompleter } from "./openai/provider";
 import { Completer } from "./completer";
 import OllamaCompleter from "./ollama/completer";
@@ -11,7 +11,7 @@ export enum Provider {
 }
 
 // builder function for provider
-export const buildCompleter = (settings: Settings): Completer => {
+export const buildCompleter = (settings: Profile): Completer => {
     switch (settings.provider) {
         case Provider.OLLAMA:
             return new OllamaCompleter(settings.providers.ollama);

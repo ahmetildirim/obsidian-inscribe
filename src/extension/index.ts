@@ -33,27 +33,37 @@ import {
 /** Supported segmentation strategies */
 export type SplitStrategy = keyof typeof TextSplitStrategies;
 
-/** Inline suggestion structure */
+/** Inline suggestion structure – now only carries text. */
 export interface Suggestion {
     text: string;
-    splitStrategy: SplitStrategy;
 }
 
-/** Inline completion configuration */
+/** Inline completion configuration.
+ * 
+ * Note: Instead of each suggestion carrying its split strategy,
+ * you supply a dynamic getter function (`getOptions`) so that the extension
+ * always uses the current settings.
+ */
 export interface InlineCompletionConfig {
     fetchFunc: (
         state: EditorState
     ) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
-    delayMs?: number;
+    /** (Optional) A static hotkey for accepting suggestions. */
     acceptanceHotkey?: string;
+    /** A function that returns current options. */
+    getOptions: () => {
+        delayMs?: number;
+        splitStrategy?: SplitStrategy;
+    };
 }
 
-/** Internal state for the current suggestion session */
+/** Internal state for the current suggestion session.
+ * Note: The previous "segmentation" property has been removed.
+ */
 interface SuggestionSession {
     fullText: string | null;
     remainingText: string | null;
     baselineDocument: Text | null;
-    segmentation: SplitStrategy | null;
     anchorPosition: number | null;
 }
 
@@ -123,7 +133,6 @@ const TextSplitStrategies = {
  */
 const SuggestionUpdateEffect = StateEffect.define<{
     content: string | null;
-    strategy: SplitStrategy | null;
     document: Text | null;
     anchor: number | null;
 }>();
@@ -136,11 +145,17 @@ const suggestionSessionState = StateField.define<SuggestionSession>({
 
     update(session, transaction) {
         // Process explicit session update effects.
-        const effect = transaction.effects.find(e => e.is(SuggestionUpdateEffect));
+        const effect = transaction.effects.find((e) =>
+            e.is(SuggestionUpdateEffect)
+        );
         if (effect) return updateSessionFromEffect(effect.value);
 
         // If the document has changed, adjust the session.
-        if (transaction.docChanged && session.remainingText && session.anchorPosition !== null) {
+        if (
+            transaction.docChanged &&
+            session.remainingText &&
+            session.anchorPosition !== null
+        ) {
             return updateSessionOnDocumentChange(session, transaction);
         }
 
@@ -161,7 +176,6 @@ function getResetSession(): SuggestionSession {
         fullText: null,
         remainingText: null,
         baselineDocument: null,
-        segmentation: null,
         anchorPosition: null,
     };
 }
@@ -171,7 +185,6 @@ function getResetSession(): SuggestionSession {
  */
 function updateSessionFromEffect(effect: {
     content: string | null;
-    strategy: SplitStrategy | null;
     document: Text | null;
     anchor: number | null;
 }): SuggestionSession {
@@ -179,7 +192,6 @@ function updateSessionFromEffect(effect: {
         ? getResetSession()
         : initializeSession(effect as {
             content: string;
-            strategy: SplitStrategy;
             document: Text;
             anchor: number;
         });
@@ -190,7 +202,6 @@ function updateSessionFromEffect(effect: {
  */
 function initializeSession(effect: {
     content: string;
-    strategy: SplitStrategy;
     document: Text;
     anchor: number;
 }): SuggestionSession {
@@ -198,7 +209,6 @@ function initializeSession(effect: {
         fullText: effect.content,
         remainingText: effect.content,
         baselineDocument: effect.document,
-        segmentation: effect.strategy,
         anchorPosition: effect.anchor,
     };
 }
@@ -321,7 +331,7 @@ const suggestionRenderer = ViewPlugin.fromClass(
             ]);
         }
     },
-    { decorations: v => v.decorations }
+    { decorations: (v) => v.decorations }
 );
 
 /* --------------------------------------------------------------------------
@@ -332,14 +342,14 @@ const suggestionRenderer = ViewPlugin.fromClass(
  * Creates a debounced fetcher for suggestions.
  *
  * @param fetch - The suggestion fetch function.
- * @param delay - The debounce delay in milliseconds.
+ * @param getDelay - A function returning the current debounce delay in milliseconds.
  */
 const createDebouncedFetcher = (
     fetch: (state: EditorState) => AsyncGenerator<Suggestion>,
-    delay: number
+    getDelay: () => number
 ) => {
     let activeRequest = true;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     /**
      * Throttled fetch that waits for the debounce interval.
@@ -347,8 +357,8 @@ const createDebouncedFetcher = (
     const throttledFetch = async function* (state: EditorState) {
         clearTimeout(timeoutId);
         activeRequest = true;
-        await new Promise(resolve => {
-            timeoutId = setTimeout(resolve, delay);
+        await new Promise((resolve) => {
+            timeoutId = setTimeout(resolve, getDelay());
         });
         if (activeRequest) yield* fetch(state);
     };
@@ -373,7 +383,6 @@ const createDebouncedFetcher = (
                     update.view.dispatch({
                         effects: SuggestionUpdateEffect.of({
                             content: suggestion.text,
-                            strategy: suggestion.splitStrategy,
                             document: state.doc,
                             anchor: state.selection.main.head,
                         }),
@@ -401,10 +410,12 @@ const createDebouncedFetcher = (
  *
  * @param terminateFetch - Function to stop further fetching.
  * @param hotkey - The key that triggers acceptance.
+ * @param getOptions - Function returning dynamic options (including splitStrategy).
  */
 const createAcceptanceHandler = (
     terminateFetch: () => void,
-    hotkey: string
+    hotkey: string,
+    getOptions: () => { delayMs?: number; splitStrategy?: SplitStrategy }
 ) =>
     Prec.highest(
         keymap.of([
@@ -414,7 +425,9 @@ const createAcceptanceHandler = (
                     const session = view.state.field(suggestionSessionState);
                     if (!session.remainingText) return false;
 
-                    const segmentationKey = session.segmentation ?? 'word';
+                    // Always obtain the current split strategy from getOptions.
+                    const dynamicOptions = getOptions();
+                    const segmentationKey = dynamicOptions.splitStrategy ?? 'word';
                     const { accepted, remaining } =
                         TextSplitStrategies[segmentationKey](session.remainingText);
 
@@ -426,10 +439,7 @@ const createAcceptanceHandler = (
                         effects: SuggestionUpdateEffect.of({
                             content: remaining || null,
                             document: remaining ? session.baselineDocument : null,
-                            strategy: remaining ? session.segmentation : null,
-                            anchor: remaining
-                                ? session.anchorPosition! + accepted.length
-                                : null,
+                            anchor: remaining ? session.anchorPosition! + accepted.length : null,
                         }),
                     });
 
@@ -461,17 +471,18 @@ const insertCompletion = (state: EditorState, text: string) => {
 /**
  * The main extension function. It wires up session state management,
  * suggestion fetching, rendering, and user interaction.
+ *
+ * Notice that the suggestion now only contains text.
+ * The split strategy is always obtained dynamically via `getOptions()`.
  */
 export function inlineSuggestions(config: InlineCompletionConfig) {
-    const {
-        delayMs: debounceInterval = 300,
-        acceptanceHotkey = 'Tab',
-        fetchFunc: fetchSuggestions,
-    } = config;
+    const { fetchFunc, getOptions } = config;
+    // Use the hotkey from the config if provided; otherwise, default to "Tab".
+    const staticHotkey = config.acceptanceHotkey || 'Tab';
 
     // Normalize the fetch function to always return an async generator.
     const normalizeFetch = async function* (state: EditorState) {
-        const result = await fetchSuggestions(state);
+        const result = await fetchFunc(state);
         if (Symbol.asyncIterator in result) {
             yield* result as AsyncGenerator<Suggestion>;
         } else {
@@ -479,11 +490,10 @@ export function inlineSuggestions(config: InlineCompletionConfig) {
         }
     };
 
-    const { fetcherPlugin, terminate } = createDebouncedFetcher(
-        normalizeFetch,
-        debounceInterval
-    );
-    const acceptanceHandler = createAcceptanceHandler(terminate, acceptanceHotkey);
+    // Use getOptions() to obtain the current debounce delay.
+    const getDelay = () => getOptions().delayMs ?? 300;
+    const { fetcherPlugin, terminate } = createDebouncedFetcher(normalizeFetch, getDelay);
+    const acceptanceHandler = createAcceptanceHandler(terminate, staticHotkey, getOptions);
 
     return [
         suggestionSessionState,

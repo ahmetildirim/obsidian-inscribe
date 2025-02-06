@@ -2,7 +2,7 @@ import { Editor } from "obsidian";
 import { SplitStrategy, Suggestion } from "src/extension";
 import { Completer } from "src/providers";
 
-export async function* generateCompletion(editor: Editor, completer: Completer, splitStrategy: SplitStrategy): AsyncGenerator<Suggestion> {
+export async function* generateCompletion(editor: Editor, completer: Completer): AsyncGenerator<Suggestion> {
     await completer.abort();
     const cursor = editor.getCursor();
 
@@ -19,7 +19,7 @@ export async function* generateCompletion(editor: Editor, completer: Completer, 
     }
 
     for await (const text of completer.generate(editor)) {
-        yield { text: text, splitStrategy: splitStrategy };
+        yield { text: text };
     }
 }
 
