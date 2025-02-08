@@ -2,13 +2,13 @@ import { Plugin } from 'obsidian';
 import { Suggestion, inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS, Profile } from './settings';
 import { InscribeSettingsTab } from "./settings";
-import { buildCompleter, Completer } from './providers';
+import { buildCompleter, Provider, ProviderId } from './providers';
 import { generateCompletion } from './completion';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	profile: Profile;
-	completer: Completer
+	completer: Provider
 
 	async onload() {
 		await this.loadSettings();
@@ -18,13 +18,13 @@ export default class Inscribe extends Plugin {
 	}
 
 	async loadCompleter() {
-		this.completer = buildCompleter(this.profile);
+		this.completer = buildCompleter(this.settings);
 	}
 
 	async setupExtention() {
 		const getOptions = () => {
 			return {
-				delayMs: this.profile.delay_ms,
+				delayMs: this.profile.delayMs,
 				splitStrategy: this.profile.splitStrategy,
 			};
 		};

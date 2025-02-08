@@ -1,8 +1,8 @@
 import { Editor } from "obsidian";
 import { SplitStrategy, Suggestion } from "src/extension";
-import { Completer } from "src/providers";
+import { Provider, ProviderId } from "src/providers";
 
-export async function* generateCompletion(editor: Editor, completer: Completer): AsyncGenerator<Suggestion> {
+export async function* generateCompletion(editor: Editor, completer: Provider): AsyncGenerator<Suggestion> {
     await completer.abort();
     const cursor = editor.getCursor();
 

@@ -1,2 +1,2 @@
-export * from "./completer";
+export * from "./provider";
 export * from "./settings";

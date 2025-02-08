@@ -2,7 +2,7 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/completion/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
-import { Provider } from "src/providers";
+import { ProviderId } from "src/providers";
 
 export class InscribeSettingsTab extends PluginSettingTab {
     constructor(app: App, private plugin: Inscribe) {
@@ -15,10 +15,10 @@ export class InscribeSettingsTab extends PluginSettingTab {
 
         await this.displayGeneralSettings();
         switch (this.plugin.profile.provider) {
-            case Provider.OLLAMA:
+            case ProviderId.OLLAMA:
                 await this.displayOllamaSettings();
                 break;
-            case Provider.OPENAI:
+            case ProviderId.OPENAI:
                 await this.displayOpenAISettings();
                 break;
             default:
@@ -53,10 +53,10 @@ export class InscribeSettingsTab extends PluginSettingTab {
             .addText((text) => {
                 text.inputEl.setAttrs({ type: "number", min: "0" });
                 text
-                    .setPlaceholder(settings.delay_ms.toString())
-                    .setValue(settings.delay_ms.toString())
+                    .setPlaceholder(settings.delayMs.toString())
+                    .setValue(settings.delayMs.toString())
                     .onChange(async (value) => {
-                        settings.delay_ms = parseInt(value);
+                        settings.delayMs = parseInt(value);
                         await this.plugin.saveSettings();
                     })
             });
@@ -103,7 +103,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
             .setDesc("Choose the Ollama model.")
             .addExtraButton((button) => {
                 button.setTooltip("Refresh model list").onClick(async () => {
-                    settings.models = await this.plugin.completer.availableModels();
+                    settings.models = await this.plugin.completer.updateModels();
                     await this.plugin.saveSettings();
                     this.display();
                 });

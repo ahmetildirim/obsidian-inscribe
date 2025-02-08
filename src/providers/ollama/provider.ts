@@ -1,12 +1,10 @@
 import { ModelResponse, Ollama } from "ollama";
-import { Suggestion } from "codemirror-companion-extension";
 import { OllamaSettings } from "./settings";
-import { Completer, Provider } from "..";
+import { Provider } from "..";
 import { Editor } from "obsidian";
 import { preparePrompt } from "src/completion/prompt";
 
-export default class OllamaCompleter implements Completer {
-    integration: Provider = Provider.OLLAMA;
+export default class OllamaProvider implements Provider {
     client: Ollama
     settings: OllamaSettings;
     aborted: boolean = false;
@@ -54,7 +52,7 @@ export default class OllamaCompleter implements Completer {
         console.log("aborted completion");
     }
 
-    async availableModels(): Promise<string[]> {
+    async updateModels(): Promise<string[]> {
         const response = await this.client.list();
         return response.models.map((model: ModelResponse) => model.name);
     }

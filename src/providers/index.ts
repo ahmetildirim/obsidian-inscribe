@@ -1,21 +1,21 @@
-import { Profile, Settings } from "src/settings";
+import { Settings } from "src/settings";
 import { OpenAICompleter } from "./openai/provider";
-import { Completer } from "./completer";
-import OllamaCompleter from "./ollama/completer";
+import { Provider } from "./provider";
+import OllamaProvider from "./ollama/provider";
 
-export * from "./completer";
+export * from "./provider";
 
-export enum Provider {
+export enum ProviderId {
     OLLAMA = "ollama",
     OPENAI = "openai",
 }
 
 // builder function for provider
-export const buildCompleter = (settings: Profile): Completer => {
-    switch (settings.provider) {
-        case Provider.OLLAMA:
-            return new OllamaCompleter(settings.providers.ollama);
-        case Provider.OPENAI:
+export const buildCompleter = (settings: Settings): Provider => {
+    switch (settings.profiles.default.provider) {
+        case ProviderId.OLLAMA:
+            return new OllamaProvider(settings.providers.ollama);
+        case ProviderId.OPENAI:
             return new OpenAICompleter(settings.providers.openai);
         default:
             throw new Error("Invalid provider");
