@@ -2,9 +2,10 @@ import { ModelResponse, Ollama } from "ollama";
 import { OllamaSettings } from "./settings";
 import { Provider } from "..";
 import { Editor } from "obsidian";
-import { preparePrompt } from "src/completion/prompt";
+import { preparePrompt } from "src/prompt/prompt";
+import { CompletionOptions } from "src/settings";
 
-export default class OllamaProvider implements Provider {
+export class OllamaProvider implements Provider {
     client: Ollama
     settings: OllamaSettings;
     aborted: boolean = false;
@@ -14,17 +15,17 @@ export default class OllamaProvider implements Provider {
         this.client = new Ollama({ host: this.settings.host });
     }
 
-    async *generate(editor: Editor): AsyncGenerator<string> {
+    async *generate(editor: Editor, options: CompletionOptions): AsyncGenerator<string> {
         this.aborted = false;
-        const prompt = preparePrompt(editor, this.settings.user_prompt);
+        const prompt = preparePrompt(editor, options.userPrompt);
 
         const completionIterator = await this.client.generate({
-            model: this.settings.model,
+            model: options.model,
             prompt: prompt,
-            system: this.settings.system_prompt,
+            system: options.systemPrompt,
             stream: true,
             options: {
-                temperature: this.settings.temperature,
+                temperature: options.temperature,
             }
         });
 

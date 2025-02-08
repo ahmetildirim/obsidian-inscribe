@@ -1,4 +1,4 @@
-import { ProviderId } from "src/providers";
+import { ProviderType } from "src/providers";
 import { SplitStrategy } from "src/extension";
 import { OllamaSettings } from "src/providers/ollama";
 import { OpenAISettings } from "src/providers/openai";
@@ -13,7 +13,7 @@ export interface CompletionOptions {
 
 // Profile settings
 export interface Profile {
-    provider: string,
+    provider: ProviderType,
     delayMs: number,
     splitStrategy: SplitStrategy
     completionOptions: CompletionOptions,
@@ -38,7 +38,7 @@ export const DEFAULT_PROFILE: ProfileName = "default";
 export const DEFAULT_SETTINGS: Settings = {
     providers: {
         openai: {
-            integration: ProviderId.OPENAI,
+            integration: ProviderType.OPENAI,
             name: "Open AI",
             description: "Use OpenAI APIs to generate text.",
             apiKey: "",
@@ -46,7 +46,7 @@ export const DEFAULT_SETTINGS: Settings = {
             models: ["gpt-4", "gpt-3.5-turbo", "gpt-3.5", "gpt-3", "gpt-2", "gpt-1"],
         },
         ollama: {
-            integration: ProviderId.OLLAMA,
+            integration: ProviderType.OLLAMA,
             name: "Ollama",
             description: "Use your own Ollama instance to generate text.",
             host: "http://localhost:11434",
@@ -60,7 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
     profile: DEFAULT_PROFILE,
     profiles: {
         default: {
-            provider: "ollama",
+            provider: ProviderType.OLLAMA,
             delayMs: 500,
             splitStrategy: "word",
             completionOptions: {

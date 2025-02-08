@@ -1,7 +1,7 @@
-import { ProviderId } from "..";
+import { ProviderType } from "..";
 
 export interface OllamaSettings {
-    integration: ProviderId;
+    integration: ProviderType;
     name: string;
     description: string;
     host: string;

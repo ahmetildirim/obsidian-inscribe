@@ -1,8 +1,8 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import { TEMPLATE_VARIABLES } from "src/completion/prompt";
+import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
-import { ProviderId } from "src/providers";
+import { ProviderType } from "src/providers";
 
 export class InscribeSettingsTab extends PluginSettingTab {
     constructor(app: App, private plugin: Inscribe) {
@@ -15,10 +15,10 @@ export class InscribeSettingsTab extends PluginSettingTab {
 
         await this.displayGeneralSettings();
         switch (this.plugin.profile.provider) {
-            case ProviderId.OLLAMA:
+            case ProviderType.OLLAMA:
                 await this.displayOllamaSettings();
                 break;
-            case ProviderId.OPENAI:
+            case ProviderType.OPENAI:
                 await this.displayOpenAISettings();
                 break;
             default:
@@ -35,10 +35,10 @@ export class InscribeSettingsTab extends PluginSettingTab {
             .setName("AI Provider")
             .setDesc("Choose your preferred AI provider.")
             .addDropdown((dropdown) => {
-                dropdown
-                    .addOptions(
-                        Object.fromEntries(Object.entries(settings.providers).map(([key, value]) => [key, value.name]))
-                    );
+                // dropdown
+                //     .addOptions(
+                //         Object.fromEntries(Object.entries(settings.providers).map(([key, value]) => [key, value.name]))
+                //     );
                 dropdown
                     .setValue(this.plugin.profile.provider)
                     .onChange(async (value) => {
@@ -83,7 +83,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
 
     async displayOllamaSettings(): Promise<void> {
         const { containerEl } = this;
-        const settings = this.plugin.profile.providers.ollama;
+        const settings = this.plugin.providers.ollama.settings;
 
         containerEl.createEl("h3", { text: "Ollama Settings" });
 
@@ -103,9 +103,9 @@ export class InscribeSettingsTab extends PluginSettingTab {
             .setDesc("Choose the Ollama model.")
             .addExtraButton((button) => {
                 button.setTooltip("Refresh model list").onClick(async () => {
-                    settings.models = await this.plugin.completer.updateModels();
-                    await this.plugin.saveSettings();
-                    this.display();
+                    // settings.models = await this.plugin.completer.updateModels();
+                    // await this.plugin.saveSettings();
+                    // this.display();
                 });
             })
             .addDropdown((dropdown) => {
@@ -170,7 +170,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
 
     async displayOpenAISettings(): Promise<void> {
         const { containerEl } = this;
-        const settings = this.plugin.profile.providers.openai;
+        const settings = this.plugin.providers.openai.settings;
 
         containerEl.createEl("h3", { text: "OpenAI Settings" });
 

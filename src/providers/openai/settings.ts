@@ -1,7 +1,7 @@
-import { ProviderId } from "..";
+import { ProviderType } from "..";
 
 export interface OpenAISettings {
-    integration: ProviderId;
+    integration: ProviderType;
     name: string;
     description: string;
     apiKey: string;

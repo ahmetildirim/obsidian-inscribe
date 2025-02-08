@@ -2,7 +2,7 @@ import { Provider } from "..";
 import { Editor } from "obsidian";
 import { OpenAISettings } from ".";
 
-export class OpenAICompleter implements Provider {
+export class OpenAIProvider implements Provider {
     settings: OpenAISettings
     models: string[];
     constructor(settings: OpenAISettings) {

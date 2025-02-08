@@ -1,9 +1,10 @@
 import { Editor } from "obsidian";
-import { SplitStrategy, Suggestion } from "src/extension";
-import { Provider, ProviderId } from "src/providers";
+import { Suggestion } from "src/extension";
+import { Provider, Providers } from "src/providers";
+import { CompletionOptions, Settings } from "src/settings";
 
-export async function* generateCompletion(editor: Editor, completer: Provider): AsyncGenerator<Suggestion> {
-    await completer.abort();
+export async function* generateCompletion(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
+    await provider.abort();
     const cursor = editor.getCursor();
 
     // If the current line is empty, don't suggest anything.
@@ -18,8 +19,14 @@ export async function* generateCompletion(editor: Editor, completer: Provider): 
         return;
     }
 
-    for await (const text of completer.generate(editor)) {
+    for await (const text of provider.generate(editor, options)) {
         yield { text: text };
     }
 }
 
+export function resolveProfile(settings: Settings, providers: Providers): [Provider, CompletionOptions] {
+    const profile = settings.profiles[settings.profile];
+    const provider = providers[profile.provider];
+    const options = profile.completionOptions;
+    return [provider, options];
+}

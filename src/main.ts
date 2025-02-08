@@ -2,23 +2,23 @@ import { Plugin } from 'obsidian';
 import { Suggestion, inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS, Profile } from './settings';
 import { InscribeSettingsTab } from "./settings";
-import { buildCompleter, Provider, ProviderId } from './providers';
-import { generateCompletion } from './completion';
+import { buildProviders, Providers } from './providers';
+import { generateCompletion, resolveProfile } from './completion';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	profile: Profile;
-	completer: Provider
+	providers: Providers;
 
 	async onload() {
 		await this.loadSettings();
-		await this.loadCompleter();
+		await this.loadProviders();
 		await this.setupExtention();
 		this.addSettingTab(new InscribeSettingsTab(this.app, this));
 	}
 
-	async loadCompleter() {
-		this.completer = buildCompleter(this.settings);
+	async loadProviders() {
+		this.providers = buildProviders(this.settings);
 	}
 
 	async setupExtention() {
@@ -41,7 +41,7 @@ export default class Inscribe extends Plugin {
 		if (!activeEditor) return;
 		if (!activeEditor.editor) return;
 
-		yield* generateCompletion(activeEditor.editor, this.completer);
+		yield* generateCompletion(activeEditor.editor, ...resolveProfile(this.settings, this.providers));
 	}
 
 	async loadSettings() {
@@ -56,6 +56,6 @@ export default class Inscribe extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-		await this.loadCompleter();
+		await this.loadProviders();
 	}
 }
