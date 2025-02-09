@@ -7,4 +7,5 @@ export interface OpenAISettings {
     apiKey: string;
     model: string;
     models: string[];
+    configured: boolean;
 }

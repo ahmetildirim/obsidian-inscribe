@@ -13,6 +13,7 @@ export interface CompletionOptions {
 
 // Profile settings
 export interface Profile {
+    name: string,
     provider: ProviderType,
     delayMs: number,
     splitStrategy: SplitStrategy
@@ -28,8 +29,6 @@ export interface Settings {
         ollama: OllamaSettings,
         openai: OpenAISettings,
     },
-    // active profile
-    profile: ProfileName,
     // profiles
     profiles: Profiles,
 }
@@ -44,22 +43,20 @@ export const DEFAULT_SETTINGS: Settings = {
             apiKey: "",
             model: "gpt-4o",
             models: ["gpt-4", "gpt-3.5-turbo", "gpt-3.5", "gpt-3", "gpt-2", "gpt-1"],
+            configured: false,
         },
         ollama: {
             integration: ProviderType.OLLAMA,
             name: "Ollama",
             description: "Use your own Ollama instance to generate text.",
             host: "http://localhost:11434",
-            model: "mistral-nemo",
             models: ["llama3.2:latest", "mistral-nemo"],
-            user_prompt: 'Complete following text:\n {{pre_cursor}}}',
-            system_prompt: "You are an helpful AI completer. Follow instructions",
-            temperature: 0.5,
+            configured: true,
         },
     },
-    profile: DEFAULT_PROFILE,
     profiles: {
         default: {
+            name: "Default Profile",
             provider: ProviderType.OLLAMA,
             delayMs: 500,
             splitStrategy: "word",
@@ -72,6 +69,33 @@ export const DEFAULT_SETTINGS: Settings = {
         },
     },
 };
+
+export function newProfile(profiles: Profiles): string {
+    const id = Math.random().toString(36).substring(2, 15);
+
+    // generate a new profile name
+    let name = "New Profile";
+    // loop through the profiles to make sure the name is unique
+    let i = 1;
+    Object.entries(profiles).forEach(([, value]) => {
+        if (value.name === name) {
+            name = `New Profile ${i}`;
+            i++;
+        }
+    });
+
+    // copy the default profile
+    const defaultProfile = profiles[DEFAULT_PROFILE];
+    const profile = {
+        ...defaultProfile,
+        name: name,
+    };
+
+    // add the new profile
+    profiles[id] = profile;
+
+    return id;
+}
 
 export * from "./tab";
 

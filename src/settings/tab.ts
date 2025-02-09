@@ -1,10 +1,17 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, TextAreaComponent, DropdownComponent } from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
+import { DEFAULT_PROFILE, newProfile, Profile } from "./index";
+import { ProviderSettingsModal } from "./provider-modal";
 
 export class InscribeSettingsTab extends PluginSettingTab {
+    private providersEl: HTMLElement;
+    private profilesEl: HTMLElement;
+    private profileEl: HTMLElement;
+    private displayedProfileId: string = DEFAULT_PROFILE;
+
     constructor(app: App, private plugin: Inscribe) {
         super(app, plugin);
     }
@@ -13,187 +20,248 @@ export class InscribeSettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        await this.displayGeneralSettings();
-        switch (this.plugin.profile.provider) {
-            case ProviderType.OLLAMA:
-                await this.displayOllamaSettings();
-                break;
-            case ProviderType.OPENAI:
-                await this.displayOpenAISettings();
-                break;
-            default:
-                break;
-        }
+        // Create container elements
+        this.providersEl = containerEl.createDiv();
+        containerEl.createEl("br");
+        this.profilesEl = containerEl.createDiv();
+        this.profileEl = containerEl.createDiv();
+
+        this.displayProviders();
+        this.displayProfiles();
     }
 
-    async displayGeneralSettings(): Promise<void> {
-        const { containerEl } = this;
-        const settings = this.plugin.profile;
+    private displayProviders(): void {
+        this.providersEl.empty();
 
-        containerEl.createEl("h1", { text: "General" });
-        new Setting(containerEl)
-            .setName("AI Provider")
-            .setDesc("Choose your preferred AI provider.")
-            .addDropdown((dropdown) => {
-                // dropdown
-                //     .addOptions(
-                //         Object.fromEntries(Object.entries(settings.providers).map(([key, value]) => [key, value.name]))
-                //     );
-                dropdown
-                    .setValue(this.plugin.profile.provider)
-                    .onChange(async (value) => {
-                        this.plugin.settings.profile = value;
-                        await this.plugin.saveSettings();
-                        this.display();
+        this.providersEl.createEl("h1", { text: "Providers" });
+        this.providersEl.createEl("p", { text: "Configure the AI providers you want to use for completions" });
+
+        // Ollama Provider
+        new Setting(this.providersEl)
+            .setName("Ollama")
+            .setDesc("Local AI provider running on your machine")
+            .addExtraButton((button: ExtraButtonComponent) => {
+                const isConfigured = this.plugin.settings.providers.ollama.configured;
+                button
+                    .setIcon(isConfigured ? "check-circle" : "alert-circle")
+                    .setTooltip(isConfigured ? "Provider configured" : "Provider not configured");
+            })
+            .addButton((button: ButtonComponent) => {
+                button
+                    .setIcon("settings")
+                    .setTooltip("Configure Ollama")
+                    .onClick(() => {
+                        new ProviderSettingsModal(
+                            this.app,
+                            this.plugin,
+                            ProviderType.OLLAMA,
+                            () => this.displayProviders()
+                        ).open();
                     });
             });
-        new Setting(containerEl)
-            .setName("Delay (ms)")
-            .setDesc("Set the delay in milliseconds before fetching suggestions.")
+
+        // OpenAI Provider
+        new Setting(this.providersEl)
+            .setName("OpenAI")
+            .setDesc("Cloud-based AI provider")
+            .addExtraButton((button: ExtraButtonComponent) => {
+                const isConfigured = this.plugin.settings.providers.openai.configured;
+                button
+                    .setIcon(isConfigured ? "check-circle" : "alert-circle")
+                    .setTooltip(isConfigured ? "Provider configured" : "Provider not configured");
+            })
+            .addButton((button: ButtonComponent) => {
+                button
+                    .setIcon("settings")
+                    .setTooltip("Configure OpenAI")
+                    .onClick(() => {
+                        new ProviderSettingsModal(
+                            this.app,
+                            this.plugin,
+                            ProviderType.OPENAI,
+                            () => this.displayProviders()
+                        ).open();
+                    });
+            });
+    }
+
+    private async displayProfiles(): Promise<void> {
+        this.profilesEl.empty();
+
+        this.profilesEl.createEl("h1", { text: "Profiles" });
+        // Profile Selection
+
+        const displayesProfile = this.plugin.settings.profiles[this.displayedProfileId];
+        new Setting(this.profilesEl)
+            .setHeading()
+            .setName("Manage profile")
+            .setDesc("Configure the settings for each profile. A profile can be assigned to paths. The default profile is used when no profile is assigned.")
+            .addDropdown((dropdown) => {
+                Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
+                    dropdown.addOption(id, profile.name);
+                });
+
+                dropdown
+                    .setValue(this.displayedProfileId)
+                    .onChange(async (value) => {
+                        this.displayedProfileId = value;
+                        this.displayProfile(this.plugin.settings.profiles[value]);
+                    });
+            })
+            .addExtraButton((button) => {
+                button
+                    .setIcon("plus")
+                    .setTooltip("Create new profile")
+                    .onClick(async () => {
+                        this.displayedProfileId = newProfile(this.plugin.settings.profiles);
+                        await this.plugin.saveSettings();
+                        this.displayProfiles();
+                    });
+            })
+            .addExtraButton((button) => {
+                button
+                    .setDisabled(this.displayedProfileId === DEFAULT_PROFILE)
+                    .setIcon("trash")
+                    .setTooltip(this.displayedProfileId === DEFAULT_PROFILE ? "Cannot delete default profile" : "Delete profile")
+                    .onClick(() => {
+                        delete this.plugin.settings.profiles[this.displayedProfileId];
+                        this.displayedProfileId = DEFAULT_PROFILE;
+                        this.displayProfiles();
+                    });
+            });
+
+        this.displayProfile(displayesProfile);
+    }
+
+    private async displayProfile(profile: Profile): Promise<void> {
+        this.profileEl.empty();
+
+        // Profile Name
+        new Setting(this.profileEl)
+            .setName("Profile Name")
+            .setDesc("Name of the profile")
             .addText((text) => {
-                text.inputEl.setAttrs({ type: "number", min: "0" });
                 text
-                    .setPlaceholder(settings.delayMs.toString())
-                    .setValue(settings.delayMs.toString())
+                    .setValue(profile.name)
                     .onChange(async (value) => {
-                        settings.delayMs = parseInt(value);
+                        profile.name = value;
                         await this.plugin.saveSettings();
-                    })
+                    });
             });
 
-        new Setting(containerEl)
-            .setName("Accept Strategy")
-            .setDesc("Choose the accept strategy.")
+        // Provider
+        new Setting(this.profileEl)
+            .setName("AI Provider")
+            .setDesc("Choose your preferred AI provider")
             .addDropdown((dropdown) => {
+                dropdown.addOption(ProviderType.OLLAMA, "Ollama");
+                dropdown.addOption(ProviderType.OPENAI, "OpenAI");
                 dropdown
-                    .addOptions({
-                        "word": "Word",
-                        "sentence": "Sentence",
-                        "paragraph": "Paragraph",
-                        "full": "Full",
-                    });
-                dropdown
-                    .setValue(this.plugin.profile.splitStrategy)
-                    .onChange(async (value) => {
-                        this.plugin.profile.splitStrategy = value as SplitStrategy;
+                    .setValue(profile.provider)
+                    .onChange(async (value: ProviderType) => {
+                        profile.provider = value;
                         await this.plugin.saveSettings();
                     });
             });
-    }
 
-    async displayOllamaSettings(): Promise<void> {
-        const { containerEl } = this;
-        const settings = this.plugin.providers.ollama.settings;
-
-        containerEl.createEl("h3", { text: "Ollama Settings" });
-
-        new Setting(containerEl)
-            .setName("Host")
-            .setDesc("Enter the Ollama host.")
-            .addText((text) => text
-                .setPlaceholder(settings.host)
-                .setValue(settings.host)
-                .onChange(async (value) => {
-                    settings.host = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-        new Setting(containerEl)
+        // Model
+        new Setting(this.profileEl)
             .setName("Model")
-            .setDesc("Choose the Ollama model.")
-            .addExtraButton((button) => {
-                button.setTooltip("Refresh model list").onClick(async () => {
-                    // settings.models = await this.plugin.completer.updateModels();
-                    // await this.plugin.saveSettings();
-                    // this.display();
-                });
-            })
+            .setDesc("Select the model to use for completions")
             .addDropdown((dropdown) => {
+                const models = profile.provider === ProviderType.OLLAMA
+                    ? this.plugin.settings.providers.ollama.models
+                    : this.plugin.settings.providers.openai.models;
+
+                models.forEach(model => dropdown.addOption(model, model));
                 dropdown
-                    .addOptions(Object.fromEntries(settings.models.map(model => [model, model])))
-                    .setValue(settings.model)
+                    .setValue(profile.completionOptions.model)
                     .onChange(async (value) => {
-                        settings.model = value;
-                        await this.plugin.saveSettings();
-                        this.display();
-                    });
-            });
-        new Setting(containerEl)
-            .setName("User Prompt")
-            .setDesc("Enter the user prompt.")
-            .addExtraButton((button) => {
-                button.setTooltip("Insert variables").onClick(() => {
-                    settings.user_prompt = `${settings.user_prompt}\n${TEMPLATE_VARIABLES}`;
-                    this.display();
-                });
-            })
-            .addTextArea((text) => {
-                text.inputEl.setAttr("rows", "5");
-                text.inputEl.setCssStyles({ width: "100%", resize: "vertical", position: "relative" });
-                text
-                    .setPlaceholder(settings.user_prompt)
-                    .setValue(settings.user_prompt)
-                    .onChange(async (value) => {
-                        settings.user_prompt = value;
-                        await this.plugin.saveSettings();
-                    });
-            }
-            );
-        new Setting(containerEl)
-            .setName("System Prompt")
-            .setDesc("Enter the system prompt.")
-            .addTextArea((text) => {
-                text.inputEl.setAttr("rows", "2");
-                text.inputEl.setCssStyles({ width: "100%", resize: "vertical", position: "relative" });
-                text
-                    .setPlaceholder(settings.system_prompt)
-                    .setValue(settings.system_prompt)
-                    .onChange(async (value) => {
-                        settings.system_prompt = value;
+                        profile.completionOptions.model = value;
                         await this.plugin.saveSettings();
                     });
             });
-        new Setting(containerEl)
+
+        // Temperature
+        new Setting(this.profileEl)
             .setName("Temperature")
-            .setDesc("Set the temperature.")
+            .setDesc("Control the randomness of completions (0 = deterministic, 1 = creative)")
             .addSlider((slider) => {
                 slider
-                    .setLimits(0, 1, 0.01)
-                    .setValue(settings.temperature)
+                    .setLimits(0, 1, 0.1)
+                    .setValue(profile.completionOptions.temperature)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
-                        settings.temperature = value;
+                        profile.completionOptions.temperature = value;
                         await this.plugin.saveSettings();
                     });
             });
-    }
 
-    async displayOpenAISettings(): Promise<void> {
-        const { containerEl } = this;
-        const settings = this.plugin.providers.openai.settings;
+        new Setting(this.profileEl)
+            .setName("Suggestion Delay")
+            .setDesc("Delay in milliseconds before fetching suggestions")
+            .addSlider((slider) => {
+                slider
+                    .setLimits(0, 2000, 100)
+                    .setValue(profile.delayMs)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        profile.delayMs = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
 
-        containerEl.createEl("h3", { text: "OpenAI Settings" });
-
-        new Setting(containerEl)
-            .setName("API Key")
-            .setDesc("Enter the OpenAI API key.")
-            .addText((text) => text
-                .setPlaceholder(settings.apiKey)
-                .setValue(settings.apiKey)
-                .onChange(async (value) => {
-                    settings.apiKey = value;
-                    await this.plugin.saveSettings();
-                })
-            );
-        new Setting(containerEl)
-            .setName("Model")
-            .setDesc("Choose the OpenAI model.")
+        new Setting(this.profileEl)
+            .setName("Completion Strategy")
+            .setDesc("Choose how completions should be split and accepted")
             .addDropdown((dropdown) => {
                 dropdown
-                    .addOptions(Object.fromEntries(settings.models.map(model => [model, model])))
-                    .setValue(settings.model)
+                    .addOption("word", "Word by Word")
+                    .addOption("sentence", "Sentence by Sentence")
+                    .addOption("paragraph", "Paragraph by Paragraph")
+                    .addOption("full", "Full Completion")
+                    .setValue(profile.splitStrategy)
+                    .onChange(async (value: SplitStrategy) => {
+                        profile.splitStrategy = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(this.profileEl)
+            .setName("System Prompt")
+            .setDesc("Set the system prompt that defines the AI's behavior")
+            .addTextArea((text) => {
+                text.inputEl.rows = 3;
+                text.inputEl.style.width = "100%";
+                text
+                    .setValue(profile.completionOptions.systemPrompt)
                     .onChange(async (value) => {
-                        settings.model = value;
+                        profile.completionOptions.systemPrompt = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(this.profileEl)
+            .setName("User Prompt")
+            .setDesc("Configure the prompt template for completions")
+            .addExtraButton((button) => {
+                button
+                    .setIcon("list")
+                    .setTooltip("Insert template variables")
+                    .onClick(async () => {
+                        const text = profile.completionOptions.userPrompt + "\n" + TEMPLATE_VARIABLES;
+                        profile.completionOptions.userPrompt = text;
+                        await this.plugin.saveSettings();
+                        this.displayProfile(profile);
+                    });
+            })
+            .addTextArea((text) => {
+                text.inputEl.rows = 3;
+                text.inputEl.style.width = "100%";
+                text
+                    .setValue(profile.completionOptions.userPrompt)
+                    .onChange(async (value) => {
+                        profile.completionOptions.userPrompt = value;
                         await this.plugin.saveSettings();
                     });
             });
