@@ -41,34 +41,29 @@ export class InscribeSettingsTab extends PluginSettingTab {
         const { providers } = this.sections;
         providers.empty();
 
-        providers.createEl("h1", { text: "Providers" });
+        providers.createEl("h3", { text: "Providers" });
         providers.createEl("p", { text: "Configure the AI providers you want to use for completions" });
 
-        // Render provider settings
-        await this.createProviderSetting(ProviderType.OLLAMA);
-        await this.createProviderSetting(ProviderType.OPENAI);
-    }
-
-    private async createProviderSetting(type: ProviderType): Promise<void> {
-        const providerConfig = type === ProviderType.OLLAMA
-            ? { name: "Ollama", desc: "Local AI provider running on your machine" }
-            : { name: "OpenAI", desc: "Cloud-based AI provider" };
-
-        const isConfigured = this.plugin.settings.providers[type].configured;
-
-        new Setting(this.sections.providers)
-            .setName(providerConfig.name)
-            .setDesc(providerConfig.desc)
-            .addExtraButton((button: ExtraButtonComponent) => {
-                button
-                    .setIcon(isConfigured ? "check-circle" : "alert-circle")
-                    .setTooltip(isConfigured ? "Provider configured" : "Provider not configured");
-            })
+        // Ollama Provider
+        new Setting(providers)
+            .setName("Ollama")
+            .setDesc("Local AI provider running on your machine")
             .addButton((button: ButtonComponent) => {
                 button
-                    .setIcon("settings")
-                    .setTooltip(`Configure ${providerConfig.name}`)
-                    .onClick(() => this.openProviderModal(type));
+                    .setButtonText("Configure")
+                    .setTooltip("Configure Ollama")
+                    .onClick(() => this.openProviderModal(ProviderType.OLLAMA));
+            });
+
+        // OpenAI Provider
+        new Setting(providers)
+            .setName("OpenAI")
+            .setDesc("OpenAI API provider")
+            .addButton((button: ButtonComponent) => {
+                button
+                    .setButtonText("Configure")
+                    .setTooltip("Configure OpenAI")
+                    .onClick(() => this.openProviderModal(ProviderType.OPENAI));
             });
     }
 
@@ -85,7 +80,8 @@ export class InscribeSettingsTab extends PluginSettingTab {
         const { profiles } = this.sections;
         profiles.empty();
 
-        profiles.createEl("h1", { text: "Profiles" });
+        profiles.createEl("h3", { text: "Profiles" });
+        profiles.createEl("p", { text: "Configure the settings for each profile. A profile can be assigned to paths. The default profile is used when no profile is assigned." });
 
         const displayedProfile = this.plugin.settings.profiles[this.displayedProfileId];
         await this.renderProfileSelection();
@@ -93,10 +89,12 @@ export class InscribeSettingsTab extends PluginSettingTab {
     }
 
     private async renderProfileSelection(): Promise<void> {
+        //addd padding
+        this.sections.profiles.createEl("br");
         new Setting(this.sections.profiles)
             .setHeading()
             .setName("Manage profile")
-            .setDesc("Configure the settings for each profile. A profile can be assigned to paths. The default profile is used when no profile is assigned.")
+            .setDesc("Select a profile to configure its settings")
             .addDropdown(this.createProfileDropdown.bind(this))
             .addExtraButton(this.createNewProfileButton.bind(this))
             .addExtraButton(this.createDeleteProfileButton.bind(this));
@@ -209,13 +207,13 @@ export class InscribeSettingsTab extends PluginSettingTab {
         new Setting(profileSection)
             .setName("Suggestion Delay")
             .setDesc("Delay in milliseconds before fetching suggestions")
-            .addSlider((slider) => {
-                slider
-                    .setLimits(0, 2000, 100)
-                    .setValue(profile.delayMs)
-                    .setDynamicTooltip()
+            .addText((text) => {
+                text.inputEl.setAttr("type", "number");
+                text
+                    .setPlaceholder("1000")
+                    .setValue(String(profile.delayMs))
                     .onChange(async (value) => {
-                        profile.delayMs = value;
+                        profile.delayMs = parseInt(value);
                         await this.plugin.saveSettings();
                     });
             });
