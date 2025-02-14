@@ -1,7 +1,7 @@
 import { Editor } from "obsidian";
 import { Suggestion } from "src/extension";
 import { Provider, Providers } from "src/providers";
-import { CompletionOptions, Settings } from "src/settings";
+import { CompletionOptions, DEFAULT_PROFILE, Settings } from "src/settings";
 
 export async function* generateCompletion(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
     await provider.abort();
@@ -25,7 +25,7 @@ export async function* generateCompletion(editor: Editor, provider: Provider, op
 }
 
 export function resolveProfile(settings: Settings, providers: Providers): [Provider, CompletionOptions] {
-    const profile = settings.profiles[settings.profile];
+    const profile = settings.profiles[DEFAULT_PROFILE];
     const provider = providers[profile.provider];
     const options = profile.completionOptions;
     return [provider, options];

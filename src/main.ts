@@ -1,13 +1,12 @@
 import { Plugin } from 'obsidian';
 import { Suggestion, inlineSuggestions } from "./extension";
-import { Settings, DEFAULT_SETTINGS, Profile } from './settings';
+import { Settings, DEFAULT_SETTINGS, Profile, DEFAULT_PROFILE } from './settings';
 import { InscribeSettingsTab } from "./settings";
 import { buildProviders, Providers } from './providers';
 import { generateCompletion, resolveProfile } from './completion';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
-	profile: Profile;
 	providers: Providers;
 
 	async onload() {
@@ -24,8 +23,8 @@ export default class Inscribe extends Plugin {
 	async setupExtention() {
 		const getOptions = () => {
 			return {
-				delayMs: this.profile.delayMs,
-				splitStrategy: this.profile.splitStrategy,
+				delayMs: this.settings.profiles[DEFAULT_PROFILE].delayMs,
+				splitStrategy: this.settings.profiles[DEFAULT_PROFILE].splitStrategy,
 			};
 		};
 
@@ -50,8 +49,6 @@ export default class Inscribe extends Plugin {
 			DEFAULT_SETTINGS,
 			await this.loadData()
 		);
-
-		this.profile = this.settings.profiles[this.settings.profile];
 	}
 
 	async saveSettings() {
