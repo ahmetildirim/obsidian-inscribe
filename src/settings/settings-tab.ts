@@ -7,6 +7,41 @@ import { DEFAULT_PROFILE, newProfile, Profile } from "./settings";
 import { ProviderSettingsModal } from "./provider-modal";
 
 /* --------------------------------------------------------------------------
+ * Main Settings Tab
+ * ------------------------------------------------------------------------ */
+export default class InscribeSettingsTab extends PluginSettingTab {
+    private providersSection: ProvidersSection;
+    private profilesSection: ProfilesSection;
+    private pathMappingsSection: PathMappingsSection;
+
+    constructor(app: App, private plugin: Inscribe) {
+        super(app, plugin);
+    }
+
+    async display(): Promise<void> {
+        this.containerEl.empty();
+
+        // Providers Section
+        const providersContainer = document.createElement("div");
+        this.containerEl.appendChild(providersContainer);
+        this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
+        await this.providersSection.render();
+
+        // Profiles Section
+        const profilesContainer = document.createElement("div");
+        this.containerEl.appendChild(profilesContainer);
+        this.profilesSection = new ProfilesSection(profilesContainer, this.plugin);
+        await this.profilesSection.render();
+
+        // Path Mappings Section
+        const pathMappingsContainer = document.createElement("div");
+        this.containerEl.appendChild(pathMappingsContainer);
+        this.pathMappingsSection = new PathMappingsSection(pathMappingsContainer, this.plugin);
+        await this.pathMappingsSection.render();
+    }
+}
+
+/* --------------------------------------------------------------------------
  * Providers Section
  * ------------------------------------------------------------------------ */
 class ProvidersSection {
@@ -314,7 +349,8 @@ class PathMappingsSection {
         this.container.createEl("br");
 
         new Setting(this.container)
-            .setName("Add Path Profile Mapping")
+            .setName("Mappings")
+            .setHeading()
             .addButton((button: ButtonComponent) => {
                 button.setButtonText("Add Mapping").onClick(async () => {
                     this.plugin.settings.path_profile_mappings[""] = DEFAULT_PROFILE;
@@ -322,7 +358,6 @@ class PathMappingsSection {
                     await this.render();
                 });
             });
-
         Object.entries(this.plugin.settings.path_profile_mappings).forEach(
             ([path, profileName]) => {
                 new Setting(this.container)
@@ -362,40 +397,5 @@ class PathMappingsSection {
                     });
             }
         );
-    }
-}
-
-/* --------------------------------------------------------------------------
- * Main Settings Tab
- * ------------------------------------------------------------------------ */
-export default class InscribeSettingsTab extends PluginSettingTab {
-    private providersSection: ProvidersSection;
-    private profilesSection: ProfilesSection;
-    private pathMappingsSection: PathMappingsSection;
-
-    constructor(app: App, private plugin: Inscribe) {
-        super(app, plugin);
-    }
-
-    async display(): Promise<void> {
-        this.containerEl.empty();
-
-        // Providers Section
-        const providersContainer = document.createElement("div");
-        this.containerEl.appendChild(providersContainer);
-        this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
-        await this.providersSection.render();
-
-        // Profiles Section
-        const profilesContainer = document.createElement("div");
-        this.containerEl.appendChild(profilesContainer);
-        this.profilesSection = new ProfilesSection(profilesContainer, this.plugin);
-        await this.profilesSection.render();
-
-        // Path Mappings Section
-        const pathMappingsContainer = document.createElement("div");
-        this.containerEl.appendChild(pathMappingsContainer);
-        this.pathMappingsSection = new PathMappingsSection(pathMappingsContainer, this.plugin);
-        await this.pathMappingsSection.render();
     }
 }
