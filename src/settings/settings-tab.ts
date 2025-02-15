@@ -346,7 +346,7 @@ class PathMappingsSection {
         this.container.empty();
         this.container.createEl("h3", { text: "Dynamic Profile Mapping" });
         this.container.createEl("p", {
-            text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder. Leave the path empty to match all files."
+            text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder."
         });
         this.container.createEl("br");
 
@@ -361,7 +361,7 @@ class PathMappingsSection {
         const header = table.createEl("tr");
         header.createEl("th", { text: "Path" });
         header.createEl("th", { text: "Profile" });
-        header.createEl("th", { text: "Actions" });
+        header.createEl("th", { text: "" });
 
         // Add New Mapping Row
         const newRow = table.createEl("tr", { cls: "new-mapping-row" });
@@ -396,7 +396,7 @@ class PathMappingsSection {
         const actionCell = newRow.createEl("td");
         const addButton = new ExtraButtonComponent(actionCell)
             .setIcon("plus")
-            .setTooltip("Add mapping")
+            .setTooltip("Add profile mapping")
             .onClick(async () => {
                 this.plugin.settings.path_profile_mappings[pathInput] = selectedProfile;
                 await this.plugin.saveSettings();
