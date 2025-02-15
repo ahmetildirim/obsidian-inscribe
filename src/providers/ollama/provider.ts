@@ -55,7 +55,9 @@ export class OllamaProvider implements Provider {
 
     async updateModels(): Promise<string[]> {
         const response = await this.client.list();
-        return response.models.map((model: ModelResponse) => model.name);
+        this.settings.models = response.models.map((model: ModelResponse) => model.name);
+
+        return this.settings.models;
     }
 }
 

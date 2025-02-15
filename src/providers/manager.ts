@@ -1,9 +1,9 @@
 import { App, Editor } from "obsidian";
 import { InlineCompletionOptions, Suggestion } from "src/extension";
-import { buildProviders, Provider, Providers } from "src/providers";
+import { buildProviders, Provider, Providers, ProviderType } from "src/providers";
 import { Settings, CompletionOptions, DEFAULT_PROFILE, Profile } from "src/settings/settings";
 
-export class CompletionManager {
+export class ProviderManager {
     private app: App;
     private settings: Settings;
     private providers: Providers;
@@ -24,12 +24,10 @@ export class CompletionManager {
 
         const [provider, profile] = this.resolveProfile(filePath);
 
-        this.inlineSuggestionOptions.delayMs = profile.delayMs;
-        this.inlineSuggestionOptions.splitStrategy = profile.splitStrategy;
+        this.inlineSuggestionOptions = { delayMs: profile.delayMs, splitStrategy: profile.splitStrategy };
 
         yield* this.generateCompletion(activeEditor.editor, provider, profile.completionOptions);
     }
-
 
     getOptions(): InlineCompletionOptions {
         return this.inlineSuggestionOptions;
@@ -80,5 +78,9 @@ export class CompletionManager {
         });
 
         return matchedProfile;
+    }
+
+    async updateModels(provider: ProviderType): Promise<string[]> {
+        return this.providers[provider].updateModels();
     }
 } 

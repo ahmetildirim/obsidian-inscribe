@@ -213,18 +213,26 @@ class ProfilesSection {
         new Setting(this.profileContainer)
             .setName("Model")
             .setDesc("Select the model to use for completions")
-            .addDropdown((dropdown) => {
-                const models =
-                    profile.provider === ProviderType.OLLAMA
-                        ? this.plugin.settings.providers.ollama.models
-                        : this.plugin.settings.providers.openai.models;
-                models.forEach((model) => dropdown.addOption(model, model));
+            .addExtraButton((button) => {
+                button
+                    .setIcon("refresh-ccw")
+                    .setTooltip("Update model list")
+                    .onClick(async () => {
+                        this.plugin.providerManager.updateModels(profile.provider);
+                        await this.plugin.saveSettings();
+                        await this.renderProfileSettings(profile);
+                    });
+            })
+            .addDropdown(async (dropdown) => {
+                const models = this.plugin.settings.providers[profile.provider].models;
                 dropdown
+                    .addOptions(Object.fromEntries(models.map((model) => [model, model])))
                     .setValue(profile.completionOptions.model)
                     .onChange(async (value) => {
                         profile.completionOptions.model = value;
                         await this.plugin.saveSettings();
                     });
+
             });
 
         // Temperature Setting
