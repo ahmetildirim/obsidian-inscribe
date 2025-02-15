@@ -39,7 +39,7 @@ export function resolveProfile(settings: Settings, providers: Providers, filePat
  */
 export function resolveProfileFromPath(settings: Settings, filePath: string): string {
     // If no path mappings exist, return default profile
-    if (!settings.path_mappings || Object.keys(settings.path_mappings).length === 0) {
+    if (!settings.path_profile_mappings || Object.keys(settings.path_profile_mappings).length === 0) {
         return DEFAULT_PROFILE;
     }
 
@@ -50,7 +50,7 @@ export function resolveProfileFromPath(settings: Settings, filePath: string): st
     let longestMatch = '';
     let matchedProfile = DEFAULT_PROFILE;
 
-    Object.entries(settings.path_mappings).forEach(([path, profile]) => {
+    Object.entries(settings.path_profile_mappings).forEach(([path, profile]) => {
         const normalizedMappingPath = path.replace(/^\/+|\/+$/g, '');
 
         // Check if the file path starts with the mapping path

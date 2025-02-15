@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, TextAreaComponent, DropdownComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent } from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
@@ -280,36 +280,36 @@ export class InscribeSettingsTab extends PluginSettingTab {
     }
 
     private async renderPathMappings(): Promise<void> {
-        const { pathMappings } = this.sections;
-        pathMappings.empty();
+        const { pathMappings: pathProfileMappings } = this.sections;
+        pathProfileMappings.empty();
 
-        pathMappings.createEl("h3", { text: "Path Mappings" });
-        pathMappings.createEl("p", { text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder." });
+        pathProfileMappings.createEl("h3", { text: "Dynamic Profile Mapping" });
+        pathProfileMappings.createEl("p", { text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder." });
 
         // Add spacing
-        pathMappings.createEl("br");
+        pathProfileMappings.createEl("br");
 
         // Add button to create new mapping
-        new Setting(pathMappings)
+        new Setting(pathProfileMappings)
             .setHeading()
-            .setName("Add Path Mapping")
+            .setName("Add Path Profile Mapping")
             .addButton((button) => {
                 button
                     .setButtonText("Add")
                     .onClick(async () => {
                         // Add a new empty mapping
-                        this.plugin.settings.path_mappings[""] = DEFAULT_PROFILE;
+                        this.plugin.settings.path_profile_mappings[""] = DEFAULT_PROFILE;
                         await this.plugin.saveSettings();
                         await this.renderPathMappings();
                     });
             });
 
         // Add spacing
-        pathMappings.createEl("br");
+        pathProfileMappings.createEl("br");
 
         // Render existing mappings
-        Object.entries(this.plugin.settings.path_mappings).forEach(([path, profileName]) => {
-            new Setting(pathMappings)
+        Object.entries(this.plugin.settings.path_profile_mappings).forEach(([path, profileName]) => {
+            new Setting(pathProfileMappings)
                 .setName(path || "Root")
                 .addText((text) => {
                     text
@@ -317,8 +317,8 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         .setValue(path)
                         .onChange(async (value) => {
                             // Remove old mapping and add new one
-                            delete this.plugin.settings.path_mappings[path];
-                            this.plugin.settings.path_mappings[value] = profileName;
+                            delete this.plugin.settings.path_profile_mappings[path];
+                            this.plugin.settings.path_profile_mappings[value] = profileName;
                             await this.plugin.saveSettings();
                         });
                 })
@@ -330,7 +330,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
                     dropdown
                         .setValue(profileName)
                         .onChange(async (value) => {
-                            this.plugin.settings.path_mappings[path] = value;
+                            this.plugin.settings.path_profile_mappings[path] = value;
                             await this.plugin.saveSettings();
                         });
                 })
@@ -339,7 +339,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         .setIcon("trash")
                         .setTooltip("Delete mapping")
                         .onClick(async () => {
-                            delete this.plugin.settings.path_mappings[path];
+                            delete this.plugin.settings.path_profile_mappings[path];
                             await this.plugin.saveSettings();
                             await this.renderPathMappings();
                         });
