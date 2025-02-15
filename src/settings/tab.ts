@@ -284,7 +284,10 @@ export class InscribeSettingsTab extends PluginSettingTab {
         pathMappings.empty();
 
         pathMappings.createEl("h3", { text: "Path Mappings" });
-        pathMappings.createEl("p", { text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence." });
+        pathMappings.createEl("p", { text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder." });
+
+        // Add spacing
+        pathMappings.createEl("br");
 
         // Add button to create new mapping
         new Setting(pathMappings)
@@ -301,12 +304,15 @@ export class InscribeSettingsTab extends PluginSettingTab {
                     });
             });
 
+        // Add spacing
+        pathMappings.createEl("br");
+
         // Render existing mappings
         Object.entries(this.plugin.settings.path_mappings).forEach(([path, profileName]) => {
             new Setting(pathMappings)
                 .addText((text) => {
                     text
-                        .setPlaceholder("Path (e.g., Daily)")
+                        .setPlaceholder("Enter path (e.g., Daily/Work)")
                         .setValue(path)
                         .onChange(async (value) => {
                             // Remove old mapping and add new one

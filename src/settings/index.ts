@@ -72,6 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
     },
     path_mappings: {
         "/": DEFAULT_PROFILE,
+        "Daily": DEFAULT_PROFILE, // Example mapping for Daily notes
     },
 };
 
