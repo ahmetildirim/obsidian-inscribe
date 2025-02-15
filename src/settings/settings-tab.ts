@@ -6,7 +6,7 @@ import { ProviderType } from "src/providers";
 import { DEFAULT_PROFILE, newProfile, Profile } from "./settings";
 import { ProviderSettingsModal } from "./provider-modal";
 
-export class InscribeSettingsTab extends PluginSettingTab {
+export default class InscribeSettingsTab extends PluginSettingTab {
     private readonly sections: {
         providers: HTMLElement;
         profiles: HTMLElement;
@@ -284,18 +284,17 @@ export class InscribeSettingsTab extends PluginSettingTab {
         pathProfileMappings.empty();
 
         pathProfileMappings.createEl("h3", { text: "Dynamic Profile Mapping" });
-        pathProfileMappings.createEl("p", { text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder." });
+        pathProfileMappings.createEl("p", { text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder. Leave the path empty to match all files." });
 
         // Add spacing
         pathProfileMappings.createEl("br");
 
         // Add button to create new mapping
         new Setting(pathProfileMappings)
-            .setHeading()
             .setName("Add Path Profile Mapping")
             .addButton((button) => {
                 button
-                    .setButtonText("Add")
+                    .setButtonText("Add Mapping")
                     .onClick(async () => {
                         // Add a new empty mapping
                         this.plugin.settings.path_profile_mappings[""] = DEFAULT_PROFILE;
@@ -303,9 +302,6 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         await this.renderPathMappings();
                     });
             });
-
-        // Add spacing
-        pathProfileMappings.createEl("br");
 
         // Render existing mappings
         Object.entries(this.plugin.settings.path_profile_mappings).forEach(([path, profileName]) => {

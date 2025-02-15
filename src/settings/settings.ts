@@ -101,6 +101,3 @@ export function newProfile(profiles: Profiles): string {
 
     return id;
 }
-
-export * from "./settings-tab";
-

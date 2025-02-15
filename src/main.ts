@@ -1,9 +1,9 @@
 import { Plugin } from 'obsidian';
 import { InlineCompletionOptions, Suggestion, inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS, Profile, DEFAULT_PROFILE } from './settings/settings';
-import { InscribeSettingsTab } from "./settings/settings";
 import { buildProviders, Providers } from './providers';
 import { generateCompletion, resolveProfile } from './completion';
+import InscribeSettingsTab from './settings/settings-tab';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;

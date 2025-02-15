@@ -1,6 +1,5 @@
 import { App, Modal, Setting } from "obsidian";
 import { ProviderType } from "src/providers";
-import { Settings } from "./settings";
 import Inscribe from "src/main";
 
 export class ProviderSettingsModal extends Modal {
@@ -71,64 +70,6 @@ export class ProviderSettingsModal extends Modal {
                     text.inputEl.addClass('inscribe-modal-input');
                 });
         }
-
-        // Add custom styles
-        this.addStyles();
-    }
-
-    private addStyles() {
-        const style = document.createElement('style');
-        style.id = 'inscribe-modal-styles';
-        style.textContent = `
-            .inscribe-provider-modal {
-                max-width: 800px !important;
-                max-height: 80vh !important;
-                width: 60vw !important;
-                height: auto !important;
-                border-radius: 12px !important;
-            }
-
-            .inscribe-modal-container {
-                display: flex;
-                flex-direction: column;
-                height: 100%;
-                padding: 0;
-            }
-
-            .inscribe-modal-header {
-                padding: 24px 32px;
-                border-bottom: 1px solid var(--background-modifier-border);
-            }
-
-            .inscribe-modal-title {
-                margin: 0;
-                font-size: 1.5em;
-                font-weight: 600;
-                color: var(--text-normal);
-            }
-
-            .inscribe-modal-content {
-                padding: 24px 32px;
-                overflow-y: auto;
-            }
-
-            .inscribe-modal-setting {
-                padding: 1rem 0;
-                border: none;
-            }
-
-            .inscribe-modal-setting .setting-item-info {
-                padding: 0 1rem 0 0;
-            }
-
-            .inscribe-modal-input {
-                width: 100% !important;
-                padding: 8px 12px !important;
-                border-radius: 6px !important;
-                background: var(--background-modifier-form-field) !important;
-            }
-        `;
-        document.head.appendChild(style);
     }
 
     override onClose() {
