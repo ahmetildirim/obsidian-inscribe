@@ -11,6 +11,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
         providers: HTMLElement;
         profiles: HTMLElement;
         profile: HTMLElement;
+        pathMappings: HTMLElement;
     };
     private displayedProfileId: string = DEFAULT_PROFILE;
 
@@ -19,7 +20,8 @@ export class InscribeSettingsTab extends PluginSettingTab {
         this.sections = {
             providers: document.createElement('div'),
             profiles: document.createElement('div'),
-            profile: document.createElement('div')
+            profile: document.createElement('div'),
+            pathMappings: document.createElement('div')
         };
     }
 
@@ -35,6 +37,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
 
         await this.renderProviders();
         await this.renderProfiles();
+        await this.renderPathMappings();
     }
 
     private async renderProviders(): Promise<void> {
@@ -274,5 +277,66 @@ export class InscribeSettingsTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
             });
+    }
+
+    private async renderPathMappings(): Promise<void> {
+        const { pathMappings } = this.sections;
+        pathMappings.empty();
+
+        pathMappings.createEl("h3", { text: "Path Mappings" });
+        pathMappings.createEl("p", { text: "Configure which profile to use for specific paths. Paths are matched by prefix, with longer paths taking precedence." });
+
+        // Add button to create new mapping
+        new Setting(pathMappings)
+            .setHeading()
+            .setName("Add Path Mapping")
+            .addButton((button) => {
+                button
+                    .setButtonText("Add")
+                    .onClick(async () => {
+                        // Add a new empty mapping
+                        this.plugin.settings.path_mappings[""] = DEFAULT_PROFILE;
+                        await this.plugin.saveSettings();
+                        await this.renderPathMappings();
+                    });
+            });
+
+        // Render existing mappings
+        Object.entries(this.plugin.settings.path_mappings).forEach(([path, profileName]) => {
+            new Setting(pathMappings)
+                .addText((text) => {
+                    text
+                        .setPlaceholder("Path (e.g., Daily)")
+                        .setValue(path)
+                        .onChange(async (value) => {
+                            // Remove old mapping and add new one
+                            delete this.plugin.settings.path_mappings[path];
+                            this.plugin.settings.path_mappings[value] = profileName;
+                            await this.plugin.saveSettings();
+                        });
+                })
+                .addDropdown((dropdown) => {
+                    // Add all available profiles to the dropdown
+                    Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
+                        dropdown.addOption(id, profile.name);
+                    });
+                    dropdown
+                        .setValue(profileName)
+                        .onChange(async (value) => {
+                            this.plugin.settings.path_mappings[path] = value;
+                            await this.plugin.saveSettings();
+                        });
+                })
+                .addExtraButton((button) => {
+                    button
+                        .setIcon("trash")
+                        .setTooltip("Delete mapping")
+                        .onClick(async () => {
+                            delete this.plugin.settings.path_mappings[path];
+                            await this.plugin.saveSettings();
+                            await this.renderPathMappings();
+                        });
+                });
+        });
     }
 }

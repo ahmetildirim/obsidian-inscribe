@@ -1,7 +1,7 @@
 import { Editor } from "obsidian";
 import { Suggestion } from "src/extension";
 import { Provider, Providers } from "src/providers";
-import { CompletionOptions, DEFAULT_PROFILE, Settings } from "src/settings";
+import { CompletionOptions, DEFAULT_PROFILE, Profile, Settings } from "src/settings";
 
 export async function* generateCompletion(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
     await provider.abort();
@@ -24,9 +24,44 @@ export async function* generateCompletion(editor: Editor, provider: Provider, op
     }
 }
 
-export function resolveProfile(settings: Settings, providers: Providers): [Provider, CompletionOptions] {
-    const profile = settings.profiles[DEFAULT_PROFILE];
+export function resolveProfile(settings: Settings, providers: Providers, filePath: string): [Provider, Profile] {
+    const profileName = resolveProfileFromPath(settings, filePath);
+    const profile = settings.profiles[profileName];
     const provider = providers[profile.provider];
-    const options = profile.completionOptions;
-    return [provider, options];
+    return [provider, profile];
+}
+
+/**
+ * Resolves the profile name based on the file path
+ * @param settings Plugin settings containing path mappings and profiles
+ * @param filePath The path of the file relative to the vault root
+ * @returns The name of the profile to use
+ */
+export function resolveProfileFromPath(settings: Settings, filePath: string): string {
+    // If no path mappings exist, return default profile
+    if (!settings.path_mappings || Object.keys(settings.path_mappings).length === 0) {
+        return DEFAULT_PROFILE;
+    }
+
+    // Normalize the file path (remove leading/trailing slashes)
+    const normalizedPath = filePath.replace(/^\/+|\/+$/g, '');
+
+    // Find the longest matching path prefix
+    let longestMatch = '';
+    let matchedProfile = DEFAULT_PROFILE;
+
+    Object.entries(settings.path_mappings).forEach(([path, profile]) => {
+        const normalizedMappingPath = path.replace(/^\/+|\/+$/g, '');
+
+        // Check if the file path starts with the mapping path
+        if (normalizedPath.startsWith(normalizedMappingPath)) {
+            // If this is a longer match than our current longest, update it
+            if (normalizedMappingPath.length > longestMatch.length) {
+                longestMatch = normalizedMappingPath;
+                matchedProfile = profile;
+            }
+        }
+    });
+
+    return matchedProfile;
 }

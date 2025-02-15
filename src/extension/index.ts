@@ -51,10 +51,12 @@ export interface InlineCompletionConfig {
     /** (Optional) A static hotkey for accepting suggestions. */
     acceptanceHotkey?: string;
     /** A function that returns current options. */
-    getOptions: () => {
-        delayMs?: number;
-        splitStrategy?: SplitStrategy;
-    };
+    getOptions: () => InlineCompletionOptions;
+}
+
+export interface InlineCompletionOptions {
+    delayMs?: number;
+    splitStrategy?: SplitStrategy;
 }
 
 /** Internal state for the current suggestion session.

@@ -31,6 +31,8 @@ export interface Settings {
     },
     // profiles
     profiles: Profiles,
+    // path to profile mappings
+    path_mappings: Record<string, ProfileName>,
 }
 
 export const DEFAULT_PROFILE: ProfileName = "default";
@@ -67,6 +69,9 @@ export const DEFAULT_SETTINGS: Settings = {
                 temperature: 0.5,
             }
         },
+    },
+    path_mappings: {
+        "/": DEFAULT_PROFILE,
     },
 };
 

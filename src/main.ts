@@ -1,5 +1,5 @@
 import { Plugin } from 'obsidian';
-import { Suggestion, inlineSuggestions } from "./extension";
+import { InlineCompletionOptions, Suggestion, inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS, Profile, DEFAULT_PROFILE } from './settings';
 import { InscribeSettingsTab } from "./settings";
 import { buildProviders, Providers } from './providers';
@@ -8,6 +8,7 @@ import { generateCompletion, resolveProfile } from './completion';
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providers: Providers;
+	inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
 
 	async onload() {
 		await this.loadSettings();
@@ -22,10 +23,7 @@ export default class Inscribe extends Plugin {
 
 	async setupExtention() {
 		const getOptions = () => {
-			return {
-				delayMs: this.settings.profiles[DEFAULT_PROFILE].delayMs,
-				splitStrategy: this.settings.profiles[DEFAULT_PROFILE].splitStrategy,
-			};
+			return this.inlineSuggestionOptions;
 		};
 
 		const extension = inlineSuggestions({
@@ -40,7 +38,11 @@ export default class Inscribe extends Plugin {
 		if (!activeEditor) return;
 		if (!activeEditor.editor) return;
 
-		yield* generateCompletion(activeEditor.editor, ...resolveProfile(this.settings, this.providers));
+		const filePath = activeEditor.file?.path || '';
+		const [provider, profile] = resolveProfile(this.settings, this.providers, filePath);
+		this.inlineSuggestionOptions.delayMs = profile.delayMs;
+		this.inlineSuggestionOptions.splitStrategy = profile.splitStrategy;
+		yield* generateCompletion(activeEditor.editor, provider, profile.completionOptions);
 	}
 
 	async loadSettings() {
