@@ -77,7 +77,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export function newProfile(profiles: Profiles): string {
-    const id = Math.random().toString(36).substring(2, 15);
+    const id = Math.random().toString(36).substring(2, 6);
 
     // generate a new profile name
     let name = "New Profile";

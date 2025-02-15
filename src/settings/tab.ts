@@ -310,6 +310,7 @@ export class InscribeSettingsTab extends PluginSettingTab {
         // Render existing mappings
         Object.entries(this.plugin.settings.path_mappings).forEach(([path, profileName]) => {
             new Setting(pathMappings)
+                .setName(path || "Root")
                 .addText((text) => {
                     text
                         .setPlaceholder("Enter path (e.g., Daily/Work)")
