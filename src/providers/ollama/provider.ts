@@ -3,7 +3,7 @@ import { OllamaSettings } from "./settings";
 import { Provider } from "..";
 import { Editor } from "obsidian";
 import { preparePrompt } from "src/prompt/prompt";
-import { CompletionOptions } from "src/settings";
+import { CompletionOptions } from "src/settings/settings";
 
 export class OllamaProvider implements Provider {
     client: Ollama

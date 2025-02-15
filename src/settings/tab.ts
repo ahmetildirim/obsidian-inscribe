@@ -3,7 +3,7 @@ import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
-import { DEFAULT_PROFILE, newProfile, Profile } from "./index";
+import { DEFAULT_PROFILE, newProfile, Profile } from "./settings";
 import { ProviderSettingsModal } from "./provider-modal";
 
 export class InscribeSettingsTab extends PluginSettingTab {

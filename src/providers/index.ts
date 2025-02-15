@@ -1,4 +1,4 @@
-import { Settings } from "src/settings";
+import { Settings } from "src/settings/settings";
 import { OpenAIProvider } from "./openai";
 import { OllamaProvider } from "./ollama";
 

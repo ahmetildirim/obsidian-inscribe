@@ -1,7 +1,7 @@
 import { Editor } from "obsidian";
 import { Suggestion } from "src/extension";
 import { Provider, Providers } from "src/providers";
-import { CompletionOptions, DEFAULT_PROFILE, Profile, Settings } from "src/settings";
+import { CompletionOptions, DEFAULT_PROFILE, Profile, Settings } from "src/settings/settings";
 
 export async function* generateCompletion(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
     await provider.abort();

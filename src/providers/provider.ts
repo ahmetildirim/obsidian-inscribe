@@ -1,5 +1,5 @@
 import { Editor } from "obsidian";
-import { CompletionOptions } from "src/settings";
+import { CompletionOptions } from "src/settings/settings";
 
 // Completer interface for ai integrations
 export interface Provider {

@@ -1,6 +1,6 @@
 import { App, Modal, Setting } from "obsidian";
 import { ProviderType } from "src/providers";
-import { Settings } from ".";
+import { Settings } from "./settings";
 import Inscribe from "src/main";
 
 export class ProviderSettingsModal extends Modal {
