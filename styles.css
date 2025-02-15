@@ -6,3 +6,87 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+/* Path Mapping Styles */
+.mapping-input-section {
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.mapping-table th {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 2px solid var(--background-modifier-border);
+    font-weight: 600;
+}
+
+.mapping-table td {
+    padding: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.mapping-table tr:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* Style the default mapping */
+.default-mapping {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Make the actions column narrower */
+.mapping-table th:last-child,
+.mapping-table td:last-child {
+    width: 60px;
+    text-align: center;
+}
+
+/* Style the new mapping row inputs */
+.new-mapping-row .path-input {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+}
+
+.new-mapping-row .path-input:focus {
+    border-color: var(--interactive-accent);
+    outline: none;
+}
+
+/* Style dropdowns in the table */
+.mapping-table select {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+}
+
+.mapping-table select:hover {
+    border-color: var(--interactive-accent);
+}
+
+/* Style the Add button */
+.new-mapping-row button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.new-mapping-row button:hover {
+    background-color: var(--interactive-accent-hover);
+}

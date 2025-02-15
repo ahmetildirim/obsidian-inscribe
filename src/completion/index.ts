@@ -25,6 +25,7 @@ export async function* generateCompletion(editor: Editor, provider: Provider, op
 }
 
 export function resolveProfile(settings: Settings, providers: Providers, filePath: string): [Provider, Profile] {
+    console.log(filePath);
     const profileName = resolveProfileFromPath(settings, filePath);
     const profile = settings.profiles[profileName];
     const provider = providers[profile.provider];

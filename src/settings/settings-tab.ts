@@ -334,10 +334,12 @@ class ProfilesSection {
 class PathMappingsSection {
     private container: HTMLElement;
     private plugin: Inscribe;
+    private tableContainer: HTMLElement;
 
     constructor(container: HTMLElement, plugin: Inscribe) {
         this.container = container;
         this.plugin = plugin;
+        this.tableContainer = document.createElement("div");
     }
 
     async render(): Promise<void> {
@@ -348,54 +350,96 @@ class PathMappingsSection {
         });
         this.container.createEl("br");
 
-        new Setting(this.container)
-            .setName("Mappings")
-            .setHeading()
-            .addButton((button: ButtonComponent) => {
-                button.setButtonText("Add Mapping").onClick(async () => {
-                    this.plugin.settings.path_profile_mappings[""] = DEFAULT_PROFILE;
+        this.container.appendChild(this.tableContainer);
+        await this.renderMappingsTable();
+    }
+
+    private async renderMappingsTable(): Promise<void> {
+        this.tableContainer.empty();
+
+        const table = this.tableContainer.createEl("table", { cls: "mapping-table" });
+        const header = table.createEl("tr");
+        header.createEl("th", { text: "Path" });
+        header.createEl("th", { text: "Profile" });
+        header.createEl("th", { text: "Actions" });
+
+        // Add New Mapping Row
+        const newRow = table.createEl("tr", { cls: "new-mapping-row" });
+        let pathInput = "";
+        let selectedProfile = DEFAULT_PROFILE;
+
+        // Path input cell
+        const pathCell = newRow.createEl("td");
+        const pathInputEl = pathCell.createEl("input", {
+            type: "text",
+            placeholder: "Enter path (e.g., Daily/Work)",
+            cls: "path-input"
+        });
+        pathInputEl.addEventListener("input", (e) => {
+            pathInput = (e.target as HTMLInputElement).value;
+        });
+
+        // Profile dropdown cell
+        const profileCell = newRow.createEl("td");
+        const profileDropdown = new DropdownComponent(profileCell)
+            .setValue(selectedProfile);
+
+        Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
+            profileDropdown.addOption(id, profile.name);
+        });
+
+        profileDropdown.onChange((value) => {
+            selectedProfile = value;
+        });
+
+        // Add button cell
+        const actionCell = newRow.createEl("td");
+        const addButton = new ExtraButtonComponent(actionCell)
+            .setIcon("plus")
+            .setTooltip("Add mapping")
+            .onClick(async () => {
+                this.plugin.settings.path_profile_mappings[pathInput] = selectedProfile;
+                await this.plugin.saveSettings();
+                await this.render();
+            });
+
+        // Existing Mappings
+        Object.entries(this.plugin.settings.path_profile_mappings).forEach(([path, profileId]) => {
+            const row = table.createEl("tr");
+            row.createEl("td", { text: path || "Root" });
+
+            // Create profile cell with dropdown
+            const isDefaultMapping = path === "";
+            const profileCell = row.createEl("td");
+
+            // For other mappings, show editable dropdown
+            const profileDropdown = new DropdownComponent(profileCell)
+                .setDisabled(isDefaultMapping);
+
+            // Add profile options
+            Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
+                profileDropdown.addOption(id, profile.name);
+            });
+
+            profileDropdown.setValue(profileId);
+
+            // Handle profile change
+            profileDropdown.onChange(async (value) => {
+                this.plugin.settings.path_profile_mappings[path] = value;
+                await this.plugin.saveSettings();
+                await this.render();
+            });
+
+            const actionsCell = row.createEl("td");
+            new ExtraButtonComponent(actionsCell)
+                .setIcon("trash")
+                .setDisabled(isDefaultMapping)
+                .setTooltip("Delete mapping")
+                .onClick(async () => {
+                    delete this.plugin.settings.path_profile_mappings[path];
                     await this.plugin.saveSettings();
                     await this.render();
                 });
-            });
-        Object.entries(this.plugin.settings.path_profile_mappings).forEach(
-            ([path, profileName]) => {
-                new Setting(this.container)
-                    .setName(path || "Root")
-                    .addText((text) => {
-                        text
-                            .setPlaceholder("Enter path (e.g., Daily/Work)")
-                            .setValue(path)
-                            .onChange(async (value) => {
-                                delete this.plugin.settings.path_profile_mappings[path];
-                                this.plugin.settings.path_profile_mappings[value] = profileName;
-                                await this.plugin.saveSettings();
-                            });
-                    })
-                    .addDropdown((dropdown: DropdownComponent) => {
-                        Object.entries(this.plugin.settings.profiles).forEach(
-                            ([id, profile]) => {
-                                dropdown.addOption(id, profile.name);
-                            }
-                        );
-                        dropdown
-                            .setValue(profileName)
-                            .onChange(async (value) => {
-                                this.plugin.settings.path_profile_mappings[path] = value;
-                                await this.plugin.saveSettings();
-                            });
-                    })
-                    .addExtraButton((button) => {
-                        button
-                            .setIcon("trash")
-                            .setTooltip("Delete mapping")
-                            .onClick(async () => {
-                                delete this.plugin.settings.path_profile_mappings[path];
-                                await this.plugin.saveSettings();
-                                await this.render();
-                            });
-                    });
-            }
-        );
+        });
     }
 }
