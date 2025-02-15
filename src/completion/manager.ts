@@ -81,5 +81,4 @@ export class CompletionManager {
 
         return matchedProfile;
     }
-
 } 
