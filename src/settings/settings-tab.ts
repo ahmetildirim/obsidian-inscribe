@@ -4,7 +4,6 @@ import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
 import { DEFAULT_PROFILE, newProfile, Profile } from "./settings";
-import { ProviderSettingsModal } from "./provider-modal";
 
 /* --------------------------------------------------------------------------
  * Main Settings Tab
@@ -85,9 +84,7 @@ class ProvidersSection {
     }
 
     private openProviderModal(type: ProviderType): void {
-        new ProviderSettingsModal(this.app, this.plugin, type, () => {
-            this.render();
-        }).open();
+        console.log(type);
     }
 }
 
