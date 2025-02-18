@@ -1,9 +1,10 @@
-import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent } from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
 import { DEFAULT_PROFILE, newProfile, Profile } from "./settings";
+import { ProviderSettingsModal } from './provider-settings-modal';
 
 /* --------------------------------------------------------------------------
  * Main Settings Tab
@@ -49,6 +50,7 @@ class ProvidersSection {
     private app: App;
 
     constructor(container: HTMLElement, app: App, plugin: Inscribe) {
+        this.app = app;
         this.container = container;
         this.plugin = plugin;
     }
@@ -84,7 +86,7 @@ class ProvidersSection {
     }
 
     private openProviderModal(type: ProviderType): void {
-        console.log(type);
+        new ProviderSettingsModal(this.app, this.plugin, type).open();
     }
 }
 
@@ -375,14 +377,12 @@ class PathMappingsSection {
 
         // Path input cell
         const pathCell = newRow.createEl("td");
-        const pathInputEl = pathCell.createEl("input", {
-            type: "text",
-            placeholder: "Enter path (e.g., Daily/Work)",
-            cls: "path-input"
-        });
-        pathInputEl.addEventListener("input", (e) => {
-            pathInput = (e.target as HTMLInputElement).value;
-        });
+
+        new TextComponent(pathCell)
+            .setPlaceholder("Enter path (e.g., Daily/Work)")
+            .onChange((value) => {
+                pathInput = value;
+            });
 
         // Profile dropdown cell
         const profileCell = newRow.createEl("td");

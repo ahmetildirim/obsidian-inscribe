@@ -90,3 +90,8 @@ If your plugin does not need CSS, delete this file.
 .new-mapping-row button:hover {
     background-color: var(--interactive-accent-hover);
 }
+
+/* Style provider modal */
+.inscribe-provider-settings-modal {
+    width: 500px;
+}
