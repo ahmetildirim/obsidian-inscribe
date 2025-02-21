@@ -3,31 +3,26 @@ import { inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
 import { ProviderManager } from './providers/manager';
-
+import StatusBarItem from './statusbar/status-bar-item';
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerManager: ProviderManager;
-	statusBarItem: HTMLElement;
+	statusBarComponent: StatusBarItem;
 
 	async onload() {
 		await this.loadSettings();
 		await this.setupProviderManager();
 		await this.setupExtention();
-		this.addSettingTab(new InscribeSettingsTab(this.app, this));
-		this.setupStatusBarItem();
+		this.addSettingTab(new InscribeSettingsTab(this));
+		this.statusBarComponent = new StatusBarItem(this);
 		this.registerEvents();
 	}
 
-	setupStatusBarItem() {
-		this.statusBarItem = this.addStatusBarItem();
-		setIcon(this.statusBarItem, 'feather');
-		setTooltip(this.statusBarItem, `Profile: ${this.providerManager.getActiveProfile().name}`, { placement: 'top' });
-	}
-
 	registerEvents() {
+		// Update profile when a file is opened
 		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
 			this.providerManager.updateProfile(file.path);
-			setTooltip(this.statusBarItem, `Profile: ${this.providerManager.getActiveProfile().name}`, { placement: 'top' });
+			this.statusBarComponent.update();
 		}));
 	}
 

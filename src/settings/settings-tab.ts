@@ -14,8 +14,8 @@ export default class InscribeSettingsTab extends PluginSettingTab {
     private profilesSection: ProfilesSection;
     private pathMappingsSection: PathMappingsSection;
 
-    constructor(app: App, private plugin: Inscribe) {
-        super(app, plugin);
+    constructor(private plugin: Inscribe) {
+        super(plugin.app, plugin);
     }
 
     async display(): Promise<void> {

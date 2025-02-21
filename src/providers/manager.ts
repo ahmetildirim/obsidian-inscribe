@@ -47,16 +47,18 @@ export class ProviderManager {
 
     private async * generateCompletion(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
         await provider.abort();
+
         const cursor = editor.getCursor();
         const currentLine = editor.getLine(cursor.line);
+
         if (!currentLine.length) return;
+
         const lastChar = currentLine[cursor.ch - 1];
         if (lastChar !== " ") return;
 
         for await (const text of provider.generate(editor, options)) {
             yield { text };
         }
-
     }
 
     private resolveProfileFromPath(filePath: string): string {
