@@ -7,12 +7,14 @@ export class ProviderManager {
     private app: App;
     private settings: Settings;
     private providers: Providers;
+    private activeProfile: Profile;
     private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
 
     constructor(app: App, settings: Settings) {
         this.app = app;
         this.settings = settings;
         this.providers = buildProviders(settings);
+        this.activeProfile = settings.profiles[DEFAULT_PROFILE];
     }
 
     async * fetchSuggestions(): AsyncGenerator<Suggestion> {
@@ -20,13 +22,9 @@ export class ProviderManager {
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
-        const filePath = activeEditor.file?.path || '';
+        const provider = this.providers[this.activeProfile.provider];
 
-        const [provider, profile] = this.resolveProfile(filePath);
-
-        this.inlineSuggestionOptions = { delayMs: profile.delayMs, splitStrategy: profile.splitStrategy };
-
-        yield* this.generateCompletion(activeEditor.editor, provider, profile.completionOptions);
+        yield* this.generateCompletion(activeEditor.editor, provider, this.activeProfile.completionOptions);
     }
 
     getOptions(): InlineCompletionOptions {
@@ -35,6 +33,16 @@ export class ProviderManager {
 
     loadProviders() {
         this.providers = buildProviders(this.settings);
+    }
+
+    updateProfile(filePath: string) {
+        const profileName = this.resolveProfileFromPath(filePath);
+        this.activeProfile = this.settings.profiles[profileName];
+        this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
+    }
+
+    getActiveProfile(): Profile {
+        return this.activeProfile;
     }
 
     private async * generateCompletion(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
@@ -49,13 +57,6 @@ export class ProviderManager {
             yield { text };
         }
 
-    }
-
-    private resolveProfile(filePath: string): [Provider, Profile] {
-        const profileName = this.resolveProfileFromPath(filePath);
-        const profile = this.settings.profiles[profileName];
-        const provider = this.providers[profile.provider];
-        return [provider, profile];
     }
 
     private resolveProfileFromPath(filePath: string): string {

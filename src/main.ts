@@ -1,4 +1,4 @@
-import { Notice, Plugin, setIcon } from 'obsidian';
+import { Notice, Plugin, setIcon, TFile, setTooltip } from 'obsidian';
 import { inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
@@ -10,17 +10,22 @@ export default class Inscribe extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
-		await this.loadProviderManager();
+		await this.setupProviderManager();
 		await this.setupExtention();
 		this.addSettingTab(new InscribeSettingsTab(this.app, this));
 
 		// Add status bar item
-		const statusBarItemEl = this.addStatusBarItem();
-		const iconEl = statusBarItemEl.createEl('span', { cls: 'inscribe-status' });
-		setIcon(iconEl, 'feather');
+		const statusBarIcon = this.addStatusBarItem();
+		setIcon(statusBarIcon, 'feather');
+		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
+			this.providerManager.updateProfile(file.path);
+			setTooltip(
+				statusBarIcon, `Active Profile: ${this.providerManager.getActiveProfile().name}`,
+				{ placement: 'top' });
+		}));
 	}
 
-	async loadProviderManager() {
+	async setupProviderManager() {
 		this.providerManager = new ProviderManager(this.app, this.settings);
 	}
 
