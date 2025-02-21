@@ -7,21 +7,27 @@ import { ProviderManager } from './providers/manager';
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerManager: ProviderManager;
+	statusBarItem: HTMLElement;
 
 	async onload() {
 		await this.loadSettings();
 		await this.setupProviderManager();
 		await this.setupExtention();
 		this.addSettingTab(new InscribeSettingsTab(this.app, this));
+		this.setupStatusBarItem();
+		this.registerEvents();
+	}
 
-		// Add status bar item
-		const statusBarIcon = this.addStatusBarItem();
-		setIcon(statusBarIcon, 'feather');
+	setupStatusBarItem() {
+		this.statusBarItem = this.addStatusBarItem();
+		setIcon(this.statusBarItem, 'feather');
+		setTooltip(this.statusBarItem, `Profile: ${this.providerManager.getActiveProfile().name}`, { placement: 'top' });
+	}
+
+	registerEvents() {
 		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
 			this.providerManager.updateProfile(file.path);
-			setTooltip(
-				statusBarIcon, `Active Profile: ${this.providerManager.getActiveProfile().name}`,
-				{ placement: 'top' });
+			setTooltip(this.statusBarItem, `Profile: ${this.providerManager.getActiveProfile().name}`, { placement: 'top' });
 		}));
 	}
 
