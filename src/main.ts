@@ -14,8 +14,12 @@ export default class Inscribe extends Plugin {
 		await this.setupProviderManager();
 		await this.setupExtention();
 		this.addSettingTab(new InscribeSettingsTab(this));
-		this.statusBarComponent = new StatusBarItem(this);
+		this.setupStatusBar();
 		this.registerEvents();
+	}
+
+	setupStatusBar() {
+		this.statusBarComponent = new StatusBarItem(this);
 	}
 
 	registerEvents() {
