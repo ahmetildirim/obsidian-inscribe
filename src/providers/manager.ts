@@ -1,7 +1,9 @@
 import { App, Editor } from "obsidian";
 import { InlineCompletionOptions, Suggestion } from "src/extension";
+import Inscribe from "src/main";
 import { buildProviders, Provider, Providers, ProviderType } from "src/providers";
 import { Settings, CompletionOptions, DEFAULT_PROFILE, Profile } from "src/settings/settings";
+import StatusBarItem from "src/statusbar/status-bar-item";
 
 export class ProviderManager {
     private app: App;
@@ -9,12 +11,14 @@ export class ProviderManager {
     private providers: Providers;
     private activeProfile: Profile;
     private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
+    private statusBarComponent: StatusBarItem;
 
-    constructor(app: App, settings: Settings) {
-        this.app = app;
-        this.settings = settings;
-        this.providers = buildProviders(settings);
-        this.activeProfile = settings.profiles[DEFAULT_PROFILE];
+    constructor(private plugin: Inscribe) {
+        this.app = this.plugin.app;
+        this.settings = this.plugin.settings;
+        this.providers = buildProviders(this.settings);
+        this.activeProfile = this.settings.profiles[this.resolveProfileFromPath(this.getActiveFilePath())];
+        this.statusBarComponent = new StatusBarItem(this.plugin, this.activeProfile.name);
     }
 
     async * fetchSuggestions(): AsyncGenerator<Suggestion> {
@@ -36,9 +40,10 @@ export class ProviderManager {
     }
 
     updateProfile(filePath: string) {
-        const profileName = this.resolveProfileFromPath(filePath);
-        this.activeProfile = this.settings.profiles[profileName];
+        const profileId = this.resolveProfileFromPath(filePath);
+        this.activeProfile = this.settings.profiles[profileId];
         this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
+        this.statusBarComponent.update(this.activeProfile.name);
     }
 
     getActiveProfile(): Profile {
@@ -85,5 +90,12 @@ export class ProviderManager {
 
     async updateModels(provider: ProviderType): Promise<string[]> {
         return this.providers[provider].updateModels();
+    }
+
+    private getActiveFilePath(): string {
+        const activeEditor = this.app.workspace.activeEditor;
+        if (!activeEditor) return "";
+        if (!activeEditor.file) return "";
+        return activeEditor.file.path;
     }
 } 

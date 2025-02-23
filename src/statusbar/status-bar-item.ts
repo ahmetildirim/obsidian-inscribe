@@ -5,14 +5,14 @@ export default class StatusBarItem {
     plugin: Inscribe;
     statusBarItem: HTMLElement;
 
-    constructor(plugin: Inscribe) {
+    constructor(plugin: Inscribe, profile: string) {
         this.plugin = plugin;
         this.statusBarItem = this.plugin.addStatusBarItem();
         setIcon(this.statusBarItem, 'feather');
-        setTooltip(this.statusBarItem, `Profile: ${this.plugin.providerManager.getActiveProfile().name}`, { placement: 'top' });
+        this.update(profile);
     }
 
-    update() {
-        setTooltip(this.statusBarItem, `Profile: ${this.plugin.providerManager.getActiveProfile().name}`, { placement: 'top' });
+    update(profile: string) {
+        setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
     }
 } 

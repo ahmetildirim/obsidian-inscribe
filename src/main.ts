@@ -4,34 +4,28 @@ import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
 import { ProviderManager } from './providers/manager';
 import StatusBarItem from './statusbar/status-bar-item';
+
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerManager: ProviderManager;
-	statusBarComponent: StatusBarItem;
 
 	async onload() {
 		await this.loadSettings();
 		await this.setupProviderManager();
 		await this.setupExtention();
 		this.addSettingTab(new InscribeSettingsTab(this));
-		this.setupStatusBar();
 		this.registerEvents();
-	}
-
-	setupStatusBar() {
-		this.statusBarComponent = new StatusBarItem(this);
 	}
 
 	registerEvents() {
 		// Update profile when a file is opened
 		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
 			this.providerManager.updateProfile(file.path);
-			this.statusBarComponent.update();
 		}));
 	}
 
 	async setupProviderManager() {
-		this.providerManager = new ProviderManager(this.app, this.settings);
+		this.providerManager = new ProviderManager(this)
 	}
 
 	async setupExtention() {
