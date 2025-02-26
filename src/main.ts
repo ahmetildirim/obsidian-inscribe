@@ -2,17 +2,18 @@ import { Notice, Plugin, setIcon, TFile, setTooltip } from 'obsidian';
 import { inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
-import { ProviderManager } from './providers/manager';
-import StatusBarItem from './statusbar/status-bar-item';
+import { ProfileManager, ProviderManager } from './providers/manager';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerManager: ProviderManager;
+	profileManager: ProfileManager;
+
 
 	async onload() {
 		await this.loadSettings();
-		await this.setupProviderManager();
-		await this.setupExtention();
+		this.profileManager = new ProfileManager(this);
+		this.providerManager = new ProviderManager(this, this.profileManager); await this.setupExtension();
 		this.addSettingTab(new InscribeSettingsTab(this));
 		this.registerEvents();
 	}
@@ -20,18 +21,14 @@ export default class Inscribe extends Plugin {
 	registerEvents() {
 		// Update profile when a file is opened
 		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
-			this.providerManager.updateProfile(file.path);
+			this.profileManager.updateProfile(file.path);
 		}));
 	}
 
-	async setupProviderManager() {
-		this.providerManager = new ProviderManager(this)
-	}
-
-	async setupExtention() {
+	async setupExtension() {
 		const extension = inlineSuggestions({
 			fetchFunc: () => this.providerManager.fetchSuggestions(),
-			getOptions: () => this.providerManager.getOptions()
+			getOptions: () => this.profileManager.getOptions()
 		});
 		this.registerEditorExtension(extension);
 	}

@@ -2,23 +2,18 @@ import { App, Editor } from "obsidian";
 import { InlineCompletionOptions, Suggestion } from "src/extension";
 import Inscribe from "src/main";
 import { buildProviders, Provider, Providers, ProviderType } from "src/providers";
-import { Settings, CompletionOptions, DEFAULT_PROFILE, Profile } from "src/settings/settings";
+import { Settings, CompletionOptions, DEFAULT_PROFILE, Profile, Profiles } from "src/settings/settings";
 import StatusBarItem from "src/statusbar/status-bar-item";
 
 export class ProviderManager {
     private app: App;
     private settings: Settings;
     private providers: Providers;
-    private activeProfile: Profile;
-    private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
-    private statusBarComponent: StatusBarItem;
 
-    constructor(private plugin: Inscribe) {
+    constructor(private plugin: Inscribe, private profileManager: ProfileManager) {
         this.app = this.plugin.app;
         this.settings = this.plugin.settings;
         this.providers = buildProviders(this.settings);
-        this.activeProfile = this.settings.profiles[this.resolveProfileFromPath(this.getActiveFilePath())];
-        this.statusBarComponent = new StatusBarItem(this.plugin, this.activeProfile.name);
     }
 
     async * fetchSuggestions(): AsyncGenerator<Suggestion> {
@@ -26,28 +21,14 @@ export class ProviderManager {
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
-        const provider = this.providers[this.activeProfile.provider];
+        const provider = this.providers[this.profileManager.getActiveProfile().provider];
+        const options = this.profileManager.getActiveProfile().completionOptions;
 
-        yield* this.generateCompletion(activeEditor.editor, provider, this.activeProfile.completionOptions);
-    }
-
-    getOptions(): InlineCompletionOptions {
-        return this.inlineSuggestionOptions;
+        yield* this.generateCompletion(activeEditor.editor, provider, options);
     }
 
     loadProviders() {
         this.providers = buildProviders(this.settings);
-    }
-
-    updateProfile(filePath: string) {
-        const profileId = this.resolveProfileFromPath(filePath);
-        this.activeProfile = this.settings.profiles[profileId];
-        this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
-        this.statusBarComponent.update(this.activeProfile.name);
-    }
-
-    getActiveProfile(): Profile {
-        return this.activeProfile;
     }
 
     private async * generateCompletion(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
@@ -64,6 +45,47 @@ export class ProviderManager {
         for await (const text of provider.generate(editor, options)) {
             yield { text };
         }
+    }
+
+    async updateModels(provider: ProviderType): Promise<string[]> {
+        return this.providers[provider].updateModels();
+    }
+}
+
+export class ProfileManager {
+    private activeProfile: Profile;
+    private app: App;
+    private settings: Settings;
+    private statusBarComponent: StatusBarItem;
+    private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
+
+    constructor(private plugin: Inscribe) {
+        this.app = this.plugin.app;
+        this.settings = this.plugin.settings;
+        this.activeProfile = this.settings.profiles[this.resolveProfileFromPath(this.getActiveFilePath())];
+        this.statusBarComponent = new StatusBarItem(this.plugin, this.activeProfile.name);
+    }
+
+    updateProfile(filePath: string) {
+        const profileId = this.resolveProfileFromPath(filePath);
+        this.activeProfile = this.settings.profiles[profileId];
+        this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
+        this.statusBarComponent.update(this.activeProfile.name);
+    }
+
+    getActiveProfile(): Profile {
+        return this.activeProfile;
+    }
+
+    getOptions(): InlineCompletionOptions {
+        return this.inlineSuggestionOptions;
+    }
+
+    private getActiveFilePath(): string {
+        const activeEditor = this.app.workspace.activeEditor;
+        if (!activeEditor) return "";
+        if (!activeEditor.file) return "";
+        return activeEditor.file.path;
     }
 
     private resolveProfileFromPath(filePath: string): string {
@@ -87,15 +109,4 @@ export class ProviderManager {
 
         return matchedProfile;
     }
-
-    async updateModels(provider: ProviderType): Promise<string[]> {
-        return this.providers[provider].updateModels();
-    }
-
-    private getActiveFilePath(): string {
-        const activeEditor = this.app.workspace.activeEditor;
-        if (!activeEditor) return "";
-        if (!activeEditor.file) return "";
-        return activeEditor.file.path;
-    }
-} 
+}
