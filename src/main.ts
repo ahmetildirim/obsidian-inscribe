@@ -2,19 +2,22 @@ import { Notice, Plugin, setIcon, TFile, setTooltip } from 'obsidian';
 import { inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
-import { ProfileManager, ProviderManager } from './providers/manager';
+import { ProviderManager } from './providers/manager';
+import { ProfileManager } from './profile/manager';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerManager: ProviderManager;
 	profileManager: ProfileManager;
 
-
 	async onload() {
 		await this.loadSettings();
+
 		this.profileManager = new ProfileManager(this);
-		this.providerManager = new ProviderManager(this, this.profileManager); await this.setupExtension();
+		this.providerManager = new ProviderManager(this, this.profileManager);
+
 		this.addSettingTab(new InscribeSettingsTab(this));
+		await this.setupExtension();
 		this.registerEvents();
 	}
 
