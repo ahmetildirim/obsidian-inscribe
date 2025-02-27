@@ -32,7 +32,10 @@ export interface Settings {
     // profiles
     profiles: Profiles,
     // path to profile mappings
-    path_profile_mappings: Record<string, string>,
+    path_profile_mappings: Record<string, {
+        profile: string,
+        enabled: boolean,
+    }>,
 }
 
 export const DEFAULT_PROFILE: ProfileName = "default";
@@ -71,7 +74,10 @@ export const DEFAULT_SETTINGS: Settings = {
         },
     },
     path_profile_mappings: {
-        "/": DEFAULT_PROFILE,
+        "/": {
+            profile: DEFAULT_PROFILE,
+            enabled: true,
+        },
     },
 };
 

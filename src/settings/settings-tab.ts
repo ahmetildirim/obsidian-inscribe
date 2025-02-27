@@ -403,13 +403,16 @@ class PathMappingsSection {
             .setIcon("plus")
             .setTooltip("Add profile mapping")
             .onClick(async () => {
-                this.plugin.settings.path_profile_mappings[pathInput] = selectedProfile;
+                this.plugin.settings.path_profile_mappings[pathInput] = {
+                    profile: selectedProfile,
+                    enabled: true,
+                };
                 await this.plugin.saveSettings();
                 await this.render();
             });
 
         // Existing Mappings
-        Object.entries(this.plugin.settings.path_profile_mappings).forEach(([path, profileId]) => {
+        Object.entries(this.plugin.settings.path_profile_mappings).forEach(([path, mapping]) => {
             const row = table.createEl("tr");
             row.createEl("td", { text: path || "Root" });
 
@@ -426,11 +429,14 @@ class PathMappingsSection {
                 profileDropdown.addOption(id, profile.name);
             });
 
-            profileDropdown.setValue(profileId);
+            profileDropdown.setValue(mapping.profile);
 
             // Handle profile change
             profileDropdown.onChange(async (value) => {
-                this.plugin.settings.path_profile_mappings[path] = value;
+                this.plugin.settings.path_profile_mappings[path] = {
+                    profile: value,
+                    enabled: mapping.enabled,
+                };
                 await this.plugin.saveSettings();
                 await this.render();
             });
