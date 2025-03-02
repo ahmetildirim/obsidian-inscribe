@@ -49,12 +49,12 @@ export class ProfileManager {
         let longestMatch = '';
         let matchedProfile = DEFAULT_PROFILE;
 
-        Object.entries(this.settings.path_profile_mappings).forEach(([path, profile]) => {
+        Object.entries(this.settings.path_profile_mappings).forEach(([path, mapping]) => {
             const normalizedMappingPath = path.replace(/^\/+|\/+$/g, '');
             if (normalizedPath.startsWith(normalizedMappingPath)) {
                 if (normalizedMappingPath.length > longestMatch.length) {
                     longestMatch = normalizedMappingPath;
-                    matchedProfile = profile;
+                    matchedProfile = mapping.profile;
                 }
             }
         });

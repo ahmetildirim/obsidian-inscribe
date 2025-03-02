@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent, ToggleComponent } from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
@@ -369,6 +369,7 @@ class PathMappingsSection {
         header.createEl("th", { text: "Path" });
         header.createEl("th", { text: "Profile" });
         header.createEl("th", { text: "" });
+        header.createEl("th", { text: "" });
 
         // Add New Mapping Row
         const newRow = table.createEl("tr", { cls: "new-mapping-row" });
@@ -398,8 +399,9 @@ class PathMappingsSection {
         });
 
         // Add button cell
+        newRow.createEl("td");
         const actionCell = newRow.createEl("td");
-        const addButton = new ExtraButtonComponent(actionCell)
+        new ExtraButtonComponent(actionCell)
             .setIcon("plus")
             .setTooltip("Add profile mapping")
             .onClick(async () => {
@@ -438,11 +440,10 @@ class PathMappingsSection {
                     enabled: mapping.enabled,
                 };
                 await this.plugin.saveSettings();
-                await this.render();
             });
 
-            const actionsCell = row.createEl("td");
-            new ExtraButtonComponent(actionsCell)
+            const deleteCell = row.createEl("td");
+            new ExtraButtonComponent(deleteCell)
                 .setIcon("trash")
                 .setDisabled(isDefaultMapping)
                 .setTooltip("Delete mapping")
@@ -450,6 +451,16 @@ class PathMappingsSection {
                     delete this.plugin.settings.path_profile_mappings[path];
                     await this.plugin.saveSettings();
                     await this.render();
+                });
+
+            // Add enabled checkbox cell
+            const enabledCell = row.createEl("td");
+            new ToggleComponent(enabledCell)
+                .setTooltip("Enable/disable mapping")
+                .setValue(mapping.enabled)
+                .onChange(async (value: boolean) => {
+                    this.plugin.settings.path_profile_mappings[path].enabled = value;
+                    await this.plugin.saveSettings();
                 });
         });
     }
