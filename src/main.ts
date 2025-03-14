@@ -3,7 +3,7 @@ import { inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
 import { ProviderFactory } from './providers/factory';
-import { ProfileTracker } from './profile/manager';
+import { ProfileTracker } from './profile/tracker';
 import { CompletionEngine } from './completion/engine';
 
 export default class Inscribe extends Plugin {

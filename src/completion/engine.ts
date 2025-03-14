@@ -1,5 +1,5 @@
 import { App, Editor } from "obsidian";
-import { ProfileTracker } from "src/profile/manager";
+import { ProfileTracker } from "src/profile/tracker";
 import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
 import { CompletionOptions } from "src/settings/settings";
