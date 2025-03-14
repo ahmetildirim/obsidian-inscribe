@@ -4,7 +4,7 @@ import Inscribe from "src/main";
 import { DEFAULT_PROFILE, Profile, Settings } from "src/settings/settings";
 import StatusBarItem from "src/statusbar/status-bar-item";
 
-export class ProfileManager {
+export class ProfileTracker {
     private activeProfile: Profile;
     private app: App;
     private settings: Settings;

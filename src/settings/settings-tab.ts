@@ -217,7 +217,7 @@ class ProfilesSection {
                     .setIcon("refresh-ccw")
                     .setTooltip("Update model list")
                     .onClick(async () => {
-                        this.plugin.providerManager.updateModels(profile.provider);
+                        this.plugin.providerFactory.updateModels(profile.provider);
                         await this.plugin.saveSettings();
                         await this.renderProfileSettings(profile);
                     });
