@@ -33,6 +33,14 @@ export class ProfileManager {
         return this.inlineSuggestionOptions;
     }
 
+    notifyGenerationStarted(): void {
+        this.statusBarComponent.startGenerating();
+    }
+
+    notifyGenerationEnded(): void {
+        this.statusBarComponent.stopGenerating(this.activeProfile.name);
+    }
+
     private getActiveFilePath(): string {
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor) return "";

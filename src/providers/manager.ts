@@ -24,7 +24,11 @@ export class ProviderManager {
         const provider = this.providers[this.profileManager.getActiveProfile().provider];
         const options = this.profileManager.getActiveProfile().completionOptions;
 
+        // Signal generation start
+        this.profileManager.notifyGenerationStarted();
         yield* this.generateCompletion(activeEditor.editor, provider, options);
+        // Signal generation end, regardless of success or failure
+        this.profileManager.notifyGenerationEnded();
     }
 
     loadProviders() {
