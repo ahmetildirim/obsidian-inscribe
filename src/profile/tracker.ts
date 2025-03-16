@@ -2,27 +2,26 @@ import { App } from "obsidian";
 import { InlineCompletionOptions } from "src/extension";
 import Inscribe from "src/main";
 import { DEFAULT_PROFILE, Profile, Settings } from "src/settings/settings";
-import StatusBarItem from "src/statusbar/status-bar-item";
 
+// ProfileTracker class is responsible for tracking the active profile based on the current file path.
 export class ProfileTracker {
+    private plugin: Inscribe;
     private activeProfile: Profile;
     private app: App;
     private settings: Settings;
-    private statusBarComponent: StatusBarItem;
     private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
+    private profileChangeCallbacks: ((profile: Profile) => void)[] = [];
 
-    constructor(private plugin: Inscribe) {
+    constructor(plugin: Inscribe) {
+        this.plugin = plugin;
         this.app = this.plugin.app;
         this.settings = this.plugin.settings;
         this.activeProfile = this.settings.profiles[this.resolveProfileFromPath(this.getActiveFilePath())];
-        this.statusBarComponent = new StatusBarItem(this.plugin, this.activeProfile.name);
-    }
 
-    updateProfile(filePath: string) {
-        const profileId = this.resolveProfileFromPath(filePath);
-        this.activeProfile = this.settings.profiles[profileId];
-        this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
-        this.statusBarComponent.update(this.activeProfile.name);
+        this.app.workspace.on('file-open', (file) => {
+            if (!file) return;
+            this.update(file.path);
+        });
     }
 
     getActiveProfile(): Profile {
@@ -33,12 +32,15 @@ export class ProfileTracker {
         return this.inlineSuggestionOptions;
     }
 
-    notifyGenerationStarted(): void {
-        this.statusBarComponent.startGenerating();
+    onProfileChange(callback: (profile: Profile) => void) {
+        this.profileChangeCallbacks.push(callback);
     }
 
-    notifyGenerationEnded(): void {
-        this.statusBarComponent.stopGenerating(this.activeProfile.name);
+    private update(filePath: string) {
+        const profileId = this.resolveProfileFromPath(filePath);
+        this.activeProfile = this.settings.profiles[profileId];
+        this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
+        this.profileChangeCallbacks.forEach(cb => cb(this.activeProfile));
     }
 
     private getActiveFilePath(): string {
@@ -68,5 +70,9 @@ export class ProfileTracker {
         });
 
         return matchedProfile;
+    }
+
+    onunload() {
+        this.app.workspace.off('file-open', this.update);
     }
 }

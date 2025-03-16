@@ -1,17 +1,22 @@
 import { setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
+import { ProfileTracker } from 'src/profile/tracker';
 
 export default class StatusBarItem {
     plugin: Inscribe;
     statusBarItem: HTMLElement;
+
+    private profileTracker: ProfileTracker;
+
     private isGenerating: boolean = false;
     private spinnerEl: HTMLElement | null = null;
 
-    constructor(plugin: Inscribe, profile: string) {
+    constructor(plugin: Inscribe, profileTracker: ProfileTracker) {
         this.plugin = plugin;
         this.statusBarItem = this.plugin.addStatusBarItem();
+        this.profileTracker = profileTracker;
         setIcon(this.statusBarItem, 'feather');
-        this.update(profile);
+        this.update(this.profileTracker.getActiveProfile().name);
 
         // Add CSS for smooth animation
         const style = document.createElement('style');
@@ -30,6 +35,10 @@ export default class StatusBarItem {
             }
         `;
         document.head.appendChild(style);
+
+        this.profileTracker.onProfileChange((profile) => {
+            this.update(profile.name);
+        });
     }
 
     update(profile: string) {

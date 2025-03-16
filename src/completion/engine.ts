@@ -4,12 +4,21 @@ import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
 import { CompletionOptions } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
+
 export class CompletionEngine {
+    private app: App;
+    private profileTracker: ProfileTracker;
+    private providerFactory: ProviderFactory;
+
     constructor(
-        private readonly app: App,
-        private readonly profileTracker: ProfileTracker,
-        private readonly providerFactory: ProviderFactory,
-    ) { }
+        app: App,
+        profileTracker: ProfileTracker,
+        providerFactory: ProviderFactory,
+    ) {
+        this.app = app;
+        this.profileTracker = profileTracker;
+        this.providerFactory = providerFactory;
+    }
 
     async *fetchCompletion(): AsyncGenerator<Suggestion> {
         const activeEditor = this.app.workspace.activeEditor;
@@ -20,9 +29,7 @@ export class CompletionEngine {
         const options = this.profileTracker.getActiveProfile().completionOptions;
 
         // Signal generation start
-        this.profileTracker.notifyGenerationStarted();
         yield* this.complete(activeEditor.editor, provider, options);
-        this.profileTracker.notifyGenerationEnded();
     }
 
     private async *complete(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {

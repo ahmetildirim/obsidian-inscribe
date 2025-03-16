@@ -5,12 +5,15 @@ import InscribeSettingsTab from './settings/settings-tab';
 import { ProviderFactory } from './providers/factory';
 import { ProfileTracker } from './profile/tracker';
 import { CompletionEngine } from './completion/engine';
+import StatusBarItem from './statusbar/status-bar-item';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerFactory: ProviderFactory;
-	profileTracker: ProfileTracker;
-	completionEngine: CompletionEngine;
+
+	private profileTracker: ProfileTracker;
+	private completionEngine: CompletionEngine;
+	private statusBarItem: StatusBarItem;
 
 	async onload() {
 		await this.loadSettings();
@@ -18,17 +21,14 @@ export default class Inscribe extends Plugin {
 		this.profileTracker = new ProfileTracker(this);
 		this.providerFactory = new ProviderFactory(this);
 		this.completionEngine = new CompletionEngine(this.app, this.profileTracker, this.providerFactory);
+		this.statusBarItem = new StatusBarItem(this, this.profileTracker);
 
 		this.addSettingTab(new InscribeSettingsTab(this));
 		await this.setupExtension();
-		this.registerEvents();
 	}
 
-	registerEvents() {
-		// Update profile when a file is opened
-		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
-			this.profileTracker.updateProfile(file.path);
-		}));
+	async onunload() {
+		this.profileTracker.onunload();
 	}
 
 	async setupExtension() {
