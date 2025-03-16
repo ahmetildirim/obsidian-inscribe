@@ -1,36 +1,46 @@
-import { setIcon, setTooltip } from 'obsidian';
+import { Menu, setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
 import { ProfileTracker } from 'src/profile/tracker';
 import { CompletionEngine } from 'src/completion/engine';
 
 export default class StatusBarItem {
     private plugin: Inscribe;
-    private statusBarItem: HTMLElement;
+    private item: HTMLElement;
 
     private profileTracker: ProfileTracker;
     private completionEngine: CompletionEngine;
 
-    private isGenerating: boolean = false;
-    private spinnerEl: HTMLElement | null = null;
-
     constructor(plugin: Inscribe, profileTracker: ProfileTracker, completionEngine: CompletionEngine) {
         this.plugin = plugin;
-        this.statusBarItem = this.plugin.addStatusBarItem();
         this.profileTracker = profileTracker;
         this.completionEngine = completionEngine;
 
         this.profileTracker.onProfileChange(this.handleProfileChange.bind(this));
         this.completionEngine.onCompletionStatusChange(this.handleCompletionStatusChange.bind(this));
 
-        setIcon(this.statusBarItem, 'feather');
+        this.item = this.plugin.addStatusBarItem();
+        setIcon(this.item, 'feather');
+        this.item.addClasses(['status-bar-item-icon', `mod-clickable`]);
+
         this.updateProfile(this.profileTracker.getActiveProfile().name);
+    }
+
+    private showContextMenu(event: MouseEvent): void {
+        const menu = new Menu();
+
+        menu.addItem((item) => {
+            item.setTitle("Item");
+        });
+
+        menu.showAtMouseEvent(event);
     }
 
     private handleCompletionStatusChange(isGenerating: boolean): void {
         if (isGenerating) {
-            this.startGenerating();
+            this.item.addClass('active');
+            setTooltip(this.item, 'Generating...', { placement: 'top' });
         } else {
-            this.stopGenerating();
+            this.item.removeClass('active');
             this.updateProfile(this.profileTracker.getActiveProfile().name);
         }
     }
@@ -40,41 +50,6 @@ export default class StatusBarItem {
     }
 
     private updateProfile(profile: string): void {
-        if (!this.isGenerating) {
-            setIcon(this.statusBarItem, 'feather');
-        }
-        setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
-    }
-
-    private startGenerating() {
-        this.isGenerating = true;
-
-        // Remove old spinner if exists
-        if (this.spinnerEl) {
-            this.spinnerEl.remove();
-            this.spinnerEl = null;
-        }
-
-        // Clear the status bar item
-        this.statusBarItem.empty();
-
-        // Create a writing animation with feather icon only
-        this.spinnerEl = this.statusBarItem.createDiv({ cls: 'inscribe-writing' });
-        setIcon(this.spinnerEl, 'feather');
-        setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
-    }
-
-    private stopGenerating() {
-        this.isGenerating = false;
-
-        // Remove spinner
-        if (this.spinnerEl) {
-            this.spinnerEl.remove();
-            this.spinnerEl = null;
-        }
-
-        // Reset icon and tooltip
-        this.statusBarItem.empty();
-        setIcon(this.statusBarItem, 'feather');
+        setTooltip(this.item, `Profile: ${profile}`, { placement: 'top' });
     }
 } 

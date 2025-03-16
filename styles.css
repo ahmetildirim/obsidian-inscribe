@@ -97,16 +97,10 @@ If your plugin does not need CSS, delete this file.
 }
 
 /* Status Bar Styles */
-.inscribe-status {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 0 8px;
-}
 
-@keyframes inscribe-generating {
+@keyframes inscribe-active {
     0% {
-        transform: translateX(-4px) rotate(-8deg);
+        transform: translateX(-2px) rotate(-8deg);
     }
 
     25% {
@@ -114,7 +108,7 @@ If your plugin does not need CSS, delete this file.
     }
 
     50% {
-        transform: translateX(4px) rotate(8deg);
+        transform: translateX(2px) rotate(8deg);
     }
 
     75% {
@@ -122,11 +116,15 @@ If your plugin does not need CSS, delete this file.
     }
 
     100% {
-        transform: translateX(-4px) rotate(-8deg);
+        transform: translateX(-2px) rotate(-8deg);
     }
 }
 
-.inscribe-writing {
-    animation: inscribe-generating 0.5s ease-in-out infinite;
-    display: inline-block;
+.inscribe-status-bar-item-icon {
+    display: flex;
+    padding: 0 4px;
+}
+
+.status-bar-item-icon.active {
+    animation: inscribe-active 0.5s ease-in-out infinite;
 }
