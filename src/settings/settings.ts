@@ -22,8 +22,10 @@ export interface Profile {
 
 export type ProfileName = string;
 export type Profiles = Record<ProfileName, Profile>
+export type ProfileMapping = { profile: string, enabled: boolean };
 
 export interface Settings {
+    completion_enabled: boolean,
     // available providers
     providers: {
         ollama: OllamaSettings,
@@ -32,14 +34,12 @@ export interface Settings {
     // profiles
     profiles: Profiles,
     // path to profile mappings
-    path_profile_mappings: Record<string, {
-        profile: string,
-        enabled: boolean,
-    }>,
+    path_profile_mappings: Record<string, ProfileMapping>,
 }
 
 export const DEFAULT_PROFILE: ProfileName = "default";
 export const DEFAULT_SETTINGS: Settings = {
+    completion_enabled: true,
     providers: {
         openai: {
             integration: ProviderType.OPENAI,
@@ -106,4 +106,14 @@ export function newProfile(profiles: Profiles): string {
     profiles[id] = profile;
 
     return id;
+}
+
+export function findProfileMapping(settings: Settings, profile: string): ProfileMapping {
+    for (const [path, mapping] of Object.entries(settings.path_profile_mappings)) {
+        if (mapping.profile === profile) {
+            return mapping;
+        }
+    }
+
+    return settings.path_profile_mappings["/"];
 }
