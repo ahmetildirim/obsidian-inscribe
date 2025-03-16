@@ -103,3 +103,30 @@ If your plugin does not need CSS, delete this file.
     gap: 4px;
     padding: 0 8px;
 }
+
+@keyframes inscribe-generating {
+    0% {
+        transform: translateX(-4px) rotate(-8deg);
+    }
+
+    25% {
+        transform: translateX(0px) rotate(0deg);
+    }
+
+    50% {
+        transform: translateX(4px) rotate(8deg);
+    }
+
+    75% {
+        transform: translateX(0px) rotate(0deg);
+    }
+
+    100% {
+        transform: translateX(-4px) rotate(-8deg);
+    }
+}
+
+.inscribe-writing {
+    animation: inscribe-generating 0.5s ease-in-out infinite;
+    display: inline-block;
+}

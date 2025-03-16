@@ -24,25 +24,6 @@ export default class StatusBarItem {
 
         setIcon(this.statusBarItem, 'feather');
         this.updateProfile(this.profileTracker.getActiveProfile().name);
-
-        // Add CSS for smooth animation
-        const style = document.createElement('style');
-        style.id = 'inscribe-spinner-style';
-        style.textContent = `
-            @keyframes inscribe-write {
-                0% { transform: translateX(-4px) rotate(-8deg); }
-                25% { transform: translateX(0px) rotate(0deg); }
-                50% { transform: translateX(4px) rotate(8deg); }
-                75% { transform: translateX(0px) rotate(0deg); }
-                100% { transform: translateX(-4px) rotate(-8deg); }
-            }
-            .inscribe-writing {
-                animation: inscribe-write 0.5s ease-in-out infinite;
-                display: inline-block;
-            }
-        `;
-        document.head.appendChild(style);
-
     }
 
     private handleCompletionStatusChange(isGenerating: boolean): void {
