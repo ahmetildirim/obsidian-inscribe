@@ -46,7 +46,7 @@ export default class StatusBarItem {
         setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
     }
 
-    startGenerating() {
+    private startGenerating() {
         this.isGenerating = true;
 
         // Remove old spinner if exists
@@ -64,7 +64,7 @@ export default class StatusBarItem {
         setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
     }
 
-    stopGenerating() {
+    private stopGenerating() {
         this.isGenerating = false;
 
         // Remove spinner
