@@ -4,8 +4,8 @@ import { ProfileTracker } from 'src/profile/tracker';
 import { CompletionEngine } from 'src/completion/engine';
 
 export default class StatusBarItem {
-    plugin: Inscribe;
-    statusBarItem: HTMLElement;
+    private plugin: Inscribe;
+    private statusBarItem: HTMLElement;
 
     private profileTracker: ProfileTracker;
     private completionEngine: CompletionEngine;
@@ -80,7 +80,6 @@ export default class StatusBarItem {
         // Create a writing animation with feather icon only
         this.spinnerEl = this.statusBarItem.createDiv({ cls: 'inscribe-writing' });
         setIcon(this.spinnerEl, 'feather');
-
         setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
     }
 
