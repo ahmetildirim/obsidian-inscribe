@@ -1,22 +1,29 @@
 import { setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
 import { ProfileTracker } from 'src/profile/tracker';
+import { CompletionEngine } from 'src/completion/engine';
 
 export default class StatusBarItem {
     plugin: Inscribe;
     statusBarItem: HTMLElement;
 
     private profileTracker: ProfileTracker;
+    private completionEngine: CompletionEngine;
 
     private isGenerating: boolean = false;
     private spinnerEl: HTMLElement | null = null;
 
-    constructor(plugin: Inscribe, profileTracker: ProfileTracker) {
+    constructor(plugin: Inscribe, profileTracker: ProfileTracker, completionEngine: CompletionEngine) {
         this.plugin = plugin;
         this.statusBarItem = this.plugin.addStatusBarItem();
         this.profileTracker = profileTracker;
+        this.completionEngine = completionEngine;
+
+        this.profileTracker.onProfileChange(this.handleProfileChange.bind(this));
+        this.completionEngine.onCompletionStatusChange(this.handleCompletionStatusChange.bind(this));
+
         setIcon(this.statusBarItem, 'feather');
-        this.update(this.profileTracker.getActiveProfile().name);
+        this.updateProfile(this.profileTracker.getActiveProfile().name);
 
         // Add CSS for smooth animation
         const style = document.createElement('style');
@@ -36,12 +43,22 @@ export default class StatusBarItem {
         `;
         document.head.appendChild(style);
 
-        this.profileTracker.onProfileChange((profile) => {
-            this.update(profile.name);
-        });
     }
 
-    update(profile: string) {
+    private handleCompletionStatusChange(isGenerating: boolean): void {
+        if (isGenerating) {
+            this.startGenerating();
+        } else {
+            this.stopGenerating();
+            this.updateProfile(this.profileTracker.getActiveProfile().name);
+        }
+    }
+
+    private handleProfileChange(profile: string): void {
+        this.updateProfile(profile);
+    }
+
+    private updateProfile(profile: string): void {
         if (!this.isGenerating) {
             setIcon(this.statusBarItem, 'feather');
         }
@@ -67,7 +84,7 @@ export default class StatusBarItem {
         setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
     }
 
-    stopGenerating(profile: string) {
+    stopGenerating() {
         this.isGenerating = false;
 
         // Remove spinner
@@ -79,6 +96,5 @@ export default class StatusBarItem {
         // Reset icon and tooltip
         this.statusBarItem.empty();
         setIcon(this.statusBarItem, 'feather');
-        this.update(profile);
     }
 } 

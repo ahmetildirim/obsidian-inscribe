@@ -9,6 +9,7 @@ export class CompletionEngine {
     private app: App;
     private profileTracker: ProfileTracker;
     private providerFactory: ProviderFactory;
+    private completionStatusListeners: ((isGenerating: boolean) => void)[] = [];
 
     constructor(
         app: App,
@@ -28,8 +29,19 @@ export class CompletionEngine {
         const provider = this.providerFactory.getProvider(this.profileTracker.getActiveProfile().provider);
         const options = this.profileTracker.getActiveProfile().completionOptions;
 
-        // Signal generation start
+        this.notifyCompletionStatus(true);
         yield* this.complete(activeEditor.editor, provider, options);
+        this.notifyCompletionStatus(false);
+    }
+
+    onCompletionStatusChange(listener: (isGenerating: boolean) => void) {
+        this.completionStatusListeners.push(listener);
+    }
+
+    private notifyCompletionStatus(isGenerating: boolean) {
+        for (const listener of this.completionStatusListeners) {
+            listener(isGenerating);
+        }
     }
 
     private async *complete(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
