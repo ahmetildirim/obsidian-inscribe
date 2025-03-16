@@ -36,7 +36,6 @@ export default class StatusBarItem {
 
         menu.addItem((item) => {
             item.setTitle(completionEnabled ? 'Disable completion' : 'Enable completion');
-            item.setIcon('toggle-on');
             item.onClick(() => {
                 this.plugin.settings.completion_enabled = !completionEnabled;
                 this.plugin.saveSettings();
@@ -45,8 +44,10 @@ export default class StatusBarItem {
         menu.addSeparator();
         menu.addItem((item) => {
             item.setTitle("Open settings");
-            item.setIcon('gear');
             item.onClick(() => {
+                const setting = (this.plugin.app as any).setting;
+                setting.open();
+                setting.openTabById(this.plugin.manifest.id);
             })
         });
 

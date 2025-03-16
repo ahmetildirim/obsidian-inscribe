@@ -2,26 +2,31 @@ import { App, Editor } from "obsidian";
 import { ProfileTracker } from "src/profile/tracker";
 import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
-import { CompletionOptions } from "src/settings/settings";
+import { CompletionOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 
 export class CompletionEngine {
     private app: App;
+    private settings: Settings;
     private profileTracker: ProfileTracker;
     private providerFactory: ProviderFactory;
     private completionStatusListeners: ((isGenerating: boolean) => void)[] = [];
 
     constructor(
         app: App,
+        settings: Settings,
         profileTracker: ProfileTracker,
         providerFactory: ProviderFactory,
     ) {
         this.app = app;
+        this.settings = settings;
         this.profileTracker = profileTracker;
         this.providerFactory = providerFactory;
     }
 
     async *fetchCompletion(): AsyncGenerator<Suggestion> {
+        if (!this.settings.completion_enabled) return;
+
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
