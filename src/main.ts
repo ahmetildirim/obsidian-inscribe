@@ -20,7 +20,7 @@ export default class Inscribe extends Plugin {
 
 		this.profileTracker = new ProfileService(this);
 		this.providerFactory = new ProviderFactory(this);
-		this.completionEngine = new CompletionEngine(this.app, this.settings, this.profileTracker, this.providerFactory);
+		this.completionEngine = new CompletionEngine(this.app, this.profileTracker, this.providerFactory);
 		this.statusBarItem = new StatusBarItem(this, this.profileTracker, this.completionEngine);
 
 		this.addSettingTab(new InscribeSettingsTab(this));

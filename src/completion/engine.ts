@@ -7,19 +7,16 @@ import { Provider } from "src/providers/provider";
 
 export class CompletionEngine {
     private app: App;
-    private settings: Settings;
     private profileTracker: ProfileService;
     private providerFactory: ProviderFactory;
     private completionStatusListeners: ((isGenerating: boolean) => void)[] = [];
 
     constructor(
         app: App,
-        settings: Settings,
         profileTracker: ProfileService,
         providerFactory: ProviderFactory,
     ) {
         this.app = app;
-        this.settings = settings;
         this.profileTracker = profileTracker;
         this.providerFactory = providerFactory;
     }
