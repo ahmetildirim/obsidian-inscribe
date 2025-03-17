@@ -3,8 +3,9 @@ import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
-import { DEFAULT_PROFILE, newProfile, Profile } from "./settings";
+import { DEFAULT_PROFILE, Profile } from "./settings";
 import { ProviderSettingsModal } from './provider-settings-modal';
+import { newProfile } from ".";
 
 /* --------------------------------------------------------------------------
  * Main Settings Tab
@@ -159,7 +160,7 @@ class ProfilesSection {
             .setIcon("plus")
             .setTooltip("Create new profile")
             .onClick(async () => {
-                this.displayedProfileId = newProfile(this.plugin.settings.profiles);
+                this.displayedProfileId = newProfile(this.plugin.settings);
                 await this.plugin.saveSettings();
                 await this.render();
             });

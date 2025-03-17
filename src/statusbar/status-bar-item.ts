@@ -1,20 +1,20 @@
 import { Menu, setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
 import { ProfileService } from 'src/profile/service';
-import { CompletionEngine } from 'src/completion/engine';
+import CompletionEngine from 'src/completion/engine';
 
 export default class StatusBarItem {
     private plugin: Inscribe;
     private statusBarItem: HTMLElement;
-    private profileTracker: ProfileService;
+    private profileService: ProfileService;
     private completionEngine: CompletionEngine;
 
     constructor(plugin: Inscribe, profileTracker: ProfileService, completionEngine: CompletionEngine) {
         this.plugin = plugin;
-        this.profileTracker = profileTracker;
+        this.profileService = profileTracker;
         this.completionEngine = completionEngine;
 
-        this.profileTracker.onProfileChange(this.handleProfileChange.bind(this));
+        this.profileService.onProfileChange(this.handleProfileChange.bind(this));
         this.completionEngine.onCompletionStatusChange(this.handleCompletionStatusChange.bind(this));
 
         this.statusBarItem = this.createStatusBarItem();
@@ -41,7 +41,7 @@ export default class StatusBarItem {
             });
         });
         menu.addItem((item) => {
-            const [path,] = this.profileTracker.getActiveProfileMapping();
+            const [path,] = this.profileService.getActiveProfileMapping();
             item.setTitle(`Disable for current path: ${path}`);
             item.onClick(() => {
                 const mapping = this.plugin.settings.path_profile_mappings[path];
@@ -68,7 +68,7 @@ export default class StatusBarItem {
         window.crypto.getRandomValues(randomBytes);
         if (randomBytes[0] < 128) {
             this.statusBarItem.removeClass('completion-disabled');
-            setTooltip(this.statusBarItem, `Profile: ${this.profileTracker.getActiveProfile().name}`, { placement: 'top' });
+            setTooltip(this.statusBarItem, `Profile: ${this.profileService.getActiveProfile().name}`, { placement: 'top' });
         } else {
             this.statusBarItem.addClass('completion-disabled');
             setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
@@ -81,7 +81,7 @@ export default class StatusBarItem {
             setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
         } else {
             this.statusBarItem.removeClass('active');
-            this.updateProfile(this.profileTracker.getActiveProfile().name);
+            this.updateProfile(this.profileService.getActiveProfile().name);
         }
     }
 
