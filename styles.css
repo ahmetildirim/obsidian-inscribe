@@ -128,3 +128,19 @@ If your plugin does not need CSS, delete this file.
 .status-bar-item-icon.active {
     animation: inscribe-active 0.5s ease-in-out infinite;
 }
+
+/* Strikethrough effect for disabled completion */
+.status-bar-item-icon.completion-disabled {
+    position: relative;
+}
+
+.status-bar-item-icon.completion-disabled::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--text-normal);
+    transform: translateY(-50%) rotate(-45deg);
+}

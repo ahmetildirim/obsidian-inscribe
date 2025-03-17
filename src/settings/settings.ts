@@ -38,6 +38,7 @@ export interface Settings {
 }
 
 export const DEFAULT_PROFILE: ProfileName = "default";
+export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
     completion_enabled: true,
     providers: {

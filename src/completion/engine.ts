@@ -31,8 +31,10 @@ export class CompletionEngine {
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
-        const provider = this.providerFactory.getProvider(this.profileTracker.getActiveProfile().provider);
-        const options = this.profileTracker.getActiveProfile().completionOptions;
+        const [, profile] = this.profileTracker.getActiveProfileMapping();
+
+        const provider = this.providerFactory.getProvider(profile.provider);
+        const options = profile.completionOptions;
 
         this.notifyCompletionStatus(true);
         yield* this.complete(activeEditor.editor, provider, options);

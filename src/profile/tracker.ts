@@ -1,12 +1,13 @@
 import { App } from "obsidian";
 import { InlineCompletionOptions } from "src/extension";
 import Inscribe from "src/main";
-import { DEFAULT_PROFILE, Profile, Settings } from "src/settings/settings";
+import { DEFAULT_PATH, DEFAULT_PROFILE, Profile, Settings } from "src/settings/settings";
 
 // ProfileTracker class is responsible for tracking the active profile based on the current file path.
 export class ProfileTracker {
     private plugin: Inscribe;
     private activeProfile: Profile;
+    private activePathMapping: string;
     private app: App;
     private settings: Settings;
     private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
@@ -16,12 +17,16 @@ export class ProfileTracker {
         this.plugin = plugin;
         this.app = this.plugin.app;
         this.settings = this.plugin.settings;
-        this.activeProfile = this.settings.profiles[this.resolveProfileFromPath(this.getActiveFilePath())];
+        this.update(this.getActiveFilePath());
 
         this.app.workspace.on('file-open', (file) => {
             if (!file) return;
             this.update(file.path);
         });
+    }
+
+    getActiveProfileMapping(): [string, Profile] {
+        return [this.activePathMapping, this.activeProfile];
     }
 
     getActiveProfile(): Profile {
@@ -37,8 +42,8 @@ export class ProfileTracker {
     }
 
     private update(filePath: string) {
-        const profileId = this.resolveProfileFromPath(filePath);
-        this.activeProfile = this.settings.profiles[profileId];
+        [this.activePathMapping, this.activeProfile] = this.resolveProfileFromPath(filePath);
+
         this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
         this.profileChangeCallbacks.forEach(cb => cb(this.activeProfile));
     }
@@ -50,14 +55,15 @@ export class ProfileTracker {
         return activeEditor.file.path;
     }
 
-    private resolveProfileFromPath(filePath: string): string {
+    private resolveProfileFromPath(filePath: string): [string, Profile] {
         if (!this.settings.path_profile_mappings || Object.keys(this.settings.path_profile_mappings).length === 0) {
-            return DEFAULT_PROFILE;
+            return [DEFAULT_PATH, this.settings.profiles[DEFAULT_PROFILE]];
         }
 
         const normalizedPath = filePath.replace(/^\/+|\/+$/g, '');
         let longestMatch = '';
         let matchedProfile = DEFAULT_PROFILE;
+        let pathMapping = '/';
 
         Object.entries(this.settings.path_profile_mappings).forEach(([path, mapping]) => {
             const normalizedMappingPath = path.replace(/^\/+|\/+$/g, '');
@@ -65,11 +71,12 @@ export class ProfileTracker {
                 if (normalizedMappingPath.length > longestMatch.length) {
                     longestMatch = normalizedMappingPath;
                     matchedProfile = mapping.profile;
+                    pathMapping = path;
                 }
             }
         });
 
-        return matchedProfile;
+        return [pathMapping, this.settings.profiles[matchedProfile]];
     }
 
     onunload() {

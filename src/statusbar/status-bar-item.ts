@@ -2,7 +2,6 @@ import { Menu, setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
 import { ProfileTracker } from 'src/profile/tracker';
 import { CompletionEngine } from 'src/completion/engine';
-import { findProfileMapping } from 'src/settings/settings';
 
 export default class StatusBarItem {
     private plugin: Inscribe;
@@ -19,7 +18,7 @@ export default class StatusBarItem {
         this.completionEngine.onCompletionStatusChange(this.handleCompletionStatusChange.bind(this));
 
         this.statusBarItem = this.createStatusBarItem();
-        this.updateProfile(this.profileTracker.getActiveProfile().name);
+        this.updateCompletionEnabledState();
     }
 
     private createStatusBarItem(): HTMLElement {
@@ -35,12 +34,23 @@ export default class StatusBarItem {
         const completionEnabled = this.plugin.settings.completion_enabled;
 
         menu.addItem((item) => {
-            item.setTitle(completionEnabled ? 'Disable completion' : 'Enable completion');
+            item.setTitle(`${completionEnabled ? 'Disable' : 'Enable'} completion globally`);
             item.onClick(() => {
                 this.plugin.settings.completion_enabled = !completionEnabled;
                 this.plugin.saveSettings();
+                this.updateCompletionEnabledState();
             });
         });
+        menu.addItem((item) => {
+            const [path,] = this.profileTracker.getActiveProfileMapping();
+            item.setTitle(`Disable for current path: ${path}`);
+            item.onClick(() => {
+                const mapping = this.plugin.settings.path_profile_mappings[path];
+                mapping.enabled = false;
+                this.plugin.saveSettings();
+            });
+        });
+
         menu.addSeparator();
         menu.addItem((item) => {
             item.setTitle("Open settings");
@@ -52,6 +62,16 @@ export default class StatusBarItem {
         });
 
         menu.showAtMouseEvent(event);
+    }
+
+    private updateCompletionEnabledState(): void {
+        if (this.plugin.settings.completion_enabled) {
+            this.statusBarItem.removeClass('completion-disabled');
+            setTooltip(this.statusBarItem, `Profile: ${this.profileTracker.getActiveProfile().name}`, { placement: 'top' });
+        } else {
+            this.statusBarItem.addClass('completion-disabled');
+            setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
+        }
     }
 
     private handleCompletionStatusChange(isGenerating: boolean): void {
@@ -69,6 +89,8 @@ export default class StatusBarItem {
     }
 
     private updateProfile(profile: string): void {
-        setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
+        if (this.plugin.settings.completion_enabled) {
+            setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
+        }
     }
 } 
