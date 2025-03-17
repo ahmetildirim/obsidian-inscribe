@@ -1,5 +1,5 @@
 import { App, Editor } from "obsidian";
-import { ProfileTracker } from "src/profile/tracker";
+import { ProfileService } from "src/profile/service";
 import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
 import { CompletionOptions, Settings } from "src/settings/settings";
@@ -8,14 +8,14 @@ import { Provider } from "src/providers/provider";
 export class CompletionEngine {
     private app: App;
     private settings: Settings;
-    private profileTracker: ProfileTracker;
+    private profileTracker: ProfileService;
     private providerFactory: ProviderFactory;
     private completionStatusListeners: ((isGenerating: boolean) => void)[] = [];
 
     constructor(
         app: App,
         settings: Settings,
-        profileTracker: ProfileTracker,
+        profileTracker: ProfileService,
         providerFactory: ProviderFactory,
     ) {
         this.app = app;

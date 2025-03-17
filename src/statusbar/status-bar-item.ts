@@ -1,15 +1,15 @@
 import { Menu, setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
-import { ProfileTracker } from 'src/profile/tracker';
+import { ProfileService } from 'src/profile/service';
 import { CompletionEngine } from 'src/completion/engine';
 
 export default class StatusBarItem {
     private plugin: Inscribe;
     private statusBarItem: HTMLElement;
-    private profileTracker: ProfileTracker;
+    private profileTracker: ProfileService;
     private completionEngine: CompletionEngine;
 
-    constructor(plugin: Inscribe, profileTracker: ProfileTracker, completionEngine: CompletionEngine) {
+    constructor(plugin: Inscribe, profileTracker: ProfileService, completionEngine: CompletionEngine) {
         this.plugin = plugin;
         this.profileTracker = profileTracker;
         this.completionEngine = completionEngine;

@@ -22,8 +22,8 @@ export interface Profile {
 
 export type ProfileName = string;
 export type Profiles = Record<ProfileName, Profile>
-export type ProfileMapping = { profile: string, enabled: boolean };
-
+export type ProfilePath = string;
+export type AssignedProfile = { profile: ProfileName, enabled: boolean };
 export interface Settings {
     // available providers
     providers: {
@@ -33,7 +33,7 @@ export interface Settings {
     // profiles
     profiles: Profiles,
     // path to profile mappings
-    path_profile_mappings: Record<string, ProfileMapping>,
+    path_profile_mappings: Record<ProfilePath, AssignedProfile>,
 }
 
 export const DEFAULT_PROFILE: ProfileName = "default";
@@ -105,14 +105,4 @@ export function newProfile(profiles: Profiles): string {
     profiles[id] = profile;
 
     return id;
-}
-
-export function findProfileMapping(settings: Settings, profile: string): ProfileMapping {
-    for (const [path, mapping] of Object.entries(settings.path_profile_mappings)) {
-        if (mapping.profile === profile) {
-            return mapping;
-        }
-    }
-
-    return settings.path_profile_mappings["/"];
 }

@@ -3,7 +3,7 @@ import { inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
 import { ProviderFactory } from './providers/factory';
-import { ProfileTracker } from './profile/tracker';
+import { ProfileService } from './profile/service';
 import { CompletionEngine } from './completion/engine';
 import StatusBarItem from './statusbar/status-bar-item';
 
@@ -11,14 +11,14 @@ export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerFactory: ProviderFactory;
 
-	private profileTracker: ProfileTracker;
+	private profileTracker: ProfileService;
 	private completionEngine: CompletionEngine;
 	private statusBarItem: StatusBarItem;
 
 	async onload() {
 		await this.loadSettings();
 
-		this.profileTracker = new ProfileTracker(this);
+		this.profileTracker = new ProfileService(this);
 		this.providerFactory = new ProviderFactory(this);
 		this.completionEngine = new CompletionEngine(this.app, this.settings, this.profileTracker, this.providerFactory);
 		this.statusBarItem = new StatusBarItem(this, this.profileTracker, this.completionEngine);

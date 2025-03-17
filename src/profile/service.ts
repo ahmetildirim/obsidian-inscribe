@@ -3,8 +3,8 @@ import { InlineCompletionOptions } from "src/extension";
 import Inscribe from "src/main";
 import { DEFAULT_PATH, DEFAULT_PROFILE, Profile, Settings } from "src/settings/settings";
 
-// ProfileTracker class is responsible for tracking the active profile based on the current file path.
-export class ProfileTracker {
+// ProfileService class is responsible for tracking the active profile based on the current file path.
+export class ProfileService {
     private plugin: Inscribe;
     private activeProfile: Profile;
     private activePathMapping: string;
