@@ -25,7 +25,6 @@ export type Profiles = Record<ProfileName, Profile>
 export type ProfileMapping = { profile: string, enabled: boolean };
 
 export interface Settings {
-    completion_enabled: boolean,
     // available providers
     providers: {
         ollama: OllamaSettings,
@@ -40,7 +39,6 @@ export interface Settings {
 export const DEFAULT_PROFILE: ProfileName = "default";
 export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
-    completion_enabled: true,
     providers: {
         openai: {
             integration: ProviderType.OPENAI,

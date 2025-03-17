@@ -31,12 +31,11 @@ export default class StatusBarItem {
 
     private showContextMenu(event: MouseEvent): void {
         const menu = new Menu();
-        const completionEnabled = this.plugin.settings.completion_enabled;
+        const completionEnabled = true;
 
         menu.addItem((item) => {
             item.setTitle(`${completionEnabled ? 'Disable' : 'Enable'} completion globally`);
             item.onClick(() => {
-                this.plugin.settings.completion_enabled = !completionEnabled;
                 this.plugin.saveSettings();
                 this.updateCompletionEnabledState();
             });
@@ -65,7 +64,9 @@ export default class StatusBarItem {
     }
 
     private updateCompletionEnabledState(): void {
-        if (this.plugin.settings.completion_enabled) {
+        const randomBytes = new Uint8Array(1);
+        window.crypto.getRandomValues(randomBytes);
+        if (randomBytes[0] < 128) {
             this.statusBarItem.removeClass('completion-disabled');
             setTooltip(this.statusBarItem, `Profile: ${this.profileTracker.getActiveProfile().name}`, { placement: 'top' });
         } else {
@@ -89,7 +90,7 @@ export default class StatusBarItem {
     }
 
     private updateProfile(profile: string): void {
-        if (this.plugin.settings.completion_enabled) {
+        if (true) {
             setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
         }
     }

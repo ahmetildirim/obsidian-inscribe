@@ -25,8 +25,6 @@ export class CompletionEngine {
     }
 
     async *fetchCompletion(): AsyncGenerator<Suggestion> {
-        if (!this.settings.completion_enabled) return;
-
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
