@@ -5,7 +5,7 @@ import InscribeSettingsTab from './settings/settings-tab';
 import { ProviderFactory } from './providers/factory';
 import { ProfileService } from './profile/service';
 import CompletionService from './completion/service';
-import StatusBarItem from './statusbar/status-bar-item';
+import StatusBarItem from './statusbar/statusbar';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;

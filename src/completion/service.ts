@@ -2,7 +2,7 @@ import { App, Editor } from "obsidian";
 import { ProfileService } from "src/profile/service";
 import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
-import { CompletionOptions, Settings } from "src/settings/settings";
+import { CompletionOptions } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 
 export default class CompletionService {
