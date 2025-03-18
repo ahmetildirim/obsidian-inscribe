@@ -1,7 +1,7 @@
 /**
- * Intelligent Inline Completions for CodeMirror
+ * Inline Completions extension for CodeMirror
  *
- * This extension offers AI-powered inline suggestions with:
+ * This extension offers inline suggestions with:
  * - Configurable suggestion fetching strategies
  * - Multiple text segmentation approaches
  * - Debounced network requests

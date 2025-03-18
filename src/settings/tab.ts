@@ -20,32 +20,32 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         super(plugin.app, plugin);
     }
 
-    async display(): Promise<void> {
+    display(): void {
         this.containerEl.empty();
 
         // General Section
         const generalContainer = document.createElement("div");
         this.containerEl.appendChild(generalContainer);
         this.generalSection = new GeneralSection(generalContainer, this.plugin);
-        await this.generalSection.render();
+        this.generalSection.render();
 
         // Providers Section
         const providersContainer = document.createElement("div");
         this.containerEl.appendChild(providersContainer);
         this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
-        await this.providersSection.render();
+        this.providersSection.render();
 
         // Profiles Section
         const profilesContainer = document.createElement("div");
         this.containerEl.appendChild(profilesContainer);
         this.profilesSection = new ProfilesSection(profilesContainer, this.plugin);
-        await this.profilesSection.render();
+        this.profilesSection.render();
 
         // Path Mappings Section
         const pathMappingsContainer = document.createElement("div");
         this.containerEl.appendChild(pathMappingsContainer);
         this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
-        await this.pathConfigsSection.render();
+        this.pathConfigsSection.render();
     }
 }
 
@@ -390,7 +390,6 @@ class PathConfigsSection {
     }
 
     async render(): Promise<void> {
-        debugger;
         this.container.empty();
         this.container.createEl("h3", { text: "Path Configs" });
         this.container.createEl("p", {
