@@ -23,7 +23,7 @@ export interface Profile {
 export type ProfileName = string;
 export type Profiles = Record<ProfileName, Profile>
 export type Path = string;
-export type PathProfile = { profile: ProfileName, enabled: boolean };
+export type PathConfig = { profile: ProfileName, enabled: boolean };
 export interface Settings {
     enabled: boolean,
     // available providers
@@ -34,7 +34,7 @@ export interface Settings {
     // profiles
     profiles: Profiles,
     // path to profile mappings
-    path_configs: Record<Path, PathProfile>,
+    path_configs: Record<Path, PathConfig>,
 }
 
 export const DEFAULT_PROFILE: ProfileName = "default";

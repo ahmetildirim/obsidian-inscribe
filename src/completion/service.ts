@@ -30,7 +30,7 @@ export default class CompletionService {
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
-        const [, profile] = this.profileService.getActiveProfileMapping();
+        const profile = this.profileService.getActiveProfile();
 
         const provider = this.providerFactory.getProvider(profile.provider);
         const options = profile.completionOptions;
@@ -45,7 +45,7 @@ export default class CompletionService {
     }
 
     completionEnabled(): boolean {
-        return this.settings.enabled && this.profileService.getActivePathProfile().enabled;
+        return this.settings.enabled && this.profileService.getActivePathConfig().enabled;
     }
 
     private notifyCompletionStatus(isGenerating: boolean) {

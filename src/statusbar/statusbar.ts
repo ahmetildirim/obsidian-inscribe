@@ -33,11 +33,12 @@ export default class StatusBarItem {
     private displayContextMenu(event: MouseEvent): void {
         const menu = new Menu();
         const globalCompletionEnabled = this.plugin.settings.enabled;
-        const pathCompletionEnabled = this.profileService.getActivePathProfile().enabled;
+        const pathCompletionEnabled = this.profileService.getActivePathConfig().enabled;
         const path = this.profileService.getActivePath();
+        const profile = this.profileService.getActiveProfile();
 
         menu.addItem((item) => {
-            item.setTitle(`Inscribe`).setIsLabel(true);
+            item.setTitle(`Profile: ${profile.name}`).setIsLabel(true);
         });
         menu.addItem((item) => {
             item.setTitle(`${pathCompletionEnabled ? 'Disable' : 'Enable'} path completion [${path}]`)
@@ -58,7 +59,6 @@ export default class StatusBarItem {
                     this.render();
                 });
         });
-
         menu.addSeparator();
         menu.addItem((item) => {
             item.setTitle("Open settings")
@@ -78,7 +78,7 @@ export default class StatusBarItem {
     }
 
     private handleProfileChange(profile: string): void {
-        this.updateProfile(profile);
+        this.render();
     }
 
     private updateProfile(profile: string): void {
@@ -91,15 +91,13 @@ export default class StatusBarItem {
             setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
         } else {
             this.statusBarItem.removeClass('active');
-            this.updateProfile(this.profileService.getActiveProfile().name);
-        }
-
-        if (this.completionService.completionEnabled()) {
-            this.statusBarItem.removeClass('completion-disabled');
-            this.updateProfile(this.profileService.getActiveProfile().name);
-        } else {
-            this.statusBarItem.addClass('completion-disabled');
-            setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
+            if (this.completionService.completionEnabled()) {
+                this.statusBarItem.removeClass('completion-disabled');
+                this.updateProfile(this.profileService.getActiveProfile().name);
+            } else {
+                this.statusBarItem.addClass('completion-disabled');
+                setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
+            }
         }
     }
 } 
