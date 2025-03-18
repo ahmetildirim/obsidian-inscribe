@@ -35,9 +35,7 @@ export default class CompletionService {
         const provider = this.providerFactory.getProvider(profile.provider);
         const options = profile.completionOptions;
 
-        this.notifyCompletionStatus(true);
         yield* this.complete(activeEditor.editor, provider, options);
-        this.notifyCompletionStatus(false);
     }
 
     onCompletionStatusChange(listener: (isGenerating: boolean) => void) {
@@ -65,8 +63,10 @@ export default class CompletionService {
         const lastChar = currentLine[cursor.ch - 1];
         if (lastChar !== " ") return;
 
+        this.notifyCompletionStatus(true);
         for await (const text of provider.generate(editor, options)) {
             yield { text };
         }
+        this.notifyCompletionStatus(false);
     }
 }
