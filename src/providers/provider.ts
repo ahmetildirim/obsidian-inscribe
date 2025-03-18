@@ -1,6 +1,11 @@
 import { Editor } from "obsidian";
 import { CompletionOptions } from "src/settings/settings";
 
+export enum ProviderType {
+    OLLAMA = "ollama",
+    OPENAI = "openai",
+}
+
 // Completer interface for ai integrations
 export interface Provider {
     settings: any

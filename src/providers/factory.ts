@@ -1,8 +1,13 @@
 import Inscribe from "src/main";
-import { Provider, Providers, ProviderType } from "src/providers";
+import { Provider, ProviderType } from "src/providers";
 import { Settings } from "src/settings/settings";
 import { OllamaProvider } from "./ollama";
 import { OpenAIProvider } from "./openai";
+
+interface Providers {
+    [ProviderType.OLLAMA]: OllamaProvider,
+    [ProviderType.OPENAI]: OpenAIProvider,
+}
 
 export class ProviderFactory {
     private settings: Settings;
@@ -10,11 +15,11 @@ export class ProviderFactory {
 
     constructor(private plugin: Inscribe) {
         this.settings = this.plugin.settings;
-        this.providers = buildProviders(this.settings);
+        this.providers = this.buildProviders(this.settings);
     }
 
     rebuildProviders() {
-        this.providers = buildProviders(this.settings);
+        this.providers = this.buildProviders(this.settings);
     }
 
     getProvider(provider: ProviderType): Provider {
@@ -24,11 +29,11 @@ export class ProviderFactory {
     async updateModels(provider: ProviderType): Promise<string[]> {
         return this.providers[provider].updateModels();
     }
-}
 
-const buildProviders = (settings: Settings): Providers => {
-    return {
-        [ProviderType.OLLAMA]: new OllamaProvider(settings.providers.ollama),
-        [ProviderType.OPENAI]: new OpenAIProvider(settings.providers.openai),
+    private buildProviders(settings: Settings): Providers {
+        return {
+            [ProviderType.OLLAMA]: new OllamaProvider(settings.providers.ollama),
+            [ProviderType.OPENAI]: new OpenAIProvider(settings.providers.openai),
+        }
     }
 }
