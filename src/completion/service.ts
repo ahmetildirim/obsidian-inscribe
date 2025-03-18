@@ -5,7 +5,7 @@ import { Suggestion } from "src/extension";
 import { CompletionOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 
-export default class CompletionEngine {
+export default class CompletionService {
     private app: App;
     private profileTracker: ProfileService;
     private providerFactory: ProviderFactory;

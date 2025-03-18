@@ -56,7 +56,7 @@ export class ProfileService {
     }
 
     private resolveProfileFromPath(filePath: string): [string, Profile] {
-        if (!this.settings.path_profile_mappings || Object.keys(this.settings.path_profile_mappings).length === 0) {
+        if (!this.settings.path_configs || Object.keys(this.settings.path_configs).length === 0) {
             return [DEFAULT_PATH, this.settings.profiles[DEFAULT_PROFILE]];
         }
 
@@ -65,7 +65,7 @@ export class ProfileService {
         let matchedProfile = DEFAULT_PROFILE;
         let pathMapping = '/';
 
-        Object.entries(this.settings.path_profile_mappings).forEach(([path, mapping]) => {
+        Object.entries(this.settings.path_configs).forEach(([path, mapping]) => {
             const normalizedMappingPath = path.replace(/^\/+|\/+$/g, '');
             if (normalizedPath.startsWith(normalizedMappingPath)) {
                 if (normalizedMappingPath.length > longestMatch.length) {

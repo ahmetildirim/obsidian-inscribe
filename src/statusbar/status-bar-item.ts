@@ -1,15 +1,15 @@
 import { Menu, setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
 import { ProfileService } from 'src/profile/service';
-import CompletionEngine from 'src/completion/engine';
+import CompletionService from 'src/completion/service';
 
 export default class StatusBarItem {
     private plugin: Inscribe;
     private statusBarItem: HTMLElement;
     private profileService: ProfileService;
-    private completionEngine: CompletionEngine;
+    private completionEngine: CompletionService;
 
-    constructor(plugin: Inscribe, profileTracker: ProfileService, completionEngine: CompletionEngine) {
+    constructor(plugin: Inscribe, profileTracker: ProfileService, completionEngine: CompletionService) {
         this.plugin = plugin;
         this.profileService = profileTracker;
         this.completionEngine = completionEngine;
@@ -44,7 +44,7 @@ export default class StatusBarItem {
             const [path,] = this.profileService.getActiveProfileMapping();
             item.setTitle(`Disable for current path: ${path}`);
             item.onClick(() => {
-                const mapping = this.plugin.settings.path_profile_mappings[path];
+                const mapping = this.plugin.settings.path_configs[path];
                 mapping.enabled = false;
                 this.plugin.saveSettings();
             });

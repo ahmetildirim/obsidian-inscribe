@@ -4,7 +4,7 @@ import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/settings-tab';
 import { ProviderFactory } from './providers/factory';
 import { ProfileService } from './profile/service';
-import CompletionEngine from './completion/engine';
+import CompletionService from './completion/service';
 import StatusBarItem from './statusbar/status-bar-item';
 
 export default class Inscribe extends Plugin {
@@ -12,7 +12,7 @@ export default class Inscribe extends Plugin {
 	providerFactory: ProviderFactory;
 
 	private profileService: ProfileService;
-	private completionEngine: CompletionEngine;
+	private completionEngine: CompletionService;
 	private statusBarItem: StatusBarItem;
 
 	async onload() {
@@ -20,7 +20,7 @@ export default class Inscribe extends Plugin {
 
 		this.profileService = new ProfileService(this);
 		this.providerFactory = new ProviderFactory(this);
-		this.completionEngine = new CompletionEngine(this.app, this.profileService, this.providerFactory);
+		this.completionEngine = new CompletionService(this.app, this.profileService, this.providerFactory);
 		this.statusBarItem = new StatusBarItem(this, this.profileService, this.completionEngine);
 
 		this.addSettingTab(new InscribeSettingsTab(this));

@@ -1,6 +1,8 @@
 import Inscribe from "src/main";
-import { buildProviders, Provider, Providers, ProviderType } from "src/providers";
+import { Provider, Providers, ProviderType } from "src/providers";
 import { Settings } from "src/settings/settings";
+import { OllamaProvider } from "./ollama";
+import { OpenAIProvider } from "./openai";
 
 export class ProviderFactory {
     private settings: Settings;
@@ -21,5 +23,12 @@ export class ProviderFactory {
 
     async updateModels(provider: ProviderType): Promise<string[]> {
         return this.providers[provider].updateModels();
+    }
+}
+
+const buildProviders = (settings: Settings): Providers => {
+    return {
+        [ProviderType.OLLAMA]: new OllamaProvider(settings.providers.ollama),
+        [ProviderType.OPENAI]: new OpenAIProvider(settings.providers.openai),
     }
 }

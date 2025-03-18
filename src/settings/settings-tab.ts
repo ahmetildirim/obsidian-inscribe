@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent, ToggleComponent } from "obsidian";
-import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
+import { TEMPLATE_VARIABLES } from "src/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
@@ -13,7 +13,7 @@ import { newProfile } from ".";
 export default class InscribeSettingsTab extends PluginSettingTab {
     private providersSection: ProvidersSection;
     private profilesSection: ProfilesSection;
-    private pathMappingsSection: PathMappingsSection;
+    private pathConfigsSection: PathConfigsSection;
 
     constructor(private plugin: Inscribe) {
         super(plugin.app, plugin);
@@ -37,8 +37,8 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         // Path Mappings Section
         const pathMappingsContainer = document.createElement("div");
         this.containerEl.appendChild(pathMappingsContainer);
-        this.pathMappingsSection = new PathMappingsSection(pathMappingsContainer, this.plugin);
-        await this.pathMappingsSection.render();
+        this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
+        await this.pathConfigsSection.render();
     }
 }
 
@@ -337,9 +337,9 @@ class ProfilesSection {
 }
 
 /* --------------------------------------------------------------------------
- * Path Mappings Section
+ * Path Configs Section
  * ------------------------------------------------------------------------ */
-class PathMappingsSection {
+class PathConfigsSection {
     private container: HTMLElement;
     private plugin: Inscribe;
     private tableContainer: HTMLElement;
@@ -352,7 +352,7 @@ class PathMappingsSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h3", { text: "Dynamic Profile Mapping" });
+        this.container.createEl("h3", { text: "Path Profiles" });
         this.container.createEl("p", {
             text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder."
         });
@@ -406,7 +406,7 @@ class PathMappingsSection {
             .setIcon("plus")
             .setTooltip("Add profile mapping")
             .onClick(async () => {
-                this.plugin.settings.path_profile_mappings[pathInput] = {
+                this.plugin.settings.path_configs[pathInput] = {
                     profile: selectedProfile,
                     enabled: true,
                 };
@@ -415,7 +415,7 @@ class PathMappingsSection {
             });
 
         // Existing Mappings
-        Object.entries(this.plugin.settings.path_profile_mappings).forEach(([path, mapping]) => {
+        Object.entries(this.plugin.settings.path_configs).forEach(([path, mapping]) => {
             const row = table.createEl("tr");
             row.createEl("td", { text: path || "Root" });
 
@@ -436,7 +436,7 @@ class PathMappingsSection {
 
             // Handle profile change
             profileDropdown.onChange(async (value) => {
-                this.plugin.settings.path_profile_mappings[path] = {
+                this.plugin.settings.path_configs[path] = {
                     profile: value,
                     enabled: mapping.enabled,
                 };
@@ -449,7 +449,7 @@ class PathMappingsSection {
                 .setDisabled(isDefaultMapping)
                 .setTooltip("Delete mapping")
                 .onClick(async () => {
-                    delete this.plugin.settings.path_profile_mappings[path];
+                    delete this.plugin.settings.path_configs[path];
                     await this.plugin.saveSettings();
                     await this.render();
                 });
@@ -460,7 +460,7 @@ class PathMappingsSection {
                 .setTooltip("Enable/disable mapping")
                 .setValue(mapping.enabled)
                 .onChange(async (value: boolean) => {
-                    this.plugin.settings.path_profile_mappings[path].enabled = value;
+                    this.plugin.settings.path_configs[path].enabled = value;
                     await this.plugin.saveSettings();
                 });
         });
