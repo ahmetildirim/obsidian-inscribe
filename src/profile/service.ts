@@ -1,13 +1,13 @@
 import { App } from "obsidian";
 import { InlineCompletionOptions } from "src/extension";
 import Inscribe from "src/main";
-import { DEFAULT_PATH, DEFAULT_PROFILE, Profile, Settings } from "src/settings/settings";
+import { DEFAULT_PATH, DEFAULT_PROFILE, PathProfile, Profile, Settings } from "src/settings/settings";
 
 // ProfileService class is responsible for tracking the active profile based on the current file path.
 export class ProfileService {
     private plugin: Inscribe;
     private activeProfile: Profile;
-    private activePathMapping: string;
+    private activePath: string;
     private app: App;
     private settings: Settings;
     private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
@@ -26,11 +26,19 @@ export class ProfileService {
     }
 
     getActiveProfileMapping(): [string, Profile] {
-        return [this.activePathMapping, this.activeProfile];
+        return [this.activePath, this.activeProfile];
     }
 
     getActiveProfile(): Profile {
         return this.activeProfile;
+    }
+
+    getActivePath(): string {
+        return this.activePath;
+    }
+
+    getActivePathProfile(): PathProfile {
+        return this.settings.path_configs[this.activePath];
     }
 
     getOptions(): InlineCompletionOptions {
@@ -42,7 +50,7 @@ export class ProfileService {
     }
 
     private update(filePath: string) {
-        [this.activePathMapping, this.activeProfile] = this.resolveProfileFromPath(filePath);
+        [this.activePath, this.activeProfile] = this.resolveProfileFromPath(filePath);
 
         this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
         this.profileChangeCallbacks.forEach(cb => cb(this.activeProfile));

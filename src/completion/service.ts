@@ -2,31 +2,35 @@ import { App, Editor } from "obsidian";
 import { ProfileService } from "src/profile/service";
 import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
-import { CompletionOptions } from "src/settings/settings";
+import { CompletionOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 
 export default class CompletionService {
     private app: App;
-    private profileTracker: ProfileService;
+    private settings: Settings;
+    private profileService: ProfileService;
     private providerFactory: ProviderFactory;
     private completionStatusListeners: ((isGenerating: boolean) => void)[] = [];
 
     constructor(
         app: App,
-        profileTracker: ProfileService,
+        settings: Settings,
+        profileService: ProfileService,
         providerFactory: ProviderFactory,
     ) {
         this.app = app;
-        this.profileTracker = profileTracker;
+        this.settings = settings;
+        this.profileService = profileService;
         this.providerFactory = providerFactory;
     }
 
     async *fetchCompletion(): AsyncGenerator<Suggestion> {
+        if (!this.completionEnabled()) return;
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
-        const [, profile] = this.profileTracker.getActiveProfileMapping();
+        const [, profile] = this.profileService.getActiveProfileMapping();
 
         const provider = this.providerFactory.getProvider(profile.provider);
         const options = profile.completionOptions;
@@ -38,6 +42,10 @@ export default class CompletionService {
 
     onCompletionStatusChange(listener: (isGenerating: boolean) => void) {
         this.completionStatusListeners.push(listener);
+    }
+
+    completionEnabled(): boolean {
+        return this.settings.enabled && this.profileService.getActivePathProfile().enabled;
     }
 
     private notifyCompletionStatus(isGenerating: boolean) {

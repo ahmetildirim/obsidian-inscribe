@@ -7,82 +7,76 @@ export default class StatusBarItem {
     private plugin: Inscribe;
     private statusBarItem: HTMLElement;
     private profileService: ProfileService;
-    private completionEngine: CompletionService;
+    private completionService: CompletionService;
+    private isGenerating: boolean = false;
 
-    constructor(plugin: Inscribe, profileTracker: ProfileService, completionEngine: CompletionService) {
+    constructor(plugin: Inscribe, profileTracker: ProfileService, completionService: CompletionService) {
         this.plugin = plugin;
         this.profileService = profileTracker;
-        this.completionEngine = completionEngine;
+        this.completionService = completionService;
 
         this.profileService.onProfileChange(this.handleProfileChange.bind(this));
-        this.completionEngine.onCompletionStatusChange(this.handleCompletionStatusChange.bind(this));
+        this.completionService.onCompletionStatusChange(this.handleCompletionStatusChange.bind(this));
 
         this.statusBarItem = this.createStatusBarItem();
-        this.updateCompletionEnabledState();
+        this.render();
     }
 
     private createStatusBarItem(): HTMLElement {
         const item = this.plugin.addStatusBarItem();
         setIcon(item, 'feather');
         item.addClasses(['status-bar-item-icon', `mod-clickable`]);
-        item.addEventListener('click', this.showContextMenu.bind(this));
+        item.addEventListener('click', this.displayContextMenu.bind(this));
         return item;
     }
 
-    private showContextMenu(event: MouseEvent): void {
+    private displayContextMenu(event: MouseEvent): void {
         const menu = new Menu();
-        const completionEnabled = true;
+        const globalCompletionEnabled = this.plugin.settings.enabled;
+        const pathCompletionEnabled = this.profileService.getActivePathProfile().enabled;
+        const path = this.profileService.getActivePath();
 
         menu.addItem((item) => {
-            item.setTitle(`${completionEnabled ? 'Disable' : 'Enable'} completion globally`);
-            item.onClick(() => {
-                this.plugin.saveSettings();
-                this.updateCompletionEnabledState();
-            });
+            item
+                .setIsLabel(true)
+                .setTitle(`Completions`);
         });
         menu.addItem((item) => {
-            const [path,] = this.profileService.getActiveProfileMapping();
-            item.setTitle(`Disable for current path: ${path}`);
-            item.onClick(() => {
-                const mapping = this.plugin.settings.path_configs[path];
-                mapping.enabled = false;
-                this.plugin.saveSettings();
-            });
+            item.setTitle(`${pathCompletionEnabled ? 'Disable' : 'Enable'} path completion [${path}]`)
+                .setChecked(pathCompletionEnabled)
+                .onClick(() => {
+                    const pathConfig = this.plugin.settings.path_configs[path];
+                    pathConfig.enabled = !pathCompletionEnabled;
+                    this.plugin.saveSettings();
+                    this.render();
+                });
+        });
+        menu.addItem((item) => {
+            item.setTitle(`${globalCompletionEnabled ? 'Disable' : 'Enable'} global completion`)
+                .setChecked(globalCompletionEnabled)
+                .onClick(() => {
+                    this.plugin.settings.enabled = !globalCompletionEnabled;
+                    this.plugin.saveSettings();
+                    this.render();
+                });
         });
 
         menu.addSeparator();
         menu.addItem((item) => {
-            item.setTitle("Open settings");
-            item.onClick(() => {
-                const setting = (this.plugin.app as any).setting;
-                setting.open();
-                setting.openTabById(this.plugin.manifest.id);
-            })
+            item.setTitle("Open settings")
+                .onClick(() => {
+                    const setting = (this.plugin.app as any).setting;
+                    setting.open();
+                    setting.openTabById(this.plugin.manifest.id);
+                })
         });
 
         menu.showAtMouseEvent(event);
     }
 
-    private updateCompletionEnabledState(): void {
-        const randomBytes = new Uint8Array(1);
-        window.crypto.getRandomValues(randomBytes);
-        if (randomBytes[0] < 128) {
-            this.statusBarItem.removeClass('completion-disabled');
-            setTooltip(this.statusBarItem, `Profile: ${this.profileService.getActiveProfile().name}`, { placement: 'top' });
-        } else {
-            this.statusBarItem.addClass('completion-disabled');
-            setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
-        }
-    }
-
     private handleCompletionStatusChange(isGenerating: boolean): void {
-        if (isGenerating) {
-            this.statusBarItem.addClass('active');
-            setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
-        } else {
-            this.statusBarItem.removeClass('active');
-            this.updateProfile(this.profileService.getActiveProfile().name);
-        }
+        this.isGenerating = isGenerating;
+        this.render();
     }
 
     private handleProfileChange(profile: string): void {
@@ -90,8 +84,24 @@ export default class StatusBarItem {
     }
 
     private updateProfile(profile: string): void {
-        if (true) {
-            setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
+        setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
+    }
+
+    private render(): void {
+        if (this.isGenerating) {
+            this.statusBarItem.addClass('active');
+            setTooltip(this.statusBarItem, 'Generating...', { placement: 'top' });
+        } else {
+            this.statusBarItem.removeClass('active');
+            this.updateProfile(this.profileService.getActiveProfile().name);
+        }
+
+        if (this.completionService.completionEnabled()) {
+            this.statusBarItem.removeClass('completion-disabled');
+            this.updateProfile(this.profileService.getActiveProfile().name);
+        } else {
+            this.statusBarItem.addClass('completion-disabled');
+            setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
         }
     }
 } 
