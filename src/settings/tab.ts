@@ -4,7 +4,7 @@ import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
 import { DEFAULT_PROFILE, Profile } from "./settings";
-import { ProviderSettingsModal } from './provider-settings-modal';
+import { ProviderSettingsModal } from './provider-modal';
 import { newProfile } from ".";
 
 /* --------------------------------------------------------------------------
@@ -390,8 +390,9 @@ class PathConfigsSection {
     }
 
     async render(): Promise<void> {
+        debugger;
         this.container.empty();
-        this.container.createEl("h3", { text: "Path Profiles" });
+        this.container.createEl("h3", { text: "Path Configs" });
         this.container.createEl("p", {
             text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder."
         });

@@ -1,7 +1,7 @@
 import { Plugin } from 'obsidian';
 import { inlineSuggestions } from "./extension";
 import { Settings, DEFAULT_SETTINGS } from './settings/settings';
-import InscribeSettingsTab from './settings/settings-tab';
+import InscribeSettingsTab from './settings/tab';
 import { ProviderFactory } from './providers/factory';
 import { ProfileService } from './profile/service';
 import CompletionService from './completion/service';
