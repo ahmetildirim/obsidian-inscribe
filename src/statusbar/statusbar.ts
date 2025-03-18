@@ -37,9 +37,7 @@ export default class StatusBarItem {
         const path = this.profileService.getActivePath();
 
         menu.addItem((item) => {
-            item
-                .setIsLabel(true)
-                .setTitle(`Completions`);
+            item.setTitle(`Inscribe`).setIsLabel(true);
         });
         menu.addItem((item) => {
             item.setTitle(`${pathCompletionEnabled ? 'Disable' : 'Enable'} path completion [${path}]`)

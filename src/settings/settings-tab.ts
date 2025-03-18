@@ -11,6 +11,7 @@ import { newProfile } from ".";
  * Main Settings Tab
  * ------------------------------------------------------------------------ */
 export default class InscribeSettingsTab extends PluginSettingTab {
+    private generalSection: GeneralSection;
     private providersSection: ProvidersSection;
     private profilesSection: ProfilesSection;
     private pathConfigsSection: PathConfigsSection;
@@ -21,6 +22,12 @@ export default class InscribeSettingsTab extends PluginSettingTab {
 
     async display(): Promise<void> {
         this.containerEl.empty();
+
+        // General Section
+        const generalContainer = document.createElement("div");
+        this.containerEl.appendChild(generalContainer);
+        this.generalSection = new GeneralSection(generalContainer, this.plugin);
+        await this.generalSection.render();
 
         // Providers Section
         const providersContainer = document.createElement("div");
@@ -39,6 +46,38 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         this.containerEl.appendChild(pathMappingsContainer);
         this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
         await this.pathConfigsSection.render();
+    }
+}
+
+// General Section
+class GeneralSection {
+    private container: HTMLElement;
+    private plugin: Inscribe;
+
+    constructor(container: HTMLElement, plugin: Inscribe) {
+        this.container = container;
+        this.plugin = plugin;
+    }
+
+    async render(): Promise<void> {
+        this.container.empty();
+        this.container.createEl("h3", { text: "General" });
+        this.container.createEl("p", {
+            text: "Configure general settings for Inscribe"
+        });
+
+        // Enabled
+        new Setting(this.container)
+            .setName("Enabled")
+            .setDesc("Enable or disable completions globally")
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.enabled)
+                    .onChange(async (value) => {
+                        this.plugin.settings.enabled = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
     }
 }
 
