@@ -89,7 +89,7 @@ export default class StatusBarItem {
     private render(): void {
         if (this.isGenerating) {
             this.statusBarItem.addClass('active');
-            setTooltip(this.statusBarItem, 'Fetching completions...', { placement: 'top' });
+            setTooltip(this.statusBarItem, 'Writing', { placement: 'top' });
         } else {
             this.statusBarItem.removeClass('active');
             if (this.completionService.completionEnabled()) {
