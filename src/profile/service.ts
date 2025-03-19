@@ -38,7 +38,10 @@ export class ProfileService {
     }
 
     getOptions(): InlineCompletionOptions {
-        return this.inlineSuggestionOptions;
+        return {
+            delayMs: this.activeProfile.delayMs,
+            splitStrategy: this.activeProfile.splitStrategy
+        };
     }
 
     onProfileChange(callback: (profile: Profile) => void) {
@@ -47,8 +50,6 @@ export class ProfileService {
 
     private update(filePath: string) {
         [this.activePath, this.activeProfile] = this.resolveProfileFromPath(filePath);
-
-        this.inlineSuggestionOptions = { delayMs: this.activeProfile.delayMs, splitStrategy: this.activeProfile.splitStrategy };
         this.profileChangeCallbacks.forEach(cb => cb(this.activeProfile));
     }
 

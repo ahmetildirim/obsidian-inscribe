@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent, ToggleComponent } from "obsidian";
+import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent, ToggleComponent, Notice } from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
@@ -413,7 +413,7 @@ class PathConfigsSection {
 
         // Add New Mapping Row
         const newRow = table.createEl("tr", { cls: "new-mapping-row" });
-        let pathInput = "/";
+        let pathInput = "";
         let selectedProfile = DEFAULT_PROFILE;
 
         // Path input cell
@@ -445,10 +445,12 @@ class PathConfigsSection {
             .setIcon("plus")
             .setTooltip("Add profile mapping")
             .onClick(async () => {
-                this.plugin.settings.path_configs[pathInput] = {
-                    profile: selectedProfile,
-                    enabled: true,
-                };
+                if (!pathInput) {
+                    new Notice("Path cannot be empty");
+                    return;
+                }
+
+                createPathConfig(this.plugin.settings, pathInput, selectedProfile);
                 await this.plugin.saveSettings();
                 await this.render();
             });
