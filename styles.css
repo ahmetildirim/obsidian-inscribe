@@ -100,28 +100,41 @@ If your plugin does not need CSS, delete this file.
 
 @keyframes inscribe-active {
     0% {
-        transform: translateX(-4px);
+        transform: rotate(0deg) translateX(0);
     }
 
-    25% {
-        transform: translateX(0px);
+    15% {
+        transform: rotate(720deg) translateX(0);
     }
 
-    50% {
-        transform: translateX(4px);
+    30% {
+        transform: rotate(720deg) translateX(3px);
+    }
+
+    45% {
+        transform: rotate(720deg) translateX(-3px);
+    }
+
+    60% {
+        transform: rotate(720deg) translateX(3px);
     }
 
     75% {
-        transform: translateX(0px);
+        transform: rotate(720deg) translateX(-3px);
+    }
+
+    90% {
+        transform: rotate(720deg) translateX(1px);
     }
 
     100% {
-        transform: translateX(-4px);
+        transform: rotate(720deg) translateX(0);
     }
 }
 
+
 .status-bar-item-icon.active {
-    animation: inscribe-active 0.5s ease-in-out infinite;
+    animation: inscribe-active 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* Strikethrough effect for disabled completion */
