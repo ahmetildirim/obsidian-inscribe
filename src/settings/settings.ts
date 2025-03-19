@@ -20,10 +20,10 @@ export interface Profile {
     completionOptions: CompletionOptions,
 }
 
-export type ProfileName = string;
-export type Profiles = Record<ProfileName, Profile>
+export type ProfileId = string;
+export type Profiles = Record<ProfileId, Profile>
 export type Path = string;
-export type PathConfig = { profile: ProfileName, enabled: boolean };
+export type PathConfig = { profile: ProfileId, enabled: boolean };
 export interface Settings {
     enabled: boolean,
     // available providers
@@ -37,7 +37,7 @@ export interface Settings {
     path_configs: Record<Path, PathConfig>,
 }
 
-export const DEFAULT_PROFILE: ProfileName = "default";
+export const DEFAULT_PROFILE: ProfileId = "default";
 export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
     enabled: true,
@@ -83,7 +83,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 // Create a new profile and return the id
-export function newProfile(settings: Settings): string {
+export function createProfile(settings: Settings): string {
     const profiles = settings.profiles;
     const id = Math.random().toString(36).substring(2, 6);
 
@@ -113,5 +113,10 @@ export function newProfile(settings: Settings): string {
 
 export function findPathConfig(settings: Settings, path: string): PathConfig {
     return settings.path_configs[path] || settings.path_configs[DEFAULT_PATH];
+}
+
+export function createPathConfig(settings: Settings, path: string, profile: ProfileId): void {
+    path = path || DEFAULT_PATH;
+    settings.path_configs[path] = { profile: profile, enabled: true };
 }
 

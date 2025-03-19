@@ -3,9 +3,9 @@ import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
-import { DEFAULT_PROFILE, Profile } from "./settings";
+import { createPathConfig, DEFAULT_PATH, DEFAULT_PROFILE, Profile } from "./settings";
 import { ProviderSettingsModal } from './provider-modal';
-import { newProfile } from ".";
+import { createProfile } from ".";
 
 /* --------------------------------------------------------------------------
  * Main Settings Tab
@@ -199,7 +199,7 @@ class ProfilesSection {
             .setIcon("plus")
             .setTooltip("Create new profile")
             .onClick(async () => {
-                this.displayedProfileId = newProfile(this.plugin.settings);
+                this.displayedProfileId = createProfile(this.plugin.settings);
                 await this.plugin.saveSettings();
                 await this.render();
             });
@@ -413,7 +413,7 @@ class PathConfigsSection {
 
         // Add New Mapping Row
         const newRow = table.createEl("tr", { cls: "new-mapping-row" });
-        let pathInput = "";
+        let pathInput = "/";
         let selectedProfile = DEFAULT_PROFILE;
 
         // Path input cell
@@ -456,10 +456,10 @@ class PathConfigsSection {
         // Existing Mappings
         Object.entries(this.plugin.settings.path_configs).forEach(([path, mapping]) => {
             const row = table.createEl("tr");
-            row.createEl("td", { text: path || "Root" });
+            const isDefaultMapping = path === DEFAULT_PATH;
+            row.createEl("td", { text: isDefaultMapping ? "Root" : path });
 
             // Create profile cell with dropdown
-            const isDefaultMapping = path === "";
             const profileCell = row.createEl("td");
 
             // For other mappings, show editable dropdown
@@ -475,10 +475,7 @@ class PathConfigsSection {
 
             // Handle profile change
             profileDropdown.onChange(async (value) => {
-                this.plugin.settings.path_configs[path] = {
-                    profile: value,
-                    enabled: mapping.enabled,
-                };
+                createPathConfig(this.plugin.settings, path, value);
                 await this.plugin.saveSettings();
             });
 
