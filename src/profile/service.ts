@@ -1,7 +1,7 @@
 import { App } from "obsidian";
 import { InlineCompletionOptions } from "src/extension";
 import Inscribe from "src/main";
-import { DEFAULT_PATH, DEFAULT_PROFILE, PathConfig, Profile, Settings } from "src/settings/settings";
+import { DEFAULT_PATH, DEFAULT_PROFILE, findPathConfig, PathConfig, Profile, Settings } from "src/settings/settings";
 
 // ProfileService class is responsible for tracking the active profile based on the current file path.
 export class ProfileService {
@@ -34,7 +34,7 @@ export class ProfileService {
     }
 
     getActivePathConfig(): PathConfig {
-        return this.settings.path_configs[this.activePath];
+        return findPathConfig(this.settings, this.activePath);
     }
 
     getOptions(): InlineCompletionOptions {

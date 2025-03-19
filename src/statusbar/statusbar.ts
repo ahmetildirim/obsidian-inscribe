@@ -2,6 +2,7 @@ import { Menu, setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
 import { ProfileService } from 'src/profile/service';
 import CompletionService from 'src/completion/service';
+import { findPathConfig } from 'src/settings';
 
 export default class StatusBarItem {
     private plugin: Inscribe;
@@ -44,7 +45,7 @@ export default class StatusBarItem {
             item.setTitle(`${pathCompletionEnabled ? 'Disable' : 'Enable'} path completion [${path}]`)
                 .setChecked(pathCompletionEnabled)
                 .onClick(() => {
-                    const pathConfig = this.plugin.settings.path_configs[path];
+                    const pathConfig = findPathConfig(this.plugin.settings, path);
                     pathConfig.enabled = !pathCompletionEnabled;
                     this.plugin.saveSettings();
                     this.render();

@@ -111,3 +111,7 @@ export function newProfile(settings: Settings): string {
     return id;
 }
 
+export function findPathConfig(settings: Settings, path: string): PathConfig {
+    return settings.path_configs[path] || settings.path_configs[DEFAULT_PATH];
+}
+
