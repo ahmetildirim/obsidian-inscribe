@@ -98,7 +98,8 @@ If your plugin does not need CSS, delete this file.
 
 /* Status Bar Styles */
 
-@keyframes inscribe-active {
+/* Writing animation with rotation */
+@keyframes write {
     0% {
         transform: rotate(0deg) translateX(0);
     }
@@ -134,7 +135,7 @@ If your plugin does not need CSS, delete this file.
 
 
 .status-bar-item-icon.active {
-    animation: inscribe-active 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation: write 2.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
 /* Strikethrough effect for disabled completion */
