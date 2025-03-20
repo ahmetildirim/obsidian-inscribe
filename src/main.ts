@@ -4,7 +4,7 @@ import { Settings, DEFAULT_SETTINGS } from './settings/settings';
 import InscribeSettingsTab from './settings/tab';
 import { ProviderFactory } from './providers/factory';
 import { ProfileService } from './profile/service';
-import CompletionService from './completion/service';
+import CompletionService from './completions/service';
 import StatusBarItem from './statusbar/statusbar';
 
 export default class Inscribe extends Plugin {

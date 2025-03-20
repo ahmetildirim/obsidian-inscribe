@@ -1,7 +1,7 @@
 import { Menu, setIcon, setTooltip } from 'obsidian';
 import Inscribe from '../main';
 import { ProfileService } from 'src/profile/service';
-import CompletionService from 'src/completion/service';
+import CompletionService from 'src/completions/service';
 import { findPathConfig } from 'src/settings';
 
 export default class StatusBarItem {
