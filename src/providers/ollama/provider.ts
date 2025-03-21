@@ -35,8 +35,7 @@ export class OllamaProvider implements Provider {
             if (this.aborted) {
                 return;
             }
-            const currentPosition = editor.getCursor();
-            if (currentPosition.line !== initialPosition.line || currentPosition.ch !== initialPosition.ch) {
+            if (this.cursorMoved(editor, initialPosition)) {
                 console.log("cursor moved, aborting completion");
                 this.abort();
                 return;
@@ -44,6 +43,11 @@ export class OllamaProvider implements Provider {
             completion += response.response;
             yield completion;
         }
+    }
+
+    private cursorMoved(editor: Editor, initialPosition: { line: number, ch: number }): boolean {
+        const currentPosition = editor.getCursor();
+        return currentPosition.line !== initialPosition.line || currentPosition.ch !== initialPosition.ch;
     }
 
     async abort() {
