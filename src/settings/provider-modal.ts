@@ -38,116 +38,63 @@ export class ProviderSettingsModal extends Modal {
         const { contentEl } = this;
         this.setTitle('Ollama Settings');
 
-        let host = this.plugin.settings.providers.ollama.host;
-
         new Setting(contentEl)
             .setName("Ollama Host")
             .setDesc("The host of the Ollama API")
             .addText((text) => {
                 text
-                    .setValue(host)
-                    .onChange((value) => {
-                        host = value;
-                    });
-            });
-
-        new Setting(contentEl)
-            .setName("Test Connection")
-            .setDesc("Test the connection to the Ollama API")
-            .addButton((btn) => {
-                btn
-                    .setButtonText('Test')
-                    .setCta()
-                    .onClick(async () => {
-                        const response = await this.plugin.providerFactory.testConnection(ProviderType.OLLAMA);
-                        if (response) {
-                            new Notice("Connection successful");
-                        } else {
-                            new Notice("Connection failed");
-                        }
-                    });
-            });
-        new Setting(contentEl)
-            .setTooltip("Save changes")
-            .addButton((btn) =>
-                btn
-                    .setButtonText('Save')
-                    .setCta()
-                    .onClick(async () => {
-                        this.close();
-                        this.plugin.settings.providers.ollama.host = host;
+                    .setValue(this.plugin.settings.providers.ollama.host)
+                    .onChange(async (value) => {
+                        this.plugin.settings.providers.ollama.host = value;
                         await this.plugin.saveSettings();
-                    }));
+                    });
+            });
     }
 
     async renderOpenAISettings() {
         const { contentEl } = this;
         this.setTitle('OpenAI Settings');
 
-        let apiKey = this.plugin.settings.providers.openai.apiKey;
-
         new Setting(contentEl)
             .setName("OpenAI API Key")
             .setDesc("The API key for OpenAI")
             .addText((text) => {
                 text
-                    .setValue(apiKey)
-                    .onChange((value) => {
-                        apiKey = value;
-                    });
-            })
-        new Setting(contentEl)
-            .setTooltip("Save changes")
-            .addButton((btn) =>
-                btn
-                    .setButtonText('Save')
-                    .setCta()
-                    .onClick(async () => {
-                        this.close();
-                        this.plugin.settings.providers.openai.apiKey = apiKey;
+                    .setValue(this.plugin.settings.providers.openai.apiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.providers.openai.apiKey = value;
                         await this.plugin.saveSettings();
-                    }));
+                    });
+            });
     }
 
     async renderOpenAICompatibleSettings() {
         const { contentEl } = this;
         this.setTitle('OpenAI Compatible Provider Settings');
 
-        let apiKey = this.plugin.settings.providers.openai_compatible.apiKey;
-        let baseUrl = this.plugin.settings.providers.openai_compatible.baseUrl;
-
         new Setting(contentEl)
             .setName("API Key")
             .setDesc("The API key for OpenAI Compatible Provider")
             .addText((text) => {
                 text
-                    .setValue(apiKey)
-                    .onChange((value) => {
-                        apiKey = value;
+                    .setValue(this.plugin.settings.providers.openai_compatible.apiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.providers.openai_compatible.apiKey = value;
+                        await this.plugin.saveSettings();
                     });
-            })
+            });
+
         new Setting(contentEl)
             .setName("Base URL")
             .setDesc("The base URL for OpenAI Compatible Provider")
             .addText((text) => {
                 text
-                    .setValue(baseUrl)
-                    .onChange((value) => {
-                        baseUrl = value;
-                    });
-            })
-        new Setting(contentEl)
-            .setTooltip("Save changes")
-            .addButton((btn) =>
-                btn
-                    .setButtonText('Save')
-                    .setCta()
-                    .onClick(async () => {
-                        this.close();
-                        this.plugin.settings.providers.openai_compatible.apiKey = apiKey;
-                        this.plugin.settings.providers.openai_compatible.baseUrl = baseUrl;
+                    .setValue(this.plugin.settings.providers.openai_compatible.baseUrl)
+                    .onChange(async (value) => {
+                        this.plugin.settings.providers.openai_compatible.baseUrl = value;
                         await this.plugin.saveSettings();
-                    }));
+                    });
+            });
     }
 
     onClose() {
