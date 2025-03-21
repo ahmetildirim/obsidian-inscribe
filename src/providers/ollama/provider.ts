@@ -63,6 +63,16 @@ export class OllamaProvider implements Provider {
 
         return this.settings.models;
     }
+
+    async testConnection(): Promise<boolean> {
+        try {
+            await this.client.list();
+            return true;
+        } catch (error) {
+            console.error("Error testing connection:", error);
+            return false;
+        }
+    }
 }
 
 

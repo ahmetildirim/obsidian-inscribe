@@ -1,18 +1,19 @@
 import { Provider } from "..";
 import { Editor } from "obsidian";
-import { OpenAISettings } from ".";
+import { OpenAICompatibleSettings } from ".";
 import { CompletionOptions } from "src/settings/settings";
 import OpenAI from "openai";
 
-export class OpenAIProvider implements Provider {
+export class OpenAICompatibleProvider implements Provider {
     client: OpenAI;
-    settings: OpenAISettings;
+    settings: OpenAICompatibleSettings;
     aborted: boolean = false;
     abortcontroller: AbortController;
 
-    constructor(settings: OpenAISettings) {
+    constructor(settings: OpenAICompatibleSettings) {
         this.settings = settings;
         this.client = new OpenAI({
+            baseURL: this.settings.baseUrl,
             apiKey: this.settings.apiKey,
             dangerouslyAllowBrowser: true,
         });
@@ -40,7 +41,6 @@ export class OpenAIProvider implements Provider {
             if (this.aborted) {
                 return;
             }
-
             if (this.cursorMoved(editor, initialPosition)) {
                 console.log("cursor moved, aborting completion");
                 this.abort();

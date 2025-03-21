@@ -1,4 +1,4 @@
-import { App, Modal, Setting } from 'obsidian';
+import { App, Modal, Notice, Setting } from 'obsidian';
 import { ProviderType } from 'src/providers';
 import Inscribe from 'src/main';
 
@@ -24,6 +24,12 @@ export class ProviderSettingsModal extends Modal {
             case ProviderType.OPENAI:
                 this.renderOpenAISettings();
                 break;
+            case ProviderType.OPENAI_COMPATIBLE:
+                this.renderOpenAICompatibleSettings();
+                break;
+            default:
+                contentEl.createEl('h2', { text: 'Unknown provider type' });
+                break;
         }
     }
 
@@ -43,7 +49,24 @@ export class ProviderSettingsModal extends Modal {
                     .onChange((value) => {
                         host = value;
                     });
-            })
+            });
+
+        new Setting(contentEl)
+            .setName("Test Connection")
+            .setDesc("Test the connection to the Ollama API")
+            .addButton((btn) => {
+                btn
+                    .setButtonText('Test')
+                    .setCta()
+                    .onClick(async () => {
+                        const response = await this.plugin.providerFactory.testConnection(ProviderType.OLLAMA);
+                        if (response) {
+                            new Notice("Connection successful");
+                        } else {
+                            new Notice("Connection failed");
+                        }
+                    });
+            });
         new Setting(contentEl)
             .setTooltip("Save changes")
             .addButton((btn) =>
@@ -82,6 +105,47 @@ export class ProviderSettingsModal extends Modal {
                     .onClick(async () => {
                         this.close();
                         this.plugin.settings.providers.openai.apiKey = apiKey;
+                        await this.plugin.saveSettings();
+                    }));
+    }
+
+    async renderOpenAICompatibleSettings() {
+        const { contentEl } = this;
+        this.setTitle('OpenAI Compatible Provider Settings');
+
+        let apiKey = this.plugin.settings.providers.openai_compatible.apiKey;
+        let baseUrl = this.plugin.settings.providers.openai_compatible.baseUrl;
+
+        new Setting(contentEl)
+            .setName("API Key")
+            .setDesc("The API key for OpenAI Compatible Provider")
+            .addText((text) => {
+                text
+                    .setValue(apiKey)
+                    .onChange((value) => {
+                        apiKey = value;
+                    });
+            })
+        new Setting(contentEl)
+            .setName("Base URL")
+            .setDesc("The base URL for OpenAI Compatible Provider")
+            .addText((text) => {
+                text
+                    .setValue(baseUrl)
+                    .onChange((value) => {
+                        baseUrl = value;
+                    });
+            })
+        new Setting(contentEl)
+            .setTooltip("Save changes")
+            .addButton((btn) =>
+                btn
+                    .setButtonText('Save')
+                    .setCta()
+                    .onClick(async () => {
+                        this.close();
+                        this.plugin.settings.providers.openai_compatible.apiKey = apiKey;
+                        this.plugin.settings.providers.openai_compatible.baseUrl = baseUrl;
                         await this.plugin.saveSettings();
                     }));
     }

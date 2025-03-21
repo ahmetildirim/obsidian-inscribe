@@ -2,6 +2,7 @@ import { ProviderType } from "src/providers";
 import { SplitStrategy } from "src/extension";
 import { OllamaSettings } from "src/providers/ollama";
 import { OpenAISettings } from "src/providers/openai";
+import { OpenAICompatibleSettings } from "src/providers/openai-compat";
 
 // Completion options for a profile
 export interface CompletionOptions {
@@ -30,6 +31,7 @@ export interface Settings {
     providers: {
         ollama: OllamaSettings,
         openai: OpenAISettings,
+        openai_compatible: OpenAICompatibleSettings,
     },
     // profiles
     profiles: Profiles,
@@ -57,6 +59,16 @@ export const DEFAULT_SETTINGS: Settings = {
             description: "Use your own Ollama instance to generate text.",
             host: "http://localhost:11434",
             models: ["llama3.2:latest", "mistral-nemo"],
+            configured: false,
+        },
+        openai_compatible: {
+            integration: ProviderType.OPENAI_COMPATIBLE,
+            name: "OpenAI Compatible",
+            description: "Use OpenAI compatible APIs to generate completions.",
+            apiKey: "api-key",
+            baseUrl: "https://api.openai.com/v1",
+            model: "gpt-4o-mini",
+            models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
         },
     },

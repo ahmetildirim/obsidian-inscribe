@@ -123,6 +123,17 @@ class ProvidersSection {
                     .setTooltip("Configure OpenAI")
                     .onClick(() => this.openProviderModal(ProviderType.OPENAI));
             });
+
+        // OpenAI Compatible Provider
+        new Setting(this.container)
+            .setName("OpenAI Compatible")
+            .setDesc("OpenAI compatible provider")
+            .addButton((button: ButtonComponent) => {
+                button
+                    .setButtonText("Configure")
+                    .setTooltip("Configure OpenAI Compatible")
+                    .onClick(() => this.openProviderModal(ProviderType.OPENAI_COMPATIBLE));
+            });
     }
 
     private openProviderModal(type: ProviderType): void {
@@ -241,10 +252,12 @@ class ProfilesSection {
                 dropdown
                     .addOption(ProviderType.OLLAMA, "Ollama")
                     .addOption(ProviderType.OPENAI, "OpenAI")
+                    .addOption(ProviderType.OPENAI_COMPATIBLE, "OpenAI Compatible")
                     .setValue(profile.provider)
                     .onChange(async (value: ProviderType) => {
                         profile.provider = value;
                         await this.plugin.saveSettings();
+                        await this.renderProfileSettings(profile);
                     });
             });
 
@@ -257,9 +270,10 @@ class ProfilesSection {
                     .setIcon("refresh-ccw")
                     .setTooltip("Update model list")
                     .onClick(async () => {
-                        this.plugin.providerFactory.updateModels(profile.provider);
+                        await this.plugin.providerFactory.updateModels(profile.provider);
                         await this.plugin.saveSettings();
                         await this.renderProfileSettings(profile);
+                        new Notice("Model list updated");
                     });
             })
             .addDropdown(async (dropdown) => {
