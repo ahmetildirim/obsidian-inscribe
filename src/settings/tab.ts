@@ -61,7 +61,7 @@ class GeneralSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h3", { text: "General" });
+        this.container.createEl("h2", { text: "General" });
         this.container.createEl("p", {
             text: "Configure general settings for Inscribe"
         });
@@ -97,7 +97,7 @@ class ProvidersSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h3", { text: "Providers" });
+        this.container.createEl("h2", { text: "Providers" });
         this.container.createEl("p", {
             text: "Configure the AI providers you want to use for completions"
         });
@@ -106,38 +106,40 @@ class ProvidersSection {
         new Setting(this.container)
             .setName("Ollama")
             .setDesc("Local AI provider running on your machine")
-            .addButton((button: ButtonComponent) => {
-                button
-                    .setButtonText("Configure")
-                    .setTooltip("Configure Ollama")
-                    .onClick(() => this.openProviderModal(ProviderType.OLLAMA));
-            });
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
+                button,
+                ProviderType.OLLAMA,
+                this.plugin.settings.providers.ollama.configured));
 
         // OpenAI Provider
         new Setting(this.container)
             .setName("OpenAI")
-            .setDesc("OpenAI API provider")
-            .addButton((button: ButtonComponent) => {
-                button
-                    .setButtonText("Configure")
-                    .setTooltip("Configure OpenAI")
-                    .onClick(() => this.openProviderModal(ProviderType.OPENAI));
-            });
+            .setDesc("OpenAI API")
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
+                button,
+                ProviderType.OPENAI,
+                this.plugin.settings.providers.openai.configured));
 
         // OpenAI Compatible Provider
         new Setting(this.container)
             .setName("OpenAI Compatible")
             .setDesc("OpenAI compatible provider")
-            .addButton((button: ButtonComponent) => {
-                button
-                    .setButtonText("Configure")
-                    .setTooltip("Configure OpenAI Compatible")
-                    .onClick(() => this.openProviderModal(ProviderType.OPENAI_COMPATIBLE));
-            });
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
+                button,
+                ProviderType.OPENAI_COMPATIBLE,
+                this.plugin.settings.providers.openai_compatible.configured));
     }
 
-    private openProviderModal(type: ProviderType): void {
-        new ProviderSettingsModal(this.app, this.plugin, type).open();
+    private createConfigureButton(button: ButtonComponent, type: ProviderType, configured: boolean): void {
+        button.buttonEl.setCssStyles({
+            color: configured ? "var(--text-success)" : "var(--text-warning)",
+        });
+        button
+            .setIcon(configured ? "circle-check" : "circle-alert")
+            .setTooltip(configured ? "Provider configured" : "Provider not configured")
+            .onClick(() => {
+                new ProviderSettingsModal(this.app, this.plugin, type).open()
+            });
     }
 }
 
@@ -167,7 +169,7 @@ class ProfilesSection {
     async render(): Promise<void> {
         // Clear main container and re-append sub-containers
         this.container.empty();
-        this.container.createEl("h3", { text: "Profiles" });
+        this.container.createEl("h2", { text: "Profiles" });
         this.container.createEl("p", {
             text: "Configure the settings for each profile. A profile can be assigned to paths. The default profile is used when no profile is assigned."
         });
@@ -357,7 +359,7 @@ class ProfilesSection {
         // User Prompt
         new Setting(this.profileContainer)
             .setName("User Prompt")
-            .setDesc("User prompt template")
+            .setDesc("User prompt template.")
             .addExtraButton((button) => {
                 button
                     .setIcon("list")
@@ -405,7 +407,7 @@ class PathConfigsSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h3", { text: "Path Configs" });
+        this.container.createEl("h2", { text: "Path Configs" });
         this.container.createEl("p", {
             text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder."
         });

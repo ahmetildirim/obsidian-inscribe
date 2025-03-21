@@ -66,7 +66,7 @@ export default class StatusBarItem {
                 .onClick(() => {
                     const setting = (this.plugin.app as any).setting;
                     setting.open();
-                    setting.openTabById("obsidian-inscribe");
+                    setting.openTabById(this.plugin.manifest.id);
                 })
         });
 

@@ -42,7 +42,7 @@ export interface Settings {
 export const DEFAULT_PROFILE: ProfileId = "default";
 export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
-    enabled: true,
+    enabled: false,
     providers: {
         openai: {
             integration: ProviderType.OPENAI,
