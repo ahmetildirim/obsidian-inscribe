@@ -1,11 +1,11 @@
 {
-	"id": "obsidian-inscribe",
+	"id": "inscribe",
 	"name": "Inscribe",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Inscribe is a plugin for Obsidian that completes your thoughts.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Inline text suggestions with AI",
+	"author": "Ahmet Ildirim",
+	"authorUrl": "https://github.com/ahmetildirim",
+	"fundingUrl": "https://buymeacoffee.com/ahmetildirim",
 	"isDesktopOnly": true
 }
