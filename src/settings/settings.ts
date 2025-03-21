@@ -15,9 +15,9 @@ export interface CompletionOptions {
 export interface Profile {
     name: string,
     provider: ProviderType,
+    completionOptions: CompletionOptions,
     delayMs: number,
     splitStrategy: SplitStrategy
-    completionOptions: CompletionOptions,
 }
 
 export type ProfileId = string;
@@ -47,8 +47,8 @@ export const DEFAULT_SETTINGS: Settings = {
             name: "Open AI",
             description: "Use OpenAI APIs to generate text.",
             apiKey: "",
-            model: "gpt-4o",
-            models: ["gpt-4", "gpt-3.5-turbo", "gpt-3.5", "gpt-3", "gpt-2", "gpt-1"],
+            model: "gpt-4o-mini",
+            models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
         },
         ollama: {
@@ -57,7 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
             description: "Use your own Ollama instance to generate text.",
             host: "http://localhost:11434",
             models: ["llama3.2:latest", "mistral-nemo"],
-            configured: true,
+            configured: false,
         },
     },
     profiles: {
@@ -65,9 +65,9 @@ export const DEFAULT_SETTINGS: Settings = {
             name: "Default Profile",
             provider: ProviderType.OLLAMA,
             delayMs: 500,
-            splitStrategy: "word",
+            splitStrategy: "sentence",
             completionOptions: {
-                model: "mistral-nemo",
+                model: "llama3.2:latest",
                 userPrompt: 'Complete following text:\n {{pre_cursor}}}',
                 systemPrompt: "You are an helpful AI completer. Follow instructions",
                 temperature: 0.5,
