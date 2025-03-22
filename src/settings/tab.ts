@@ -4,7 +4,7 @@ import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
 import { createPathConfig, DEFAULT_PATH, DEFAULT_PROFILE, Profile } from "./settings";
-import { ProviderSettingsModal } from './provider-modal';
+import { ProviderSettingsModal } from './provider';
 import { createProfile } from ".";
 
 /* --------------------------------------------------------------------------
