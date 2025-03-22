@@ -14,6 +14,10 @@ export class ProviderSettingsModal extends Modal {
     }
 
     onOpen() {
+        this.renderProviderSettings();
+    }
+
+    async renderProviderSettings() {
         const { contentEl } = this;
         contentEl.empty();
 
@@ -113,10 +117,11 @@ export class ProviderSettingsModal extends Modal {
                 button
                     .setButtonText(`Connection Test`)
                     .onClick(async () => {
+                        button.setDisabled(true).setButtonText('Testing...');
                         provider.configured = await this.plugin.providerFactory.connectionTest(this.providerType);
                         await this.plugin.saveSettings();
                         new Notice(provider.configured ? 'Connected!' : 'Failed to connect');
-                        this.onOpen(); // Refresh the view
+                        this.renderProviderSettings();
                     });
             });
     }
