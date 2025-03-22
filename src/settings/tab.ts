@@ -61,11 +61,6 @@ class GeneralSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h2", { text: "General" });
-        this.container.createEl("p", {
-            text: "Configure general settings for Inscribe"
-        });
-
         // Enabled
         new Setting(this.container)
             .setName("Enabled")
@@ -97,16 +92,13 @@ class ProvidersSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h2", { text: "Providers" });
-        this.container.createEl("p", {
-            text: "Configure the AI providers you want to use for completions"
-        });
+        this.container.createEl("h3", { text: "Providers" });
 
         // Ollama Provider
         new Setting(this.container)
             .setName("Ollama")
             .setDesc("Local AI provider running on your machine")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
+            .addExtraButton((button: ExtraButtonComponent) => this.createConfigureButton(
                 button,
                 ProviderType.OLLAMA,
                 this.plugin.settings.providers.ollama.configured));
@@ -115,7 +107,7 @@ class ProvidersSection {
         new Setting(this.container)
             .setName("OpenAI")
             .setDesc("OpenAI API")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
+            .addExtraButton((button: ExtraButtonComponent) => this.createConfigureButton(
                 button,
                 ProviderType.OPENAI,
                 this.plugin.settings.providers.openai.configured));
@@ -124,18 +116,18 @@ class ProvidersSection {
         new Setting(this.container)
             .setName("OpenAI Compatible")
             .setDesc("OpenAI compatible provider")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
+            .addExtraButton((button: ExtraButtonComponent) => this.createConfigureButton(
                 button,
                 ProviderType.OPENAI_COMPATIBLE,
                 this.plugin.settings.providers.openai_compatible.configured));
     }
 
-    private createConfigureButton(button: ButtonComponent, type: ProviderType, configured: boolean): void {
-        button.buttonEl.setCssStyles({
+    private createConfigureButton(button: ExtraButtonComponent, type: ProviderType, configured: boolean): void {
+        button.extraSettingsEl.setCssProps({
             color: configured ? "var(--text-success)" : "var(--text-warning)",
         });
         button
-            .setIcon(configured ? "circle-check" : "circle-alert")
+            .setIcon(configured ? "cog" : "cog")
             .setTooltip(configured ? "Provider configured" : "Provider not configured")
             .onClick(() => {
                 new ProviderSettingsModal(this.app, this.plugin, type).open()
@@ -169,10 +161,7 @@ class ProfilesSection {
     async render(): Promise<void> {
         // Clear main container and re-append sub-containers
         this.container.empty();
-        this.container.createEl("h2", { text: "Profiles" });
-        this.container.createEl("p", {
-            text: "Configure the settings for each profile. A profile can be assigned to paths. The default profile is used when no profile is assigned."
-        });
+        this.container.createEl("h3", { text: "Profiles" });
         this.container.appendChild(this.selectionContainer);
         this.container.appendChild(this.profileContainer);
 
@@ -184,10 +173,8 @@ class ProfilesSection {
 
     private async renderProfileSelection(): Promise<void> {
         this.selectionContainer.empty();
-        this.selectionContainer.createEl("br");
 
         new Setting(this.selectionContainer)
-            .setHeading()
             .setName("Manage profile")
             .setDesc("Select a profile to configure its settings")
             .addDropdown((dropdown: DropdownComponent) => this.createProfileDropdown(dropdown))
@@ -411,8 +398,6 @@ class PathConfigsSection {
         this.container.createEl("p", {
             text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder."
         });
-        this.container.createEl("br");
-
         this.container.appendChild(this.tableContainer);
         await this.renderMappingsTable();
     }

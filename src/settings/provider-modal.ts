@@ -55,7 +55,6 @@ export class ProviderSettingsModal extends Modal {
             .setDesc(`${this.plugin.settings.providers.ollama.configured ? 'Successful' : 'Failed'}`)
             .addButton(button => {
                 button
-                    .setCta()
                     .setButtonText(`Test Connection`)
                     .onClick(async () => {
                         this.plugin.settings.providers.ollama.configured = await this.plugin.providerFactory.testConnection(ProviderType.OLLAMA);
@@ -90,7 +89,6 @@ export class ProviderSettingsModal extends Modal {
             .setDesc(`${this.plugin.settings.providers.openai.configured ? 'Successful' : 'Failed'}`)
             .addButton(button => {
                 button
-                    .setCta()
                     .setButtonText(`Test Connection`)
                     .onClick(async () => {
                         this.plugin.settings.providers.openai.configured = await this.plugin.providerFactory.testConnection(ProviderType.OPENAI);
@@ -137,7 +135,6 @@ export class ProviderSettingsModal extends Modal {
             .setDesc(`${this.plugin.settings.providers.openai_compatible.configured ? 'Successful' : 'Failed'}`)
             .addButton(button => {
                 button
-                    .setCta()
                     .setButtonText(`Test Connection`)
                     .onClick(async () => {
                         this.plugin.settings.providers.openai_compatible.configured = await this.plugin.providerFactory.testConnection(ProviderType.OPENAI_COMPATIBLE);
