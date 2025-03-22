@@ -3,7 +3,7 @@
 	"name": "Inscribe",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Inline text suggestions with AI",
+	"description": "Inline autocompletion powered by AI",
 	"author": "Ahmet Ildirim",
 	"authorUrl": "https://github.com/ahmetildirim",
 	"fundingUrl": "https://buymeacoffee.com/ahmetildirim",
