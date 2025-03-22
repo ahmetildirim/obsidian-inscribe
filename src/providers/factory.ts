@@ -32,8 +32,8 @@ export class ProviderFactory {
         return this.providers[provider].updateModels();
     }
 
-    async testConnection(provider: ProviderType): Promise<boolean> {
-        return this.providers[provider].testConnection();
+    async connectionTest(provider: ProviderType): Promise<boolean> {
+        return this.providers[provider].connectionTest();
     }
 
     private buildProviders(settings: Settings): Providers {

@@ -75,7 +75,7 @@ export class OpenAICompatibleProvider implements Provider {
         return chatModels;
     }
 
-    async testConnection(): Promise<boolean> {
+    async connectionTest(): Promise<boolean> {
         try {
             await this.client.models.list();
             return true;

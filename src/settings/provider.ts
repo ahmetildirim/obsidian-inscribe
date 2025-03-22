@@ -33,11 +33,11 @@ export class ProviderSettingsModal extends Modal {
         }
     }
 
-
     async renderOllamaSettings() {
         const { contentEl } = this;
         contentEl.empty();
         this.setTitle('Ollama Settings');
+
         new Setting(contentEl)
             .setName("Ollama Host")
             .setDesc("The host of the Ollama API")
@@ -50,21 +50,7 @@ export class ProviderSettingsModal extends Modal {
                     });
             });
 
-        new Setting(contentEl)
-            .setName("Status")
-            .setDesc(`${this.plugin.settings.providers.ollama.configured ? 'Successful' : 'Failed'}`)
-            .addButton(button => {
-                button
-                    .setButtonText(`Test Connection`)
-                    .onClick(async () => {
-                        this.plugin.settings.providers.ollama.configured = await this.plugin.providerFactory.testConnection(ProviderType.OLLAMA);
-                        await this.plugin.saveSettings();
-                        new Notice(this.plugin.settings.providers.ollama.configured
-                            ? 'Successfully connected to Ollama'
-                            : 'Failed to connect to Ollama');
-                        this.renderOllamaSettings();
-                    });
-            });
+        this.renderConnectionStatus(this.plugin.settings.providers.ollama);
     }
 
     async renderOpenAISettings() {
@@ -84,21 +70,7 @@ export class ProviderSettingsModal extends Modal {
                     });
             });
 
-        new Setting(contentEl)
-            .setName("Status")
-            .setDesc(`${this.plugin.settings.providers.openai.configured ? 'Successful' : 'Failed'}`)
-            .addButton(button => {
-                button
-                    .setButtonText(`Test Connection`)
-                    .onClick(async () => {
-                        this.plugin.settings.providers.openai.configured = await this.plugin.providerFactory.testConnection(ProviderType.OPENAI);
-                        await this.plugin.saveSettings();
-                        new Notice(this.plugin.settings.providers.openai.configured
-                            ? 'Successfully connected to OpenAI'
-                            : 'Failed to connect to OpenAI');
-                        this.renderOpenAISettings();
-                    });
-            });
+        this.renderConnectionStatus(this.plugin.settings.providers.openai);
     }
 
     async renderOpenAICompatibleSettings() {
@@ -130,19 +102,21 @@ export class ProviderSettingsModal extends Modal {
                     });
             });
 
-        new Setting(contentEl)
+        this.renderConnectionStatus(this.plugin.settings.providers.openai_compatible);
+    }
+
+    private renderConnectionStatus(provider: { configured: boolean }) {
+        new Setting(this.contentEl)
             .setName("Status")
-            .setDesc(`${this.plugin.settings.providers.openai_compatible.configured ? 'Successful' : 'Failed'}`)
+            .setDesc(`${provider.configured ? 'Successful' : 'Failed'}`)
             .addButton(button => {
                 button
-                    .setButtonText(`Test Connection`)
+                    .setButtonText(`Connection Test`)
                     .onClick(async () => {
-                        this.plugin.settings.providers.openai_compatible.configured = await this.plugin.providerFactory.testConnection(ProviderType.OPENAI_COMPATIBLE);
+                        provider.configured = await this.plugin.providerFactory.connectionTest(this.providerType);
                         await this.plugin.saveSettings();
-                        new Notice(this.plugin.settings.providers.openai_compatible.configured
-                            ? 'Successfully connected to OpenAI Compatible Provider'
-                            : 'Failed to connect to OpenAI Compatible Provider');
-                        this.renderOpenAICompatibleSettings();
+                        new Notice(provider.configured ? 'Connected!' : 'Failed to connect');
+                        this.onOpen(); // Refresh the view
                     });
             });
     }
@@ -150,9 +124,6 @@ export class ProviderSettingsModal extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
-
-        const setting = (this.plugin.app as any).setting;
-        setting.open();
-        setting.openTabById(this.plugin.manifest.id);
+        (this.plugin.app as any).setting?.openTabById(this.plugin.manifest.id);
     }
-} 
+}

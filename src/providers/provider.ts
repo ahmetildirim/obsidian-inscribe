@@ -13,5 +13,5 @@ export interface Provider {
     generate: (editor: Editor, options: CompletionOptions) => AsyncGenerator<string>;
     abort: () => Promise<void>;
     updateModels(): Promise<string[]> | string[];
-    testConnection(): Promise<boolean>;
+    connectionTest(): Promise<boolean>;
 }
