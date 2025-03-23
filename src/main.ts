@@ -10,10 +10,10 @@ import StatusBarItem from './statusbar/statusbar';
 export default class Inscribe extends Plugin {
 	settings: Settings;
 	providerFactory: ProviderFactory;
+	statusBarItem: StatusBarItem;
 
 	private profileService: ProfileService;
 	private completionEngine: CompletionService;
-	private statusBarItem: StatusBarItem;
 
 	async onload() {
 		await this.loadSettings();

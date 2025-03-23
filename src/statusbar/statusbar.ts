@@ -11,9 +11,9 @@ export default class StatusBarItem {
     private completionService: CompletionService;
     private isGenerating: boolean = false;
 
-    constructor(plugin: Inscribe, profileTracker: ProfileService, completionService: CompletionService) {
+    constructor(plugin: Inscribe, profileService: ProfileService, completionService: CompletionService) {
         this.plugin = plugin;
-        this.profileService = profileTracker;
+        this.profileService = profileService;
         this.completionService = completionService;
 
         this.profileService.onProfileChange(this.handleProfileChange.bind(this));
@@ -21,6 +21,22 @@ export default class StatusBarItem {
 
         this.statusBarItem = this.createStatusBarItem();
         this.render();
+    }
+
+    render(): void {
+        if (this.isGenerating) {
+            this.statusBarItem.addClass('active');
+            setTooltip(this.statusBarItem, 'Inscribing...', { placement: 'top' });
+        } else {
+            this.statusBarItem.removeClass('active');
+            if (this.completionService.completionEnabled()) {
+                this.statusBarItem.removeClass('completion-disabled');
+                this.updateProfile(this.profileService.getActiveProfile().name);
+            } else {
+                this.statusBarItem.addClass('completion-disabled');
+                setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
+            }
+        }
     }
 
     private createStatusBarItem(): HTMLElement {
@@ -84,21 +100,5 @@ export default class StatusBarItem {
 
     private updateProfile(profile: string): void {
         setTooltip(this.statusBarItem, `Profile: ${profile}`, { placement: 'top' });
-    }
-
-    private render(): void {
-        if (this.isGenerating) {
-            this.statusBarItem.addClass('active');
-            setTooltip(this.statusBarItem, 'Inscribing...', { placement: 'top' });
-        } else {
-            this.statusBarItem.removeClass('active');
-            if (this.completionService.completionEnabled()) {
-                this.statusBarItem.removeClass('completion-disabled');
-                this.updateProfile(this.profileService.getActiveProfile().name);
-            } else {
-                this.statusBarItem.addClass('completion-disabled');
-                setTooltip(this.statusBarItem, `Completion disabled`, { placement: 'top' });
-            }
-        }
     }
 } 

@@ -71,6 +71,7 @@ class GeneralSection {
                     .onChange(async (value) => {
                         this.plugin.settings.enabled = value;
                         await this.plugin.saveSettings();
+                        this.plugin.statusBarItem.render();
                     });
             });
     }
@@ -501,6 +502,7 @@ class PathConfigsSection {
                 .onChange(async (value: boolean) => {
                     this.plugin.settings.path_configs[path].enabled = value;
                     await this.plugin.saveSettings();
+                    this.plugin.statusBarItem.render();
                 });
         });
     }
