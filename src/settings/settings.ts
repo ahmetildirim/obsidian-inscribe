@@ -48,7 +48,7 @@ export const DEFAULT_SETTINGS: Settings = {
             integration: ProviderType.OPENAI,
             name: "Open AI",
             description: "Use OpenAI APIs to generate text.",
-            apiKey: "",
+            apiKey: "api-key",
             model: "gpt-4o-mini",
             models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
@@ -132,3 +132,6 @@ export function createPathConfig(settings: Settings, path: string, profile: Prof
     settings.path_configs[path] = { profile: profile, enabled: true };
 }
 
+export function resetSettings(settings: Settings): void {
+    Object.assign(settings, DEFAULT_SETTINGS);
+}

@@ -3,7 +3,7 @@ import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
-import { createPathConfig, DEFAULT_PATH, DEFAULT_PROFILE, Profile } from "./settings";
+import { createPathConfig, DEFAULT_PATH, DEFAULT_PROFILE, Profile, resetSettings } from "./settings";
 import { ProviderSettingsModal } from './provider';
 import { createProfile } from ".";
 
@@ -26,7 +26,7 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         // General Section
         const generalContainer = document.createElement("div");
         this.containerEl.appendChild(generalContainer);
-        this.generalSection = new GeneralSection(generalContainer, this.plugin);
+        this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
         this.generalSection.render();
 
         // Providers Section
@@ -53,10 +53,12 @@ export default class InscribeSettingsTab extends PluginSettingTab {
 class GeneralSection {
     private container: HTMLElement;
     private plugin: Inscribe;
+    private displayFunc: () => void;
 
-    constructor(container: HTMLElement, plugin: Inscribe) {
+    constructor(container: HTMLElement, plugin: Inscribe, displayFunc: () => void) {
         this.container = container;
         this.plugin = plugin;
+        this.displayFunc = displayFunc;
     }
 
     async render(): Promise<void> {
@@ -72,6 +74,24 @@ class GeneralSection {
                         this.plugin.settings.enabled = value;
                         await this.plugin.saveSettings();
                         this.plugin.statusBarItem.render();
+                    });
+            });
+
+        // Reset Settings
+        new Setting(this.container)
+            .setName("Reset Settings")
+            .setDesc("Reset all settings to default")
+            .addButton((button: ButtonComponent) => {
+                button
+                    .setWarning()
+                    .setButtonText("Reset")
+                    .setTooltip("Reset settings to default")
+                    .onClick(async () => {
+                        resetSettings(this.plugin.settings);
+                        await this.plugin.saveSettings();
+                        this.displayFunc();
+                        this.plugin.statusBarItem.render();
+                        new Notice("Settings reset to default");
                     });
             });
     }
@@ -506,4 +526,10 @@ class PathConfigsSection {
                 });
         });
     }
+}
+
+function openSettingsTab(plugin: Inscribe): void {
+    const setting = (plugin.app as any).setting;
+    setting.open();
+    setting.openTabById(plugin.manifest.id);
 }
