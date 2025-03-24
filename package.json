@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-inscibe-plugin",
+	"name": "obsidian-inscribe",
 	"version": "1.0.0",
-	"description": "Inscribe is a plugin for Obsidian that completes your thoughts.",
+	"description": "A plugin for Obsidian that uses AI to provide inline completions.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
