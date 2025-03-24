@@ -184,7 +184,7 @@ class ProfilesSection {
         this.container.empty();
         this.container.createEl("h3", { text: "Profiles" });
         this.container.appendChild(this.selectionContainer);
-        this.container.createEl("hr");
+        this.container.createEl("div", { cls: "setting-item" });
         this.container.appendChild(this.profileContainer);
 
         await this.renderProfileSelection();
@@ -198,6 +198,7 @@ class ProfilesSection {
 
         new Setting(this.selectionContainer)
             .setName("Manage profile")
+            .setHeading()
             .setDesc("Select a profile to configure its settings")
             .addDropdown((dropdown: DropdownComponent) => this.createProfileDropdown(dropdown))
             .addExtraButton((button: ExtraButtonComponent) => this.createNewProfileButton(button))

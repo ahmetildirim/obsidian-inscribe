@@ -1,25 +1,27 @@
 # Obsidian Inscribe Plugin
 
-Inscribe is an AI-powered inline autocompletion plugin for Obsidian. It enhances your writing experience by providing smart, contextual suggestions as you type.
-
-## What Inscribe Does
-
-Inscribe works quietly in the background as you write, offering intelligent completions that match your writing style and context. After you type a space, the plugin can suggest natural continuations of your text, helping you write more efficiently while maintaining your unique voice.
+Inscribe is an AI-powered inline autocompletion plugin for Obsidian. After you type a space, the plugin can suggest natural continuations of your text, helping you write more efficiently.
 
 ## Features
 
-- **AI-Powered Completions**: Get intelligent, context-aware text suggestions as you write
-- **Multiple AI Provider Support**:
+### AI-Powered Completions 
+Get intelligent, context-aware text suggestions as you write.
+
+### Multiple AI Provider Support**:
   - OpenAI (GPT-4o, GPT-4o-mini)
   - Ollama (local models like Llama3, Mistral, Gemma)
   - OpenAI-compatible APIs
-- **Customizable Profiles**: Create different completion profiles for various writing styles and needs
-- **Per-Path Configuration**: Set different profiles for different folders in your vault
-- **Adjustable Parameters**:
+
+### Customizable Profiles 
+Create different completion profiles for various writing styles and needs
+
+### Per-Path Configuration
+Set different profiles for different folders in your vault
+
+### Adjustable Parameters
   - Customize temperature to control creativity level
   - Fine-tune delay settings
   - Edit system and user prompts
-- **Status Bar Integration**: Easily see and control the plugin status
 
 ## How to Use
 
