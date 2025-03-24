@@ -1,94 +1,54 @@
-# Obsidian Sample Plugin
+# Obsidian Inscribe Plugin
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Inscribe is an AI-powered inline autocompletion plugin for Obsidian. It enhances your writing experience by providing smart, contextual suggestions as you type.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## What Inscribe Does
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+Inscribe works quietly in the background as you write, offering intelligent completions that match your writing style and context. After you type a space, the plugin can suggest natural continuations of your text, helping you write more efficiently while maintaining your unique voice.
 
-## First time developing plugins?
+## Features
 
-Quick starting guide for new plugin devs:
+- **AI-Powered Completions**: Get intelligent, context-aware text suggestions as you write
+- **Multiple AI Provider Support**:
+  - OpenAI (GPT-4o, GPT-4o-mini)
+  - Ollama (local models like Llama3, Mistral, Gemma)
+  - OpenAI-compatible APIs
+- **Customizable Profiles**: Create different completion profiles for various writing styles and needs
+- **Per-Path Configuration**: Set different profiles for different folders in your vault
+- **Adjustable Parameters**:
+  - Customize temperature to control creativity level
+  - Fine-tune delay settings
+  - Edit system and user prompts
+- **Status Bar Integration**: Easily see and control the plugin status
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## How to Use
 
-## Releasing new releases
+1. **Installation**: Install the plugin through Obsidian's Community Plugins browser or manually
+2. **Configuration**:
+   - Go to Settings → Inscribe
+   - Enable the plugin and configure at least one AI provider
+   - Set up your API keys or connection details for your chosen provider(s)
+3. **Create Profiles** (optional):
+   - Create different profiles with specific AI models and settings
+   - Assign profiles to specific paths in your vault
+4. **Start Writing**:
+   - Begin typing in any note
+   - After typing a space, the plugin will suggest completions
+   - Press Tab to accept a suggestion or continue typing to ignore it
+5. **Toggle On/Off**:
+   - Use the status bar icon to quickly enable/disable completions
+   - Configure path-specific settings to control where completions appear
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+## Setup Tips
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+- For OpenAI: Enter your API key in the settings
+- For Ollama: Make sure your Ollama server is running (default: http://localhost:11434)
+- Adjust temperature for more conservative (lower) or creative (higher) completions
+- Customize prompts to better match your writing style and needs
 
-## Adding your plugin to the community plugin list
+---
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+Made with ❤️ by [Ahmet Ildirim](https://github.com/ahmetildirim)
 
-## How to use
+If you find this plugin useful, consider [buying me a coffee](https://buymeacoffee.com/ahmetildirim)
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
-
-If you have multiple URLs, you can also do:
-
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
-
-## API Documentation
-
-See https://github.com/obsidianmd/obsidian-api
