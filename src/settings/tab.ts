@@ -184,6 +184,7 @@ class ProfilesSection {
         this.container.empty();
         this.container.createEl("h3", { text: "Profiles" });
         this.container.appendChild(this.selectionContainer);
+        this.container.createEl("hr");
         this.container.appendChild(this.profileContainer);
 
         await this.renderProfileSelection();
@@ -415,9 +416,10 @@ class PathConfigsSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h2", { text: "Path Configs" });
+        this.container.createEl("h3", { text: "Path configs" });
         this.container.createEl("p", {
-            text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder."
+            text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder.",
+            cls: "setting-item"
         });
         this.container.appendChild(this.tableContainer);
         await this.renderMappingsTable();
