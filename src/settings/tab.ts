@@ -527,9 +527,3 @@ class PathConfigsSection {
         });
     }
 }
-
-function openSettingsTab(plugin: Inscribe): void {
-    const setting = (plugin.app as any).setting;
-    setting.open();
-    setting.openTabById(plugin.manifest.id);
-}
