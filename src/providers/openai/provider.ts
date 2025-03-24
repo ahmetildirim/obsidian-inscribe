@@ -42,7 +42,6 @@ export class OpenAIProvider implements Provider {
             }
 
             if (this.cursorMoved(editor, initialPosition)) {
-                console.log("cursor moved, aborting completion");
                 this.abort();
                 return;
             }
@@ -57,7 +56,6 @@ export class OpenAIProvider implements Provider {
         if (this.aborted) return;
         this.aborted = true;
         this.abortcontroller.abort();
-        console.log("aborted completion");
     }
 
     async updateModels(): Promise<string[]> {

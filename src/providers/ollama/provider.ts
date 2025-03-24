@@ -36,7 +36,6 @@ export class OllamaProvider implements Provider {
                 return;
             }
             if (this.cursorMoved(editor, initialPosition)) {
-                console.log("cursor moved, aborting completion");
                 this.abort();
                 return;
             }
@@ -54,7 +53,6 @@ export class OllamaProvider implements Provider {
         if (this.aborted) return;
         this.client.abort();
         this.aborted = true;
-        console.log("aborted completion");
     }
 
     async updateModels(): Promise<string[]> {

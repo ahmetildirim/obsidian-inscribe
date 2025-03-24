@@ -350,7 +350,7 @@ class ProfilesSection {
             .setName("System Prompt")
             .setDesc("Set system prompt")
             .addTextArea((text) => {
-                text.inputEl.rows = 3;
+                text.inputEl.rows = 7;
                 text.inputEl.setCssStyles({
                     width: "100%",
                     resize: "vertical",
@@ -383,7 +383,7 @@ class ProfilesSection {
                     });
             })
             .addTextArea((text) => {
-                text.inputEl.rows = 3;
+                text.inputEl.rows = 7;
                 text.inputEl.setCssStyles({
                     width: "100%",
                     resize: "vertical",
