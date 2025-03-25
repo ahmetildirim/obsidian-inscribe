@@ -26,25 +26,21 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         // General Section
         const generalContainer = document.createElement("div");
         this.containerEl.appendChild(generalContainer);
-        this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
-        this.generalSection.render();
-
-        // Providers Section
         const providersContainer = document.createElement("div");
         this.containerEl.appendChild(providersContainer);
-        this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
-        this.providersSection.render();
-
-        // Profiles Section
         const profilesContainer = document.createElement("div");
         this.containerEl.appendChild(profilesContainer);
-        this.profilesSection = new ProfilesSection(profilesContainer, this.plugin);
-        this.profilesSection.render();
-
-        // Path Mappings Section
         const pathMappingsContainer = document.createElement("div");
         this.containerEl.appendChild(pathMappingsContainer);
+
+        this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
+        this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
         this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
+        this.profilesSection = new ProfilesSection(profilesContainer, this.plugin, this.pathConfigsSection.render.bind(this.pathConfigsSection));
+
+        this.generalSection.render();
+        this.providersSection.render();
+        this.profilesSection.render();
         this.pathConfigsSection.render();
     }
 }
@@ -162,13 +158,15 @@ class ProvidersSection {
 class ProfilesSection {
     private container: HTMLElement;
     private plugin: Inscribe;
+    private onProfileUpdate: () => void;
     private displayedProfileId: string = DEFAULT_PROFILE;
     private selectionContainer: HTMLElement;
     private profileContainer: HTMLElement;
 
-    constructor(container: HTMLElement, plugin: Inscribe) {
+    constructor(container: HTMLElement, plugin: Inscribe, onProfileUpdate: () => void) {
         this.container = container;
         this.plugin = plugin;
+        this.onProfileUpdate = onProfileUpdate;
 
         // Create the containers once
         this.selectionContainer = document.createElement("div");
@@ -200,12 +198,12 @@ class ProfilesSection {
             .setName("Manage profile")
             .setHeading()
             .setDesc("Select a profile to configure its settings")
-            .addDropdown((dropdown: DropdownComponent) => this.createProfileDropdown(dropdown))
+            .addDropdown((dropdown: DropdownComponent) => this.profileDropdown(dropdown))
             .addExtraButton((button: ExtraButtonComponent) => this.createNewProfileButton(button))
             .addExtraButton((button: ExtraButtonComponent) => this.createDeleteProfileButton(button));
     }
 
-    private createProfileDropdown(dropdown: DropdownComponent): void {
+    private profileDropdown(dropdown: DropdownComponent): void {
         Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
             dropdown.addOption(id, profile.name);
         });
@@ -225,6 +223,7 @@ class ProfilesSection {
                 this.displayedProfileId = createProfile(this.plugin.settings);
                 await this.plugin.saveSettings();
                 await this.render();
+                this.onProfileUpdate();
             });
     }
 
@@ -239,6 +238,7 @@ class ProfilesSection {
                 this.displayedProfileId = DEFAULT_PROFILE;
                 await this.plugin.saveSettings();
                 await this.render();
+                this.onProfileUpdate();
             });
     }
 
