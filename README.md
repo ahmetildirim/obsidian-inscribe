@@ -1,56 +1,40 @@
 # Obsidian Inscribe Plugin
 
-Inscribe is an AI-powered inline autocompletion plugin for Obsidian. After you type a space, the plugin can suggest natural continuations of your text, helping you write more efficiently.
+Inscribe is an AI-powered inline autocompletion plugin for Obsidian. It will generate autocompletions as you type and you can accept or reject them with TAB.
 
-## Features
+## Get started
+### 1. Setup a provider
+Inscribe supports following providers:
+- Ollama (local)
+- OpenAI
+- OpenAI compatible
 
-### AI-Powered Completions 
-Get intelligent, context-aware text suggestions as you write.
+More providers will be added if requested. Or better, feel free to create PR.
 
-### Multiple AI Provider Support**:
-  - OpenAI (GPT-4o, GPT-4o-mini)
-  - Ollama (local models like Llama3, Mistral, Gemma)
-  - OpenAI-compatible APIs
+![](doc/images/setup-provider.png)
 
-### Customizable Profiles 
-Create different completion profiles for various writing styles and needs
+### 2. Customize prompts
+You can set both system and user prompts to guide the AI's responses. For user prompt, template variables (mustache) can be used to provide context;
+- **{{pre_cursor}}**: text before cursor
+- **{{post_cursor}}**: text after cursor
+- **{{active_sentence}}**: the current sentence
+- **{{last_line}}**: last line of the active note
 
-### Per-Path Configuration
-Set different profiles for different folders in your vault
+![](doc/images/customize-prompts.png)
 
-### Adjustable Parameters
-  - Customize temperature to control creativity level
-  - Fine-tune delay settings
-  - Edit system and user prompts
+### 3. Per-Path profile assignments (Optional)
+You can create multiple profiles and assign them to specific note paths.
+For example, you might want a more formal profile for research notes and a more creative one for writing fiction. Corresponding profile will be automatically activated when you open a note matching the assigned path.
 
-## How to Use
+![](doc/images/per-path-profile-assignments.png)
 
-1. **Installation**: Install the plugin through Obsidian's Community Plugins browser or manually
-2. **Configuration**:
-   - Go to Settings → Inscribe
-   - Enable the plugin and configure at least one AI provider
-   - Set up your API keys or connection details for your chosen provider(s)
-3. **Create Profiles** (optional):
-   - Create different profiles with specific AI models and settings
-   - Assign profiles to specific paths in your vault
-4. **Start Writing**:
-   - Begin typing in any note
-   - After typing a space, the plugin will suggest completions
-   - Press Tab to accept a suggestion or continue typing to ignore it
-5. **Toggle On/Off**:
-   - Use the status bar icon to quickly enable/disable completions
-   - Configure path-specific settings to control where completions appear
 
-## Setup Tips
+## Tips
+### What provider should you use?
+Given the high frequency of API calls, using Ollama is highly recommended to reduce costs and improve response times. And for Ollama models, consider using a model bigger than 8B params. For now, `gemma3:12b` is a good starting point.
 
-- For OpenAI: Enter your API key in the settings
-- For Ollama: Make sure your Ollama server is running (default: http://localhost:11434)
-- Adjust temperature for more conservative (lower) or creative (higher) completions
-- Customize prompts to better match your writing style and needs
+## Disable completions using path config
+Using per-path profile config, you can enable completions only for specific paths. This way, you can avoid annoying interruptions in notes where autocompletion isn't desired.
 
----
-
-Made with ❤️ by [Ahmet Ildirim](https://github.com/ahmetildirim)
-
-If you find this plugin useful, consider [buying me a coffee](https://buymeacoffee.com/ahmetildirim)
+![](doc/images/disable-completions.png)
 
