@@ -2,6 +2,9 @@
 
 Inscribe is an AI-powered inline autocompletion plugin for Obsidian. It will generate autocompletions as you type and you can accept or reject them with TAB.
 
+![](doc/images/inscribe.gif)
+
+
 ## Get started
 ### 1. Setup a provider
 Inscribe supports following providers:
