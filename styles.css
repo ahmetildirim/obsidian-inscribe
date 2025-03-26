@@ -22,8 +22,8 @@
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.inscribe-mapping-table tr:hover {
-    background-color: var(--background-modifier-hover);
+.inscribe-mapping-table .mapping-toggle-wrapper {
+    display: flex;
 }
 
 /* Style provider modal */

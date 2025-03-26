@@ -485,6 +485,9 @@ class PathConfigsSection {
         // Existing Mappings
         Object.entries(this.plugin.settings.path_configs).forEach(([path, mapping]) => {
             const row = table.createEl("tr");
+            row.setCssStyles({
+                "height": "40px"
+            });
             const isDefaultMapping = path === DEFAULT_PATH;
             row.createEl("td", { text: isDefaultMapping ? "Root" : path });
 
@@ -521,7 +524,10 @@ class PathConfigsSection {
 
             // Add enabled checkbox cell
             const enabledCell = row.createEl("td");
-            new ToggleComponent(enabledCell)
+            // Create a wrapper div for the toggle with flexbox centering
+            const toggleWrapper = enabledCell.createDiv();
+            toggleWrapper.addClass("mapping-toggle-wrapper");
+            new ToggleComponent(toggleWrapper)
                 .setTooltip("Enable/disable mapping")
                 .setValue(mapping.enabled)
                 .onChange(async (value: boolean) => {
