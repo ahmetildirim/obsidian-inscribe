@@ -18,13 +18,11 @@ export class OpenAIProvider implements Provider {
         });
     }
 
-    async *generate(editor: Editor, options: CompletionOptions): AsyncGenerator<string> {
+    async *generate(editor: Editor, prompt: string, options: CompletionOptions): AsyncGenerator<string> {
         this.aborted = false;
         this.abortcontroller = new AbortController();
 
         const initialPosition = editor.getCursor();
-        const prompt = preparePrompt(editor, options.userPrompt);
-
         const stream = await this.client.chat.completions.create({
             model: options.model,
             messages: [
@@ -90,4 +88,4 @@ export class OpenAIProvider implements Provider {
 }
 
 // Import this at the end to avoid circular dependency issues
-import preparePrompt from "src/prompt/prompt";
+import preparePrompt from "src/completions/prompt";

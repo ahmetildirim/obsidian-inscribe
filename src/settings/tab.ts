@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent, ToggleComponent, Notice } from "obsidian";
-import { TEMPLATE_VARIABLES } from "src/prompt/prompt";
+import { TEMPLATE_VARIABLES } from "src/completions/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
@@ -419,7 +419,7 @@ class PathConfigsSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h3", { text: "Path configs" });
+        this.container.createEl("h3", { text: "Per-Path profile assignments" });
         this.container.createEl("p", {
             text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder.",
             cls: "setting-item"

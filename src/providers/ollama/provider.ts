@@ -2,7 +2,6 @@ import { ModelResponse, Ollama } from "ollama";
 import { OllamaSettings } from "./settings";
 import { Provider } from "..";
 import { Editor } from "obsidian";
-import preparePrompt from "src/prompt/prompt";
 import { CompletionOptions } from "src/settings/settings";
 
 export class OllamaProvider implements Provider {
@@ -15,9 +14,8 @@ export class OllamaProvider implements Provider {
         this.client = new Ollama({ host: this.settings.host });
     }
 
-    async *generate(editor: Editor, options: CompletionOptions): AsyncGenerator<string> {
+    async *generate(editor: Editor, prompt: string, options: CompletionOptions): AsyncGenerator<string> {
         this.aborted = false;
-        const prompt = preparePrompt(editor, options.userPrompt);
 
         const completionIterator = await this.client.generate({
             model: options.model,

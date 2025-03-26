@@ -13,15 +13,15 @@ export default class Inscribe extends Plugin {
 	statusBarItem: StatusBarItem;
 
 	private profileService: ProfileService;
-	private completionEngine: CompletionService;
+	private completionService: CompletionService;
 
 	async onload() {
 		await this.loadSettings();
 
 		this.profileService = new ProfileService(this);
 		this.providerFactory = new ProviderFactory(this);
-		this.completionEngine = new CompletionService(this.app, this.settings, this.profileService, this.providerFactory);
-		this.statusBarItem = new StatusBarItem(this, this.profileService, this.completionEngine);
+		this.completionService = new CompletionService(this.app, this.settings, this.profileService, this.providerFactory);
+		this.statusBarItem = new StatusBarItem(this, this.profileService, this.completionService);
 
 		this.addSettingTab(new InscribeSettingsTab(this));
 		await this.setupExtension();
@@ -33,7 +33,7 @@ export default class Inscribe extends Plugin {
 
 	async setupExtension() {
 		const extension = inlineSuggestions({
-			fetchFunc: () => this.completionEngine.fetchCompletion(),
+			fetchFunc: () => this.completionService.fetchCompletion(),
 			getOptions: () => this.profileService.getOptions()
 		});
 		this.registerEditorExtension(extension);

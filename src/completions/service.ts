@@ -4,6 +4,7 @@ import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
 import { CompletionOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
+import preparePrompt from "src/completions/prompt";
 
 export default class CompletionService {
     private app: App;
@@ -63,8 +64,10 @@ export default class CompletionService {
         const lastChar = currentLine[cursor.ch - 1];
         if (lastChar !== " ") return;
 
+        const prompt = preparePrompt(editor, options.userPrompt);
+
         this.notifyCompletionStatus(true);
-        for await (const text of provider.generate(editor, options)) {
+        for await (const text of provider.generate(editor, prompt, options)) {
             yield { text };
         }
         this.notifyCompletionStatus(false);
