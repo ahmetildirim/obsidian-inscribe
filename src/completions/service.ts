@@ -26,17 +26,32 @@ export default class CompletionService {
     }
 
     async *fetchCompletion(): AsyncGenerator<Suggestion> {
+        this.notifyCompletionStatus(false);
         if (!this.completionEnabled()) return;
+
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
         const profile = this.profileService.getActiveProfile();
-
         const provider = this.providerFactory.getProvider(profile.provider);
         const options = profile.completionOptions;
 
-        yield* this.complete(activeEditor.editor, provider, options);
+        // Stop any previous generation
+        await provider.abort();
+
+        const cursor = activeEditor.editor.getCursor();
+        const currentLine = activeEditor.editor.getLine(cursor.line);
+
+        // Check if the current line is empty
+        if (!currentLine.length) return;
+
+        const lastChar = currentLine[cursor.ch - 1];
+        // Check if the last character is not a space
+        if (lastChar !== " ") return;
+
+        const prompt = preparePrompt(activeEditor.editor, options.userPrompt);
+        yield* this.complete(activeEditor.editor, provider, prompt, options);
     }
 
     onCompletionStatusChange(listener: (isGenerating: boolean) => void) {
@@ -53,19 +68,7 @@ export default class CompletionService {
         }
     }
 
-    private async *complete(editor: Editor, provider: Provider, options: CompletionOptions): AsyncGenerator<Suggestion> {
-        await provider.abort();
-
-        const cursor = editor.getCursor();
-        const currentLine = editor.getLine(cursor.line);
-
-        if (!currentLine.length) return;
-
-        const lastChar = currentLine[cursor.ch - 1];
-        if (lastChar !== " ") return;
-
-        const prompt = preparePrompt(editor, options.userPrompt);
-
+    private async *complete(editor: Editor, provider: Provider, prompt: string, options: CompletionOptions): AsyncGenerator<Suggestion> {
         this.notifyCompletionStatus(true);
         for await (const text of provider.generate(editor, prompt, options)) {
             yield { text };
