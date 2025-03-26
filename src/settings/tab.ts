@@ -431,7 +431,7 @@ class PathConfigsSection {
     private async renderMappingsTable(): Promise<void> {
         this.tableContainer.empty();
 
-        const table = this.tableContainer.createEl("table", { cls: "mapping-table" });
+        const table = this.tableContainer.createEl("table", { cls: "inscribe-mapping-table" });
         const header = table.createEl("tr");
         header.createEl("th", { text: "Path" });
         header.createEl("th", { text: "Profile" });
@@ -439,7 +439,7 @@ class PathConfigsSection {
         header.createEl("th", { text: "" });
 
         // Add New Mapping Row
-        const newRow = table.createEl("tr", { cls: "new-mapping-row" });
+        const newRow = table.createEl("tr");
         let pathInput = "";
         let selectedProfile = DEFAULT_PROFILE;
 
@@ -468,7 +468,7 @@ class PathConfigsSection {
         // Add button cell
         newRow.createEl("td");
         const actionCell = newRow.createEl("td");
-        new ExtraButtonComponent(actionCell)
+        new ButtonComponent(actionCell)
             .setIcon("plus")
             .setTooltip("Add profile mapping")
             .onClick(async () => {
