@@ -3,14 +3,16 @@ import { ProviderType } from 'src/providers';
 import Inscribe from 'src/main';
 
 export class ProviderSettingsModal extends Modal {
-    plugin: Inscribe;
-    providerType: ProviderType;
+    private plugin: Inscribe;
+    private providerType: ProviderType;
+    private onCloseCallback: () => void;
 
-    constructor(app: App, plugin: Inscribe, providerType: ProviderType) {
+    constructor(app: App, plugin: Inscribe, providerType: ProviderType, onCloseCallback: () => void) {
         super(app);
         this.plugin = plugin;
         this.providerType = providerType;
         this.modalEl.addClass('inscribe-provider-settings-modal');
+        this.onCloseCallback = onCloseCallback;
     }
 
     onOpen() {
@@ -129,6 +131,6 @@ export class ProviderSettingsModal extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
-        (this.plugin.app as any).setting?.openTabById(this.plugin.manifest.id);
+        this.onCloseCallback();
     }
 }

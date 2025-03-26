@@ -147,7 +147,9 @@ class ProvidersSection {
             .setIcon(configured ? "cog" : "cog")
             .setTooltip(configured ? "Provider configured" : "Provider not configured")
             .onClick(() => {
-                new ProviderSettingsModal(this.app, this.plugin, type).open()
+                new ProviderSettingsModal(this.app, this.plugin, type, () => {
+                    this.render();
+                }).open();
             });
     }
 }
