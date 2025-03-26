@@ -293,8 +293,7 @@ function updateSessionOnCursorDrift(
  * Widget for rendering inline suggestion text.
  */
 class SuggestionWidget extends WidgetType {
-    static readonly OPACITY = 0.4;
-    static readonly CSS_CLASS = 'cm-inline-prediction';
+    static readonly CSS_CLASSES = ['cm-inline-prediction', 'inscribe-inline-prediction'];
 
     constructor(private readonly content: string) {
         super();
@@ -302,8 +301,7 @@ class SuggestionWidget extends WidgetType {
 
     toDOM(): HTMLElement {
         const span = document.createElement('span');
-        span.className = SuggestionWidget.CSS_CLASS;
-        span.style.opacity = SuggestionWidget.OPACITY.toString();
+        span.classList.add(...SuggestionWidget.CSS_CLASSES);
         span.textContent = this.content;
         return span;
     }
