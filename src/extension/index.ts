@@ -1,12 +1,10 @@
-/**
- * Inline Completions extension for CodeMirror
- *
- * This extension offers inline suggestions with:
- * - Configurable suggestion fetching strategies
- * - Multiple text segmentation approaches
- * - Debounced network requests
- * - Non-invasive suggestion rendering
- */
+// Inline Completions extension for CodeMirror
+//
+// This extension offers inline suggestions with:
+// - Configurable suggestion fetching strategies
+// - Multiple text segmentation approaches
+// - Debounced network requests
+// - Non-invasive suggestion rendering
 
 import {
     ViewPlugin,
@@ -30,27 +28,22 @@ import {
    Type Definitions
 ---------------------------------------------------------------------------- */
 
-/** Supported segmentation strategies */
+// Supported segmentation strategies
 export type SplitStrategy = keyof typeof TextSplitStrategies;
 
-/** Inline suggestion structure – now only carries text. */
+// Inline suggestion structure – now only carries text.
 export interface Suggestion {
     text: string;
 }
 
-/** Inline completion configuration.
- * 
- * Note: Instead of each suggestion carrying its split strategy,
- * you supply a dynamic getter function (`getOptions`) so that the extension
- * always uses the current settings.
- */
+// Inline completion configuration.
 export interface InlineCompletionConfig {
     fetchFunc: (
         state: EditorState
     ) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
-    /** (Optional) A static hotkey for accepting suggestions. */
+    //(Optional) A static hotkey for accepting suggestions. 
     acceptanceHotkey?: string;
-    /** A function that returns current options. */
+    // A function that returns current options.
     getOptions: () => InlineCompletionOptions;
 }
 
@@ -59,9 +52,7 @@ export interface InlineCompletionOptions {
     splitStrategy?: SplitStrategy;
 }
 
-/** Internal state for the current suggestion session.
- * Note: The previous "segmentation" property has been removed.
- */
+// Internal state for the current suggestion session.
 interface SuggestionSession {
     fullText: string | null;
     remainingText: string | null;
@@ -73,15 +64,11 @@ interface SuggestionSession {
    Text Segmentation Strategies
 ---------------------------------------------------------------------------- */
 
-/**
- * A set of text splitting functions used to determine how much of the
- * suggestion to accept when triggered.
- */
+// A set of text splitting functions used to determine how much of the
+// suggestion to accept when triggered.
 const TextSplitStrategies = {
-    /**
-     * Word-level segmentation (space-delimited).
-     * Accepts text until (and including) the first space.
-     */
+    // Word-level segmentation (space-delimited).
+    // Accepts text until (and including) the first space.
     word: (text: string) => {
         const nextSpace = text.indexOf(' ');
         return nextSpace === -1
@@ -92,9 +79,7 @@ const TextSplitStrategies = {
             };
     },
 
-    /**
-     * Sentence-level segmentation (punctuation followed by whitespace).
-     */
+    // Sentence-level segmentation (punctuation followed by whitespace).
     sentence: (text: string) => {
         const match = text.match(/[.!?]\s+/);
         if (match && match.index !== undefined) {
@@ -106,9 +91,7 @@ const TextSplitStrategies = {
         return { accepted: text, remaining: '' };
     },
 
-    /**
-     * Paragraph-level segmentation (double newline).
-     */
+    // Paragraph-level segmentation (double newline).
     paragraph: (text: string) => {
         const paragraphEnd = text.indexOf('\n\n');
         return paragraphEnd === -1
@@ -119,9 +102,7 @@ const TextSplitStrategies = {
             };
     },
 
-    /**
-     * Atomic acceptance – consume the entire suggestion.
-     */
+    // Atomic acceptance – consume the entire suggestion.
     full: (text: string) => ({ accepted: text, remaining: '' }),
 } as const;
 
@@ -129,19 +110,15 @@ const TextSplitStrategies = {
    Suggestion Session State Management
 ---------------------------------------------------------------------------- */
 
-/**
- * Effect to update the suggestion session state.
- * A `null` content signals a reset.
- */
+// Effect to update the suggestion session state.
+// A `null` content signals a reset.
 const SuggestionUpdateEffect = StateEffect.define<{
     content: string | null;
     document: Text | null;
     anchor: number | null;
 }>();
 
-/**
- * The state field that holds the current suggestion session.
- */
+// The state field that holds the current suggestion session.
 const suggestionSessionState = StateField.define<SuggestionSession>({
     create: () => getResetSession(),
 
@@ -170,9 +147,7 @@ const suggestionSessionState = StateField.define<SuggestionSession>({
     },
 });
 
-/**
- * Creates a fresh, empty suggestion session.
- */
+// Creates a fresh, empty suggestion session.
 function getResetSession(): SuggestionSession {
     return {
         fullText: null,
@@ -182,9 +157,7 @@ function getResetSession(): SuggestionSession {
     };
 }
 
-/**
- * Update session state based on an incoming effect.
- */
+// Update session state based on an incoming effect.
 function updateSessionFromEffect(effect: {
     content: string | null;
     document: Text | null;
@@ -199,9 +172,7 @@ function updateSessionFromEffect(effect: {
         });
 }
 
-/**
- * Initializes a new suggestion session with provided effect data.
- */
+// Initializes a new suggestion session with provided effect data.
 function initializeSession(effect: {
     content: string;
     document: Text;
@@ -215,9 +186,7 @@ function initializeSession(effect: {
     };
 }
 
-/**
- * Adjust the suggestion session in response to document changes.
- */
+// Adjust the suggestion session in response to document changes.
 function updateSessionOnDocumentChange(
     session: SuggestionSession,
     transaction: Transaction
@@ -245,9 +214,7 @@ function updateSessionOnDocumentChange(
     return invalidateSession(session);
 }
 
-/**
- * Advance the session by consuming accepted text.
- */
+// Advance the session by consuming accepted text.
 function advanceSession(
     session: SuggestionSession,
     consumedLength: number
@@ -262,9 +229,7 @@ function advanceSession(
     };
 }
 
-/**
- * Invalidate the session, effectively cancelling any pending suggestion.
- */
+// Invalidate the session, effectively cancelling any pending suggestion.
 function invalidateSession(session: SuggestionSession): SuggestionSession {
     return {
         ...session,
@@ -273,9 +238,7 @@ function invalidateSession(session: SuggestionSession): SuggestionSession {
     };
 }
 
-/**
- * Cancel the suggestion if the cursor has drifted away.
- */
+// Cancel the suggestion if the cursor has drifted away.
 function updateSessionOnCursorDrift(
     session: SuggestionSession,
     transaction: Transaction
@@ -289,9 +252,7 @@ function updateSessionOnCursorDrift(
    Suggestion Rendering (Visualization Layer)
 ---------------------------------------------------------------------------- */
 
-/**
- * Widget for rendering inline suggestion text.
- */
+// Widget for rendering inline suggestion text.
 class SuggestionWidget extends WidgetType {
     static readonly CSS_CLASSES = ['cm-inline-prediction', 'inscribe-inline-prediction'];
 
@@ -307,9 +268,7 @@ class SuggestionWidget extends WidgetType {
     }
 }
 
-/**
- * Plugin that renders inline suggestion decorations.
- */
+// Plugin that renders inline suggestion decorations.
 const suggestionRenderer = ViewPlugin.fromClass(
     class {
         decorations = Decoration.none;
@@ -338,12 +297,7 @@ const suggestionRenderer = ViewPlugin.fromClass(
    Suggestion Fetching (Debounced Fetcher)
 ---------------------------------------------------------------------------- */
 
-/**
- * Creates a debounced fetcher for suggestions.
- *
- * @param fetch - The suggestion fetch function.
- * @param getDelay - A function returning the current debounce delay in milliseconds.
- */
+// Creates a debounced fetcher for suggestions.
 const createDebouncedFetcher = (
     fetch: (state: EditorState) => AsyncGenerator<Suggestion>,
     getDelay: () => number
@@ -351,9 +305,7 @@ const createDebouncedFetcher = (
     let activeRequest = true;
     let timeoutId: ReturnType<typeof setTimeout>;
 
-    /**
-     * Throttled fetch that waits for the debounce interval.
-     */
+    // Throttled fetch that waits for the debounce interval.
     const throttledFetch = async function* (state: EditorState) {
         clearTimeout(timeoutId);
         activeRequest = true;
@@ -363,9 +315,7 @@ const createDebouncedFetcher = (
         if (activeRequest) yield* fetch(state);
     };
 
-    /**
-     * Plugin that initiates suggestion fetching on document changes.
-     */
+    // Plugin that initiates suggestion fetching on document changes.
     const fetcherPlugin = ViewPlugin.fromClass(
         class {
             private currentRequestId = 0;
@@ -405,13 +355,7 @@ const createDebouncedFetcher = (
    User Interaction (Acceptance Handler)
 ---------------------------------------------------------------------------- */
 
-/**
- * Returns a key binding that accepts the current suggestion.
- *
- * @param terminateFetch - Function to stop further fetching.
- * @param hotkey - The key that triggers acceptance.
- * @param getOptions - Function returning dynamic options (including splitStrategy).
- */
+// Returns a key binding that accepts the current suggestion.
 const createAcceptanceHandler = (
     terminateFetch: () => void,
     hotkey: string,
@@ -450,9 +394,7 @@ const createAcceptanceHandler = (
         ])
     );
 
-/**
- * Helper to create a transaction that inserts completion text.
- */
+// Helper to create a transaction that inserts completion text.
 const insertCompletion = (state: EditorState, text: string) => {
     const cursorPos = state.selection.main.head;
     return {
@@ -468,13 +410,10 @@ const insertCompletion = (state: EditorState, text: string) => {
    Public API
 ---------------------------------------------------------------------------- */
 
-/**
- * The main extension function. It wires up session state management,
- * suggestion fetching, rendering, and user interaction.
- *
- * Notice that the suggestion now only contains text.
- * The split strategy is always obtained dynamically via `getOptions()`.
- */
+// The main extension function. It wires up session state management,
+// suggestion fetching, rendering, and user interaction.
+//
+// The split strategy is always obtained dynamically via `getOptions()`.
 export function inlineSuggestions(config: InlineCompletionConfig) {
     const { fetchFunc, getOptions } = config;
     // Use the hotkey from the config if provided; otherwise, default to "Tab".
