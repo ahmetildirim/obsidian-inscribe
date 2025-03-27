@@ -75,7 +75,7 @@ class GeneralSection {
 
         // Reset Settings
         new Setting(this.container)
-            .setName("Reset Settings")
+            .setName("Reset settings")
             .setDesc("Reset all settings to default")
             .addButton((button: ButtonComponent) => {
                 button
@@ -131,8 +131,8 @@ class ProvidersSection {
 
         // OpenAI Compatible Provider
         new Setting(this.container)
-            .setName("OpenAI Compatible")
-            .setDesc("OpenAI compatible provider")
+            .setName("OpenAI compatible API")
+            .setDesc("Use any OpenAI compatible provider")
             .addButton((button: ButtonComponent) => this.createConfigureButton(
                 button,
                 ProviderType.OPENAI_COMPATIBLE,
@@ -247,7 +247,7 @@ class ProfilesSection {
 
         // Profile Name
         new Setting(this.profileContainer)
-            .setName("Profile Name")
+            .setName("Profile name")
             .setDesc("Name of the profile")
             .addText((text) => {
                 text.setValue(profile.name).onChange(async (value) => {
@@ -258,7 +258,7 @@ class ProfilesSection {
 
         // Provider Selection
         new Setting(this.profileContainer)
-            .setName("AI Provider")
+            .setName("AI provider")
             .setDesc("Choose your preferred AI provider")
             .addDropdown((dropdown) => {
                 dropdown
@@ -317,7 +317,7 @@ class ProfilesSection {
 
         // Suggestion Delay
         new Setting(this.profileContainer)
-            .setName("Suggestion Delay")
+            .setName("Suggestion delay")
             .setDesc("Delay in milliseconds before fetching suggestions")
             .addText((text) => {
                 text.inputEl.setAttr("type", "number");
@@ -332,7 +332,7 @@ class ProfilesSection {
 
         // Split Strategy
         new Setting(this.profileContainer)
-            .setName("Completion Strategy")
+            .setName("Completion strategy")
             .setDesc("Choose how completions should be split and accepted")
             .addDropdown((dropdown) => {
                 dropdown
@@ -349,7 +349,7 @@ class ProfilesSection {
 
         // System Prompt
         new Setting(this.profileContainer)
-            .setName("System Prompt")
+            .setName("System prompt")
             .setDesc("Set system prompt")
             .addTextArea((text) => {
                 text.inputEl.rows = 7;
@@ -368,7 +368,7 @@ class ProfilesSection {
 
         // User Prompt
         new Setting(this.profileContainer)
-            .setName("User Prompt")
+            .setName("User prompt")
             .setDesc("User prompt template.")
             .addExtraButton((button) => {
                 button

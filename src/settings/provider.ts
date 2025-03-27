@@ -42,10 +42,10 @@ export class ProviderSettingsModal extends Modal {
     async renderOllamaSettings() {
         const { contentEl } = this;
         contentEl.empty();
-        this.setTitle('Ollama Settings');
+        this.setTitle('Ollama settings');
 
         new Setting(contentEl)
-            .setName("Ollama Host")
+            .setName("Ollama host")
             .setDesc("The host of the Ollama API")
             .addText((text) => {
                 text
@@ -62,10 +62,10 @@ export class ProviderSettingsModal extends Modal {
     async renderOpenAISettings() {
         const { contentEl } = this;
         contentEl.empty();
-        this.setTitle('OpenAI Settings');
+        this.setTitle('OpenAI settings');
 
         new Setting(contentEl)
-            .setName("OpenAI API Key")
+            .setName("OpenAI API key")
             .setDesc("The API key for OpenAI")
             .addText((text) => {
                 text
@@ -82,11 +82,11 @@ export class ProviderSettingsModal extends Modal {
     async renderOpenAICompatibleSettings() {
         const { contentEl } = this;
         contentEl.empty();
-        this.setTitle('OpenAI Compatible Provider Settings');
+        this.setTitle('OpenAI compatible provider settings');
 
         new Setting(contentEl)
             .setName("API Key")
-            .setDesc("The API key for OpenAI Compatible Provider")
+            .setDesc("The API key for OpenAI compatible provider")
             .addText((text) => {
                 text
                     .setValue(this.plugin.settings.providers.openai_compatible.apiKey)
