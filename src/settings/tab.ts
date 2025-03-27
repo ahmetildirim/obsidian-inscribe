@@ -109,7 +109,11 @@ class ProvidersSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h3", { text: "Providers" });
+        this.container.createEl("br")
+        new Setting(this.container)
+            .setHeading()
+            .setName("Providers")
+            .setDesc("Configure your AI providers");
 
         // Ollama Provider
         new Setting(this.container)
@@ -180,13 +184,22 @@ class ProfilesSection {
     async render(): Promise<void> {
         // Clear main container and re-append sub-containers
         this.container.empty();
-        this.container.createEl("h3", { text: "Profiles" });
-        this.container.appendChild(this.selectionContainer);
-        this.container.createEl("div", { cls: "setting-item" });
+        this.container.createEl("br");
+
+        // Heading
+        new Setting(this.container)
+            .setHeading()
+            .setName("Profiles")
+            .setDesc("Create and manage profiles for different settings");
+
+        new Setting(this.container)
+            .setName("Manage profile")
+            .setDesc("Select a profile to configure its settings")
+            .addDropdown((dropdown: DropdownComponent) => this.profileDropdown(dropdown))
+            .addExtraButton((button: ExtraButtonComponent) => this.createNewProfileButton(button))
+            .addExtraButton((button: ExtraButtonComponent) => this.createDeleteProfileButton(button));
+
         this.container.appendChild(this.profileContainer);
-
-        await this.renderProfileSelection();
-
         const displayedProfile = this.plugin.settings.profiles[this.displayedProfileId];
         await this.renderProfileSettings(displayedProfile);
     }
@@ -195,7 +208,7 @@ class ProfilesSection {
         this.selectionContainer.empty();
 
         new Setting(this.selectionContainer)
-            .setName("Manage profile")
+            .setName("Profiles")
             .setHeading()
             .setDesc("Select a profile to configure its settings")
             .addDropdown((dropdown: DropdownComponent) => this.profileDropdown(dropdown))
@@ -417,11 +430,13 @@ class PathConfigsSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("h3", { text: "Per-Path profile assignments" });
-        this.container.createEl("p", {
-            text: "You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder.",
-            cls: "setting-item"
-        });
+        this.container.createEl("br");
+
+        // Heading
+        new Setting(this.container)
+            .setName("Per-Path profile assignments")
+            .setHeading()
+            .setDesc("You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder.");
         this.container.appendChild(this.tableContainer);
         await this.renderMappingsTable();
     }
@@ -487,7 +502,7 @@ class PathConfigsSection {
                 "height": "40px"
             });
             const isDefaultMapping = path === DEFAULT_PATH;
-            row.createEl("td", { text: isDefaultMapping ? "Root" : path });
+            row.createEl("td", { text: isDefaultMapping ? "/ (root)" : path });
 
             // Create profile cell with dropdown
             const profileCell = row.createEl("td");
