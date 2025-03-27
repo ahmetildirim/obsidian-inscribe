@@ -3,13 +3,10 @@ import { TEMPLATE_VARIABLES } from "src/completions/prompt";
 import { SplitStrategy } from "src/extension";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
-import { createPathConfig, DEFAULT_PATH, DEFAULT_PROFILE, Profile, resetSettings } from "./settings";
+import { createPathConfig, DEFAULT_PATH, DEFAULT_PROFILE, isDefaultProfile, Profile, resetSettings } from "./settings";
 import { ProviderSettingsModal } from './provider';
 import { createProfile } from ".";
 
-/* --------------------------------------------------------------------------
- * Main Settings Tab
- * ------------------------------------------------------------------------ */
 export default class InscribeSettingsTab extends PluginSettingTab {
     private generalSection: GeneralSection;
     private providersSection: ProvidersSection;
@@ -45,7 +42,6 @@ export default class InscribeSettingsTab extends PluginSettingTab {
     }
 }
 
-// General Section
 class GeneralSection {
     private container: HTMLElement;
     private plugin: Inscribe;
@@ -93,9 +89,6 @@ class GeneralSection {
     }
 }
 
-/* --------------------------------------------------------------------------
- * Providers Section
- * ------------------------------------------------------------------------ */
 class ProvidersSection {
     private container: HTMLElement;
     private plugin: Inscribe;
@@ -156,14 +149,11 @@ class ProvidersSection {
     }
 }
 
-/* --------------------------------------------------------------------------
- * Profiles Section
- * ------------------------------------------------------------------------ */
 class ProfilesSection {
     private container: HTMLElement;
     private plugin: Inscribe;
     private onProfileUpdate: () => void;
-    private displayedProfileId: string = DEFAULT_PROFILE;
+    private selectedProfileId: string = DEFAULT_PROFILE;
 
     constructor(container: HTMLElement, plugin: Inscribe, onProfileUpdate: () => void) {
         this.container = container;
@@ -190,11 +180,12 @@ class ProfilesSection {
             .addExtraButton((button: ExtraButtonComponent) => this.createDeleteProfileButton(button));
 
         // Profile Name
-        const profile = this.plugin.settings.profiles[this.displayedProfileId];
+        const profile = this.plugin.settings.profiles[this.selectedProfileId];
         new Setting(this.container)
             .setName("Profile name")
             .setDesc(`${profile.name} | Name of the profile`)
             .addText((text) => {
+                text.setDisabled(isDefaultProfile(this.selectedProfileId));
                 text.setValue(profile.name).onChange(async (value) => {
                     profile.name = value;
                     await this.plugin.saveSettings();
@@ -341,9 +332,9 @@ class ProfilesSection {
             dropdown.addOption(id, profile.name);
         });
         dropdown
-            .setValue(this.displayedProfileId)
+            .setValue(this.selectedProfileId)
             .onChange(async (value) => {
-                this.displayedProfileId = value;
+                this.selectedProfileId = value;
                 await this.render();
             });
     }
@@ -353,7 +344,7 @@ class ProfilesSection {
             .setIcon("plus")
             .setTooltip("Create new profile")
             .onClick(async () => {
-                this.displayedProfileId = createProfile(this.plugin.settings);
+                this.selectedProfileId = createProfile(this.plugin.settings);
                 await this.plugin.saveSettings();
                 await this.render();
                 this.onProfileUpdate();
@@ -361,14 +352,14 @@ class ProfilesSection {
     }
 
     private createDeleteProfileButton(button: ExtraButtonComponent): void {
-        const isDefault = this.displayedProfileId === DEFAULT_PROFILE;
+        const isDefault = this.selectedProfileId === DEFAULT_PROFILE;
         button
             .setDisabled(isDefault)
             .setIcon("trash")
             .setTooltip(isDefault ? "Cannot delete default profile" : "Delete profile")
             .onClick(async () => {
-                delete this.plugin.settings.profiles[this.displayedProfileId];
-                this.displayedProfileId = DEFAULT_PROFILE;
+                delete this.plugin.settings.profiles[this.selectedProfileId];
+                this.selectedProfileId = DEFAULT_PROFILE;
                 await this.plugin.saveSettings();
                 await this.render();
                 this.onProfileUpdate();
@@ -460,11 +451,8 @@ class PathConfigsSection {
         // Existing Mappings
         Object.entries(this.plugin.settings.path_configs).forEach(([path, mapping]) => {
             const row = table.createEl("tr");
-            row.setCssStyles({
-                "height": "40px"
-            });
             const isDefaultMapping = path === DEFAULT_PATH;
-            row.createEl("td", { text: isDefaultMapping ? "/ (root)" : path });
+            row.createEl("td", { text: isDefaultMapping ? "Default (all paths)" : path });
 
             // Create profile cell with dropdown
             const profileCell = row.createEl("td");

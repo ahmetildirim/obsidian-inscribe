@@ -58,7 +58,7 @@ export default class StatusBarItem {
             item.setTitle(`Profile: ${profile.name}`).setIsLabel(true);
         });
         menu.addItem((item) => {
-            item.setTitle(`${pathCompletionEnabled ? 'Disable' : 'Enable'} this path: {${path}]}`)
+            item.setTitle(`Completion is ${pathCompletionEnabled ? 'On' : 'Off'} for: {${path}]}`)
                 .setChecked(pathCompletionEnabled)
                 .onClick(() => {
                     const pathConfig = findPathConfig(this.plugin.settings, path);
@@ -68,7 +68,7 @@ export default class StatusBarItem {
                 });
         });
         menu.addItem((item) => {
-            item.setTitle(`${globalCompletionEnabled ? 'Disable' : 'Enable'} globally`)
+            item.setTitle(`Global Completion is ${globalCompletionEnabled ? 'On' : 'Off'}`)
                 .setChecked(globalCompletionEnabled)
                 .onClick(() => {
                     this.plugin.settings.enabled = !globalCompletionEnabled;

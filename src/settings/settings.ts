@@ -135,3 +135,7 @@ export function createPathConfig(settings: Settings, path: string, profile: Prof
 export function resetSettings(settings: Settings): void {
     Object.assign(settings, DEFAULT_SETTINGS);
 }
+
+export const isDefaultProfile = (profile: ProfileId): boolean => {
+    return profile === DEFAULT_PROFILE;
+}
