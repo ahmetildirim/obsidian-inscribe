@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-inscribe",
-	"version": "1.0.1",
+	"version": "1.0.3",
 	"description": "A plugin for Obsidian that uses AI to provide inline completions.",
 	"main": "main.js",
 	"scripts": {
