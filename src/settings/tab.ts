@@ -115,7 +115,7 @@ class ProvidersSection {
         new Setting(this.container)
             .setName("Ollama")
             .setDesc("Local AI provider running on your machine")
-            .addExtraButton((button: ExtraButtonComponent) => this.createConfigureButton(
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
                 button,
                 ProviderType.OLLAMA,
                 this.plugin.settings.providers.ollama.configured));
@@ -124,7 +124,7 @@ class ProvidersSection {
         new Setting(this.container)
             .setName("OpenAI")
             .setDesc("OpenAI API")
-            .addExtraButton((button: ExtraButtonComponent) => this.createConfigureButton(
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
                 button,
                 ProviderType.OPENAI,
                 this.plugin.settings.providers.openai.configured));
@@ -133,18 +133,16 @@ class ProvidersSection {
         new Setting(this.container)
             .setName("OpenAI Compatible")
             .setDesc("OpenAI compatible provider")
-            .addExtraButton((button: ExtraButtonComponent) => this.createConfigureButton(
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
                 button,
                 ProviderType.OPENAI_COMPATIBLE,
                 this.plugin.settings.providers.openai_compatible.configured));
     }
 
-    private createConfigureButton(button: ExtraButtonComponent, type: ProviderType, configured: boolean): void {
-        button.extraSettingsEl.setCssProps({
-            color: configured ? "var(--text-success)" : "var(--text-warning)",
-        });
+    private createConfigureButton(button: ButtonComponent, type: ProviderType, configured: boolean): void {
+        if (!configured) { button.setWarning(); }
         button
-            .setIcon(configured ? "cog" : "cog")
+            .setButtonText(configured ? "Configured" : "Configure")
             .setTooltip(configured ? "Provider configured" : "Provider not configured")
             .onClick(() => {
                 new ProviderSettingsModal(this.app, this.plugin, type, () => {
