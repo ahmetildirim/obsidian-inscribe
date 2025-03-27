@@ -190,9 +190,10 @@ class ProfilesSection {
         new Setting(this.container)
             .setHeading()
             .setName("Profiles")
-            .setDesc("Create and manage profiles for different settings");
+            .setDesc("Create and manage profiles for different settings")
 
         new Setting(this.container)
+            .setHeading()
             .setName("Manage profile")
             .setDesc("Select a profile to configure its settings")
             .addDropdown((dropdown: DropdownComponent) => this.profileDropdown(dropdown))
@@ -365,12 +366,8 @@ class ProfilesSection {
             .setName("System prompt")
             .setDesc("Set system prompt")
             .addTextArea((text) => {
+                text.inputEl.addClass("inscribe-prompt-textarea");
                 text.inputEl.rows = 7;
-                text.inputEl.setCssStyles({
-                    width: "100%",
-                    resize: "vertical",
-                    position: "relative"
-                });
                 text.setValue(profile.completionOptions.systemPrompt).onChange(
                     async (value) => {
                         profile.completionOptions.systemPrompt = value;
@@ -378,11 +375,10 @@ class ProfilesSection {
                     }
                 );
             });
-
         // User Prompt
         new Setting(this.profileContainer)
             .setName("User prompt")
-            .setDesc("User prompt template.")
+            .setDesc("User prompt template")
             .addExtraButton((button) => {
                 button
                     .setIcon("list")
@@ -398,12 +394,8 @@ class ProfilesSection {
                     });
             })
             .addTextArea((text) => {
+                text.inputEl.addClass("inscribe-prompt-textarea");
                 text.inputEl.rows = 7;
-                text.inputEl.setCssStyles({
-                    width: "100%",
-                    resize: "vertical",
-                    position: "relative"
-                });
                 text.setValue(profile.completionOptions.userPrompt).onChange(
                     async (value) => {
                         profile.completionOptions.userPrompt = value;

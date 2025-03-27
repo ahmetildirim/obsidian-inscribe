@@ -3,6 +3,12 @@
     opacity: 0.5;
 }
 
+.inscribe-prompt-textarea {
+    width: 100%;
+    resize: vertical;
+    position: relative;
+}
+
 /* Path Mapping Styles */
 .inscribe-mapping-table {
     width: 100%;
