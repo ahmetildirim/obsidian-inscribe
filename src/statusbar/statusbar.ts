@@ -58,7 +58,7 @@ export default class StatusBarItem {
             item.setTitle(`Profile: ${profile.name}`).setIsLabel(true);
         });
         menu.addItem((item) => {
-            item.setTitle(`Completion is ${pathCompletionEnabled ? 'On' : 'Off'} for: {${path}]}`)
+            item.setTitle(`Completion is ${pathCompletionEnabled ? 'On' : 'Off'} for: {${path}}`)
                 .setChecked(pathCompletionEnabled)
                 .onClick(() => {
                     const pathConfig = findPathConfig(this.plugin.settings, path);

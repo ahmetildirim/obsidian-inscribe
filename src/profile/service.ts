@@ -10,7 +10,6 @@ export class ProfileService {
     private activePath: string;
     private app: App;
     private settings: Settings;
-    private inlineSuggestionOptions: InlineCompletionOptions = { delayMs: 300, splitStrategy: "sentence" };
     private profileChangeCallbacks: ((profile: Profile) => void)[] = [];
 
     constructor(plugin: Inscribe) {
@@ -19,10 +18,20 @@ export class ProfileService {
         this.settings = this.plugin.settings;
         this.update(this.getActiveFilePath());
 
-        this.app.workspace.on('file-open', (file) => {
-            if (!file) return;
-            this.update(file.path);
-        });
+        // Add listener for file open events
+        this.plugin.registerEvent(
+            this.app.workspace.on('file-open', (file) => {
+                if (!file) return;
+                this.update(file.path);
+            })
+        );
+
+        // Add listener for file rename events
+        this.plugin.registerEvent(
+            this.app.vault.on('rename', (file) => {
+                this.update(file.path);
+            })
+        );
     }
 
     getActiveProfile(): Profile {
@@ -82,9 +91,5 @@ export class ProfileService {
         });
 
         return [pathMapping, this.settings.profiles[matchedProfile]];
-    }
-
-    onunload() {
-        this.app.workspace.off('file-open', this.update);
     }
 }
