@@ -193,7 +193,7 @@ class ProfilesSection {
         const profile = this.plugin.settings.profiles[this.displayedProfileId];
         new Setting(this.container)
             .setName("Profile name")
-            .setDesc("Name of the profile")
+            .setDesc(`${profile.name} | Name of the profile`)
             .addText((text) => {
                 text.setValue(profile.name).onChange(async (value) => {
                     profile.name = value;
@@ -204,7 +204,7 @@ class ProfilesSection {
         // Provider Selection
         new Setting(this.container)
             .setName("AI provider")
-            .setDesc("Choose your preferred AI provider")
+            .setDesc(`${profile.name} | Choose your preferred AI provider`)
             .addDropdown((dropdown) => {
                 dropdown
                     .addOption(ProviderType.OLLAMA, "Ollama")
@@ -221,7 +221,7 @@ class ProfilesSection {
         // Model Selection
         new Setting(this.container)
             .setName("Model")
-            .setDesc("Select the model to use for completions")
+            .setDesc(`${profile.name} | Select the model to use for completions`)
             .addExtraButton((button) => {
                 button
                     .setIcon("refresh-ccw")
@@ -248,7 +248,7 @@ class ProfilesSection {
         // Temperature Setting
         new Setting(this.container)
             .setName("Temperature")
-            .setDesc("Control the randomness of completions (0 = deterministic, 1 = creative)")
+            .setDesc(`${profile.name} | Control the randomness of completions (0 = deterministic, 1 = creative)`)
             .addSlider((slider) => {
                 slider
                     .setLimits(0, 1, 0.1)
@@ -263,7 +263,7 @@ class ProfilesSection {
         // Suggestion Delay
         new Setting(this.container)
             .setName("Suggestion delay")
-            .setDesc("Delay in milliseconds before fetching suggestions")
+            .setDesc(`${profile.name} | Delay in milliseconds before fetching suggestions`)
             .addText((text) => {
                 text.inputEl.setAttr("type", "number");
                 text
@@ -278,7 +278,7 @@ class ProfilesSection {
         // Split Strategy
         new Setting(this.container)
             .setName("Completion strategy")
-            .setDesc("Choose how completions should be split and accepted")
+            .setDesc(`${profile.name} | Choose how completions should be split and accepted`)
             .addDropdown((dropdown) => {
                 dropdown
                     .addOption("word", "Word by Word")
@@ -295,7 +295,7 @@ class ProfilesSection {
         // System Prompt
         new Setting(this.container)
             .setName("System prompt")
-            .setDesc("Set system prompt")
+            .setDesc(`${profile.name} | Set system prompt`)
             .addTextArea((text) => {
                 text.inputEl.addClass("inscribe-prompt-textarea");
                 text.inputEl.rows = 7;
@@ -309,7 +309,7 @@ class ProfilesSection {
         // User Prompt
         new Setting(this.container)
             .setName("User prompt")
-            .setDesc("User prompt template")
+            .setDesc(`${profile.name} | User prompt template`)
             .addExtraButton((button) => {
                 button
                     .setIcon("list")
