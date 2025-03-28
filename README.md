@@ -41,3 +41,8 @@ Using per-path profile config, you can enable completions only for specific path
 
 ![](doc/images/disable-completions.png)
 
+## Support
+If you find this plugin useful:
+
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/ahmetildirim)
+

@@ -17,14 +17,13 @@
 
 .inscribe-mapping-table th {
     text-align: left;
-    padding: 8px;
+    padding: 8px 0px;
     border-bottom: 1px solid var(--background-modifier-border);
-    font-weight: 600;
 }
 
 .inscribe-mapping-table td {
     text-align: left;
-    padding: 8px;
+    padding: 8px 0px;
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
