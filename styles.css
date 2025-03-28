@@ -9,6 +9,10 @@
     position: relative;
 }
 
+.inscribe-section {
+    margin-top: 1.75em;
+}
+
 /* Path Mapping Styles */
 .inscribe-mapping-table {
     width: 100%;

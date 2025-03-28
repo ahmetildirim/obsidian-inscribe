@@ -23,11 +23,17 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         // General Section
         const generalContainer = document.createElement("div");
         this.containerEl.appendChild(generalContainer);
+
         const providersContainer = document.createElement("div");
+        providersContainer.addClass("inscribe-section");
         this.containerEl.appendChild(providersContainer);
+
         const profilesContainer = document.createElement("div");
+        profilesContainer.addClass("inscribe-section");
         this.containerEl.appendChild(profilesContainer);
+
         const pathMappingsContainer = document.createElement("div");
+        pathMappingsContainer.addClass("inscribe-section");
         this.containerEl.appendChild(pathMappingsContainer);
 
         this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
@@ -102,7 +108,6 @@ class ProvidersSection {
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("br")
         new Setting(this.container)
             .setHeading()
             .setName("Providers")
@@ -164,7 +169,6 @@ class ProfilesSection {
     async render(): Promise<void> {
         // Clear main container and re-append sub-containers
         this.container.empty();
-        this.container.createEl("br");
 
         // Heading
         new Setting(this.container)
@@ -379,16 +383,16 @@ class PathConfigsSection {
         this.container = container;
         this.plugin = plugin;
         this.tableContainer = document.createElement("div");
+        this.tableContainer.addClass("setting-item");
     }
 
     async render(): Promise<void> {
         this.container.empty();
-        this.container.createEl("br");
 
         // Heading
         new Setting(this.container)
-            .setName("Per-Path profile assignments")
             .setHeading()
+            .setName("Per-Path profile assignments")
             .setDesc("You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder.");
         this.container.appendChild(this.tableContainer);
         await this.renderMappingsTable();
