@@ -1,6 +1,6 @@
 import { ProviderType } from "..";
 
-export interface OpenAISettings {
+export interface GeminiSettings {
     integration: ProviderType;
     name: string;
     description: string;

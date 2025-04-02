@@ -1,4 +1,4 @@
-# Obsidian Inscribe Plugin
+# Inscribe Plugin
 
 Inscribe is an AI-powered inline autocompletion plugin for Obsidian. It will generate autocompletions as you type and you can accept or reject them with TAB.
 

@@ -3,6 +3,7 @@ import { SplitStrategy } from "src/extension";
 import { OllamaSettings } from "src/providers/ollama";
 import { OpenAISettings } from "src/providers/openai";
 import { OpenAICompatibleSettings } from "src/providers/openai-compat";
+import { GeminiSettings } from "src/providers/gemini";
 
 // Completion options for a profile
 export interface CompletionOptions {
@@ -32,6 +33,7 @@ export interface Settings {
         ollama: OllamaSettings,
         openai: OpenAISettings,
         openai_compatible: OpenAICompatibleSettings,
+        gemini: GeminiSettings,
     },
     // profiles
     profiles: Profiles,
@@ -49,7 +51,6 @@ export const DEFAULT_SETTINGS: Settings = {
             name: "Open AI",
             description: "Use OpenAI APIs to generate text.",
             apiKey: "api-key",
-            model: "gpt-4o-mini",
             models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
         },
@@ -67,9 +68,19 @@ export const DEFAULT_SETTINGS: Settings = {
             description: "Use OpenAI compatible APIs to generate completions.",
             apiKey: "api-key",
             baseUrl: "https://api.openai.com/v1",
-            model: "gpt-4o-mini",
             models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
+        },
+        gemini: {
+            integration: ProviderType.GEMINI,
+            name: "Gemini",
+            description: "Use Gemini APIs to generate text.",
+            apiKey: "api-key",
+            models: [
+                "gemini-2.0-flash",
+                "gemini-2.0-flash-lite",
+            ],
+            configured: false
         },
     },
     profiles: {

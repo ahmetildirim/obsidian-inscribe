@@ -5,6 +5,7 @@ export enum ProviderType {
     OLLAMA = "ollama",
     OPENAI = "openai",
     OPENAI_COMPATIBLE = "openai_compatible",
+    GEMINI = "gemini",
 }
 
 // Completer interface for ai integrations

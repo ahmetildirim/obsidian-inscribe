@@ -131,6 +131,15 @@ class ProvidersSection {
                 ProviderType.OPENAI,
                 this.plugin.settings.providers.openai.configured));
 
+        // Gemini Provider
+        new Setting(this.container)
+            .setName("Gemini")
+            .setDesc("Google Gemini API")
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
+                button,
+                ProviderType.GEMINI,
+                this.plugin.settings.providers.gemini.configured));
+
         // OpenAI Compatible Provider
         new Setting(this.container)
             .setName("OpenAI compatible API")
@@ -139,6 +148,7 @@ class ProvidersSection {
                 button,
                 ProviderType.OPENAI_COMPATIBLE,
                 this.plugin.settings.providers.openai_compatible.configured));
+
     }
 
     private createConfigureButton(button: ButtonComponent, type: ProviderType, configured: boolean): void {
@@ -204,6 +214,7 @@ class ProfilesSection {
                 dropdown
                     .addOption(ProviderType.OLLAMA, "Ollama")
                     .addOption(ProviderType.OPENAI, "OpenAI")
+                    .addOption(ProviderType.GEMINI, "Gemini")
                     .addOption(ProviderType.OPENAI_COMPATIBLE, "OpenAI Compatible")
                     .setValue(profile.provider)
                     .onChange(async (value: ProviderType) => {

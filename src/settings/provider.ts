@@ -33,6 +33,9 @@ export class ProviderSettingsModal extends Modal {
             case ProviderType.OPENAI_COMPATIBLE:
                 this.renderOpenAICompatibleSettings();
                 break;
+            case ProviderType.GEMINI:
+                this.renderGeminiSettings();
+                break;
             default:
                 contentEl.createEl('h2', { text: 'Unknown provider type' });
                 break;
@@ -109,6 +112,26 @@ export class ProviderSettingsModal extends Modal {
             });
 
         this.renderConnectionStatus(this.plugin.settings.providers.openai_compatible);
+    }
+
+    async renderGeminiSettings() {
+        const { contentEl } = this;
+        contentEl.empty();
+        this.setTitle('Gemini settings');
+
+        new Setting(contentEl)
+            .setName("Gemini API key")
+            .setDesc("The API key for Gemini")
+            .addText((text) => {
+                text
+                    .setValue(this.plugin.settings.providers.gemini.apiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.providers.gemini.apiKey = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        this.renderConnectionStatus(this.plugin.settings.providers.gemini);
     }
 
     private renderConnectionStatus(provider: { configured: boolean }) {

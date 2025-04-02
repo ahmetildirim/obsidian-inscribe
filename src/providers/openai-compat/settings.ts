@@ -6,7 +6,6 @@ export interface OpenAICompatibleSettings {
     description: string;
     baseUrl: string;
     apiKey: string;
-    model: string;
     models: string[];
     configured: boolean;
 }

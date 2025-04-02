@@ -4,11 +4,13 @@ import { Settings } from "src/settings/settings";
 import { OllamaProvider } from "./ollama";
 import { OpenAIProvider } from "./openai";
 import { OpenAICompatibleProvider } from "./openai-compat";
+import { GeminiProvider } from "./gemini";
 
 interface Providers {
     [ProviderType.OLLAMA]: OllamaProvider,
     [ProviderType.OPENAI]: OpenAIProvider,
-    [ProviderType.OPENAI_COMPATIBLE]: OpenAICompatibleProvider
+    [ProviderType.OPENAI_COMPATIBLE]: OpenAICompatibleProvider,
+    [ProviderType.GEMINI]: GeminiProvider,
 }
 
 export class ProviderFactory {
@@ -41,6 +43,7 @@ export class ProviderFactory {
             [ProviderType.OLLAMA]: new OllamaProvider(settings.providers.ollama),
             [ProviderType.OPENAI]: new OpenAIProvider(settings.providers.openai),
             [ProviderType.OPENAI_COMPATIBLE]: new OpenAICompatibleProvider(settings.providers.openai_compatible),
+            [ProviderType.GEMINI]: new GeminiProvider(settings.providers.gemini),
         }
     }
 }
