@@ -71,7 +71,8 @@ export default class CompletionService {
     private async *complete(editor: Editor, provider: Provider, prompt: string, options: CompletionOptions): AsyncGenerator<Suggestion> {
         this.notifyCompletionStatus(true);
         for await (const text of provider.generate(editor, prompt, options)) {
-            yield { text };
+            // trim the text to remove any leading or trailing whitespace
+            yield { text: text.trim() };
         }
         this.notifyCompletionStatus(false);
     }
