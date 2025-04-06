@@ -9,6 +9,7 @@ Inscribe is an AI-powered inline autocompletion plugin for Obsidian. It will gen
 ### 1. Setup a provider
 Inscribe supports following providers:
 - Ollama (local)
+- Gemini
 - OpenAI
 - OpenAI compatible
 
@@ -35,6 +36,8 @@ For example, you might want a more formal profile for research notes and a more 
 ## Tips
 ### What provider should you use?
 Given the high frequency of API calls, using Ollama is highly recommended to reduce costs and improve response times. And for Ollama models, consider using a model bigger than 8B params. For now, `gemma3:12b` is a good starting point.
+
+Also, Google Gemini is a great option. It is fast and free tier is generous.
 
 ## Disable completions using path config
 Using per-path profile config, you can enable completions only for specific paths. This way, you can avoid annoying interruptions in notes where autocompletion isn't desired.
