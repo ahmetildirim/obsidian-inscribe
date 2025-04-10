@@ -8,4 +8,5 @@ export interface OpenAICompatibleSettings {
     apiKey: string;
     models: string[];
     configured: boolean;
+    temperature_range: { min: number; max: number };
 }

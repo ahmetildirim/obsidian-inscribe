@@ -53,6 +53,7 @@ export const DEFAULT_SETTINGS: Settings = {
             apiKey: "api-key",
             models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
+            temperature_range: { min: 0, max: 1 },
         },
         ollama: {
             integration: ProviderType.OLLAMA,
@@ -61,6 +62,7 @@ export const DEFAULT_SETTINGS: Settings = {
             host: "http://localhost:11434",
             models: ["llama3.2:latest", "mistral-nemo"],
             configured: false,
+            temperature_range: { min: 0, max: 1 },
         },
         openai_compatible: {
             integration: ProviderType.OPENAI_COMPATIBLE,
@@ -70,6 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
             baseUrl: "https://api.openai.com/v1",
             models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
+            temperature_range: { min: 0, max: 1 },
         },
         gemini: {
             integration: ProviderType.GEMINI,
@@ -80,7 +83,8 @@ export const DEFAULT_SETTINGS: Settings = {
                 "gemini-2.0-flash",
                 "gemini-2.0-flash-lite",
             ],
-            configured: false
+            configured: false,
+            temperature_range: { min: 0, max: 2 },
         },
     },
     profiles: {

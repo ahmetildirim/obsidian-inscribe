@@ -252,12 +252,13 @@ class ProfilesSection {
             });
 
         // Temperature Setting
+        const temperatureRange = this.plugin.settings.providers[profile.provider].temperature_range;
         new Setting(this.container)
             .setName("Temperature")
             .setDesc(`${profile.name} | Control the randomness of completions (0 = deterministic, 1 = creative)`)
             .addSlider((slider) => {
                 slider
-                    .setLimits(0, 1, 0.1)
+                    .setLimits(temperatureRange.min, temperatureRange.max, 0.1)
                     .setValue(profile.completionOptions.temperature)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
