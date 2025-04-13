@@ -39,7 +39,7 @@ Given the high frequency of API calls, using Ollama is highly recommended to red
 
 Also, Google Gemini is a great option. It is fast and free tier is generous.
 
-## Disable completions using path config
+### Disable completions using path config
 Using per-path profile config, you can enable completions only for specific paths. This way, you can avoid annoying interruptions in notes where autocompletion isn't desired.
 
 ![](doc/images/disable-completions.png)
