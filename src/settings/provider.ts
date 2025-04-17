@@ -45,7 +45,7 @@ export class ProviderSettingsModal extends Modal {
     async renderOllamaSettings() {
         const { contentEl } = this;
         contentEl.empty();
-        this.setTitle('Ollama settings');
+        this.setTitle('Ollama');
 
         new Setting(contentEl)
             .setName("Ollama host")
@@ -65,7 +65,7 @@ export class ProviderSettingsModal extends Modal {
     async renderOpenAISettings() {
         const { contentEl } = this;
         contentEl.empty();
-        this.setTitle('OpenAI settings');
+        this.setTitle('OpenAI');
 
         new Setting(contentEl)
             .setName("OpenAI API key")
@@ -85,10 +85,10 @@ export class ProviderSettingsModal extends Modal {
     async renderOpenAICompatibleSettings() {
         const { contentEl } = this;
         contentEl.empty();
-        this.setTitle('OpenAI compatible provider settings');
+        this.setTitle('OpenAI compatible provider');
 
         new Setting(contentEl)
-            .setName("API Key")
+            .setName("API key")
             .setDesc("The API key for OpenAI compatible provider")
             .addText((text) => {
                 text
@@ -117,7 +117,7 @@ export class ProviderSettingsModal extends Modal {
     async renderGeminiSettings() {
         const { contentEl } = this;
         contentEl.empty();
-        this.setTitle('Gemini settings');
+        this.setTitle('Gemini');
 
         new Setting(contentEl)
             .setName("Gemini API key")
@@ -140,7 +140,7 @@ export class ProviderSettingsModal extends Modal {
             .setDesc(`${provider.configured ? 'Successful' : 'Failed'}`)
             .addButton(button => {
                 button
-                    .setButtonText(`Connection Test`)
+                    .setButtonText(`Connection test`)
                     .onClick(async () => {
                         button.setDisabled(true).setButtonText('Testing...');
                         provider.configured = await this.plugin.providerFactory.connectionTest(this.providerType);

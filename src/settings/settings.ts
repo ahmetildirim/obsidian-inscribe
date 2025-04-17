@@ -66,7 +66,7 @@ export const DEFAULT_SETTINGS: Settings = {
         },
         openai_compatible: {
             integration: ProviderType.OPENAI_COMPATIBLE,
-            name: "OpenAI Compatible",
+            name: "OpenAI compatible",
             description: "Use OpenAI compatible APIs to generate completions.",
             apiKey: "api-key",
             baseUrl: "https://api.openai.com/v1",
@@ -89,7 +89,7 @@ export const DEFAULT_SETTINGS: Settings = {
     },
     profiles: {
         default: {
-            name: "Default Profile",
+            name: "Default profile",
             provider: ProviderType.OLLAMA,
             delayMs: 500,
             splitStrategy: "sentence",
@@ -115,12 +115,12 @@ export function createProfile(settings: Settings): string {
     const id = Math.random().toString(36).substring(2, 6);
 
     // generate a new profile name
-    let name = "New Profile";
+    let name = "New profile";
     // loop through the profiles to make sure the name is unique
     let i = 1;
     Object.entries(profiles).forEach(([, value]) => {
         if (value.name === name) {
-            name = `New Profile ${i}`;
+            name = `New profile ${i}`;
             i++;
         }
     });
