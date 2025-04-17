@@ -1,7 +1,7 @@
 {
 	"id": "inscribe",
 	"name": "Inscribe",
-	"version": "1.0.8",
+	"version": "1.0.9",
 	"minAppVersion": "0.15.0",
 	"description": "Inline autocompletion powered by AI.",
 	"author": "Ahmet Ildirim",
