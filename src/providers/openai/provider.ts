@@ -56,7 +56,7 @@ export class OpenAIProvider implements Provider {
         this.abortcontroller.abort();
     }
 
-    async updateModels(): Promise<string[]> {
+    async fetchModels(): Promise<string[]> {
         if (!this.client) {
             return this.settings.models;
         }
@@ -66,8 +66,6 @@ export class OpenAIProvider implements Provider {
         const chatModels = models.data
             .filter(model => model.id.includes("gpt"))
             .map(model => model.id);
-
-        this.settings.models = chatModels;
         return chatModels;
     }
 

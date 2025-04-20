@@ -13,6 +13,6 @@ export interface Provider {
     settings: any
     generate: (editor: Editor, prompt: string, options: CompletionOptions) => AsyncGenerator<string>;
     abort: () => Promise<void>;
-    updateModels(): Promise<string[]> | string[];
+    fetchModels(): Promise<string[]> | string[];
     connectionTest(): Promise<boolean>;
 }

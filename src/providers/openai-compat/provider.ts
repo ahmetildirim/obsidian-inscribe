@@ -56,19 +56,13 @@ export class OpenAICompatibleProvider implements Provider {
         this.abortcontroller.abort();
     }
 
-    async updateModels(): Promise<string[]> {
+    async fetchModels(): Promise<string[]> {
         if (!this.client) {
             return this.settings.models;
         }
 
         const models = await this.client.models.list();
-        // Filter for chat models only
-        const chatModels = models.data
-            .filter(model => model.id.includes("gpt"))
-            .map(model => model.id);
-
-        this.settings.models = chatModels;
-        return chatModels;
+        return models.data.map(model => model.id);
     }
 
     async connectionTest(): Promise<boolean> {

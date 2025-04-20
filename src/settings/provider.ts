@@ -59,6 +59,7 @@ export class ProviderSettingsModal extends Modal {
                     });
             });
 
+        this.renderModelSettings(this.plugin.settings.providers.ollama);
         this.renderConnectionStatus(this.plugin.settings.providers.ollama);
     }
 
@@ -79,6 +80,7 @@ export class ProviderSettingsModal extends Modal {
                     });
             });
 
+        this.renderModelSettings(this.plugin.settings.providers.openai);
         this.renderConnectionStatus(this.plugin.settings.providers.openai);
     }
 
@@ -111,6 +113,7 @@ export class ProviderSettingsModal extends Modal {
                     });
             });
 
+        this.renderModelSettings(this.plugin.settings.providers.openai_compatible);
         this.renderConnectionStatus(this.plugin.settings.providers.openai_compatible);
     }
 
@@ -130,8 +133,41 @@ export class ProviderSettingsModal extends Modal {
                         await this.plugin.saveSettings();
                     });
             });
-
+        this.renderModelSettings(this.plugin.settings.providers.gemini);
         this.renderConnectionStatus(this.plugin.settings.providers.gemini);
+    }
+
+    private renderModelSettings(provider: { models: string[] }) {
+        new Setting(this.contentEl)
+            .setName("Available models")
+            .setDesc("Update the list of available models.")
+            .addExtraButton((btn) => {
+                btn
+                    .setIcon("refresh-cw")
+                    .setTooltip("Refresh models from provider")
+                    .onClick(async () => {
+                        provider.models = await this.plugin.providerFactory.fetchModels(this.providerType);
+                        await this.plugin.saveSettings();
+                        new Notice("Models refreshed");
+                        this.renderProviderSettings();
+                    });
+            })
+            .addTextArea((text) => {
+                const modelsJson = JSON.stringify(provider.models, null, 2);
+                text.inputEl.rows = 12;
+                text
+                    .setValue(modelsJson)
+                    .setPlaceholder("[]")
+                    .onChange(async (value) => {
+                        try {
+                            const models = JSON.parse(value);
+                            provider.models = models;
+                            await this.plugin.saveSettings();
+                        } catch (e) {
+                            new Notice("Invalid JSON format");
+                        }
+                    });
+            })
     }
 
     private renderConnectionStatus(provider: { configured: boolean }) {

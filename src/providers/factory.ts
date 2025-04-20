@@ -30,8 +30,8 @@ export class ProviderFactory {
         return this.providers[provider];
     }
 
-    async updateModels(provider: ProviderType): Promise<string[]> {
-        return this.providers[provider].updateModels();
+    async fetchModels(provider: ProviderType): Promise<string[]> {
+        return this.providers[provider].fetchModels();
     }
 
     async connectionTest(provider: ProviderType): Promise<boolean> {

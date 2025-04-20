@@ -228,17 +228,6 @@ class ProfilesSection {
         new Setting(this.container)
             .setName("Model")
             .setDesc(`${profile.name} | Select the model to use for completions`)
-            .addExtraButton((button) => {
-                button
-                    .setIcon("refresh-ccw")
-                    .setTooltip("Update model list")
-                    .onClick(async () => {
-                        await this.plugin.providerFactory.updateModels(profile.provider);
-                        await this.plugin.saveSettings();
-                        await this.render();
-                        new Notice("Model list updated");
-                    });
-            })
             .addDropdown(async (dropdown) => {
                 const models = this.plugin.settings.providers[profile.provider].models;
                 dropdown

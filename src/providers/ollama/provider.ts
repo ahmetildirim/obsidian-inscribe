@@ -53,11 +53,9 @@ export class OllamaProvider implements Provider {
         this.aborted = true;
     }
 
-    async updateModels(): Promise<string[]> {
+    async fetchModels(): Promise<string[]> {
         const response = await this.client.list();
-        this.settings.models = response.models.map((model: ModelResponse) => model.name);
-
-        return this.settings.models;
+        return response.models.map((model: ModelResponse) => model.name);
     }
 
     async connectionTest(): Promise<boolean> {

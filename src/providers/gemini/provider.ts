@@ -53,7 +53,7 @@ export class GeminiProvider implements Provider {
         this.aborted = true;
     }
 
-    async updateModels(): Promise<string[]> {
+    async fetchModels(): Promise<string[]> {
         return this.settings.models;
     }
 
