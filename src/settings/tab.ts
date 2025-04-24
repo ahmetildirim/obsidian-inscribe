@@ -463,9 +463,7 @@ class PathConfigsSection {
             const profileCell = row.createEl("td");
 
             // For other mappings, show editable dropdown
-            const profileDropdown = new DropdownComponent(profileCell)
-                .setDisabled(isDefaultMapping);
-
+            const profileDropdown = new DropdownComponent(profileCell);
             // Add profile options
             Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
                 profileDropdown.addOption(id, profile.name);
