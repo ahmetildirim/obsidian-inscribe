@@ -28,6 +28,7 @@ export type Path = string;
 export type PathConfig = { profile: ProfileId, enabled: boolean };
 export interface Settings {
     enabled: boolean,
+    acceptanceHotkey: string,
     // available providers
     providers: {
         ollama: OllamaSettings,
@@ -45,6 +46,7 @@ export const DEFAULT_PROFILE: ProfileId = "default";
 export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
     enabled: false,
+    acceptanceHotkey: "Tab",
     providers: {
         openai: {
             integration: ProviderType.OPENAI,

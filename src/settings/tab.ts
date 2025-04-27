@@ -75,6 +75,21 @@ class GeneralSection {
                     });
             });
 
+        // Acceptance Hotkey
+        new Setting(this.container)
+            .setName("Acceptance hotkey")
+            .setDesc("Hotkey to accept the current suggestion")
+            .addText((text) => {
+                text
+                    .setPlaceholder("e.g. Tab")
+                    .setValue(this.plugin.settings.acceptanceHotkey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.acceptanceHotkey = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.statusBarItem.render();
+                    });
+            });
+
         // Reset Settings
         new Setting(this.container)
             .setName("Reset settings")
