@@ -5,6 +5,7 @@ import { Suggestion } from "src/extension";
 import { CompletionOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 import preparePrompt from "src/completions/prompt";
+import { isVimEnabled, isVimInsertMode } from "src/completions/vim";
 
 export default class CompletionService {
     private app: App;
@@ -32,6 +33,13 @@ export default class CompletionService {
         const activeEditor = this.app.workspace.activeEditor;
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
+
+        // Check if the editor is in Vim insert mode
+        if (isVimEnabled(activeEditor.editor)) {
+            if (!isVimInsertMode(activeEditor.editor)) {
+                return;
+            }
+        }
 
         const profile = this.profileService.getActiveProfile();
         const provider = this.providerFactory.getProvider(profile.provider);
