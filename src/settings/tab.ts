@@ -345,6 +345,31 @@ class ProfilesSection {
                     }
                 );
             });
+
+        // Output Limit
+        new Setting(this.container)
+            .setName("Output limit")
+            .setDesc(`${profile.name} | Limit the number of sentences in the output`)
+            .addText((text) => {
+                text.inputEl.setAttr("type", "number");
+                text.inputEl.setAttr("min", "1");
+                text
+                    .setValue(String(profile.completionOptions.outputLimit.sentences))
+                    .onChange(async (value) => {
+                        profile.completionOptions.outputLimit.sentences = parseInt(value);
+                        await this.plugin.saveSettings();
+                    });
+            })
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(profile.completionOptions.outputLimit.enabled)
+                    .onChange(async (value) => {
+                        profile.completionOptions.outputLimit.enabled = value;
+                        await this.plugin.saveSettings();
+                        await this.render();
+                    });
+            })
+
     }
 
     private profileDropdown(dropdown: DropdownComponent): void {
