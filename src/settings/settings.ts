@@ -105,7 +105,7 @@ export const DEFAULT_SETTINGS: Settings = {
                 systemPrompt: "You are a writing assistant that predicts and completes sentences in a natural, context-aware manner. Your goal is to continue the user’s text smoothly, maintaining coherence, fluency, and style. Adapt to the user’s writing tone, whether formal, informal, creative, or technical. Ensure that completions feel intuitive, useful, and free of unnecessary repetition. Do not generate completion that includes the prompt itself.",
                 temperature: 0.5,
                 outputLimit: {
-                    enabled: true,
+                    enabled: false,
                     sentences: 1,
                 },
             }

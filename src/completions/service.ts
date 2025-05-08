@@ -60,7 +60,9 @@ export default class CompletionService {
         if (lastChar !== " ") return;
 
         const prompt = preparePrompt(activeEditor.editor, options.userPrompt);
+        this.notifyCompletionStatus(true);
         yield* this.complete(activeEditor.editor, provider, prompt, options);
+        this.notifyCompletionStatus(false);
     }
 
     onCompletionStatusChange(listener: (isGenerating: boolean) => void) {
@@ -78,10 +80,20 @@ export default class CompletionService {
     }
 
     private async *complete(editor: Editor, provider: Provider, prompt: string, options: CompletionOptions): AsyncGenerator<Suggestion> {
-        this.notifyCompletionStatus(true);
         for await (let text of provider.generate(editor, prompt, options)) {
-            yield { text: text.trim() };
+            text = text.trim();
+
+            if (options.outputLimit.enabled) {
+                const sentences = nlp(text).sentences().out('array');
+                if (sentences.length > options.outputLimit.sentences) {
+                    // Take only the first N sentences
+                    text = sentences.slice(0, options.outputLimit.sentences).join(' ');
+                    yield { text: text };
+                    break;
+                }
+            }
+
+            yield { text: text };
         }
-        this.notifyCompletionStatus(false);
     }
 }
