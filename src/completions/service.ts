@@ -6,6 +6,7 @@ import { CompletionOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 import preparePrompt from "src/completions/prompt";
 import { isVimEnabled, isVimInsertMode } from "src/completions/vim";
+import nlp from "compromise";
 
 export default class CompletionService {
     private app: App;
@@ -78,8 +79,7 @@ export default class CompletionService {
 
     private async *complete(editor: Editor, provider: Provider, prompt: string, options: CompletionOptions): AsyncGenerator<Suggestion> {
         this.notifyCompletionStatus(true);
-        for await (const text of provider.generate(editor, prompt, options)) {
-            // trim the text to remove any leading or trailing whitespace
+        for await (let text of provider.generate(editor, prompt, options)) {
             yield { text: text.trim() };
         }
         this.notifyCompletionStatus(false);

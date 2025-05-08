@@ -10,7 +10,11 @@ export interface CompletionOptions {
     model: string,
     userPrompt: string,
     systemPrompt: string,
-    temperature: number
+    temperature: number,
+    outputLimit: {
+        enabled: boolean,
+        sentences: number,
+    }
 }
 
 // Profile settings
@@ -100,6 +104,10 @@ export const DEFAULT_SETTINGS: Settings = {
                 userPrompt: 'If the last sentence is incomplete, only complete the sentence and nothing else. If the last sentence is complete, generate a new sentence that follows logically:\n---\n{{pre_cursor}}',
                 systemPrompt: "You are a writing assistant that predicts and completes sentences in a natural, context-aware manner. Your goal is to continue the user’s text smoothly, maintaining coherence, fluency, and style. Adapt to the user’s writing tone, whether formal, informal, creative, or technical. Ensure that completions feel intuitive, useful, and free of unnecessary repetition. Do not generate completion that includes the prompt itself.",
                 temperature: 0.5,
+                outputLimit: {
+                    enabled: true,
+                    sentences: 1,
+                },
             }
         },
     },

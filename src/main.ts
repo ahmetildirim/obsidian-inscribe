@@ -6,6 +6,7 @@ import { ProviderFactory } from './providers/factory';
 import { ProfileService } from './profile/service';
 import CompletionService from './completions/service';
 import StatusBarItem from './statusbar/statusbar';
+import { deepMerge } from './settings/load';
 
 export default class Inscribe extends Plugin {
 	settings: Settings;
@@ -37,10 +38,11 @@ export default class Inscribe extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
+		const loadedSettings = await this.loadData() || {};
+
+		this.settings = deepMerge(
 			DEFAULT_SETTINGS,
-			await this.loadData()
+			loadedSettings
 		);
 	}
 
