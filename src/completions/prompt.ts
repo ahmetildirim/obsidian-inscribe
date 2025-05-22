@@ -2,7 +2,7 @@ import Mustache from 'mustache';
 import { Editor } from 'obsidian';
 import nlp from 'compromise/one'
 
-export const TEMPLATE_VARIABLES = `{{pre_cursor}}\n{{post_cursor}} \n{{active_sentence}} \n{{last_line}}`;
+export const TEMPLATE_VARIABLES = `{{{pre_cursor}}}\n{{{post_cursor}}} \n{{{active_sentence}}} \n{{{last_line}}}`;
 
 interface TemplateArgs {
     pre_cursor: string;
@@ -27,5 +27,5 @@ export default function preparePrompt(editor: Editor, template: string = TEMPLAT
 }
 
 function renderTemplate(template: string, args: TemplateArgs): string {
-    return Mustache.render(template, args);
+    return Mustache.render(template, args, {}, { escape: (text) => text });
 }
