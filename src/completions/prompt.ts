@@ -27,5 +27,5 @@ export default function preparePrompt(editor: Editor, template: string = TEMPLAT
 }
 
 function renderTemplate(template: string, args: TemplateArgs): string {
-    return Mustache.render(template, args);
+    return Mustache.render(template, args, {}, { escape: (text) => text });
 }
