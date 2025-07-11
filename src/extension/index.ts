@@ -43,6 +43,8 @@ export interface InlineCompletionConfig {
     ) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
     //(Optional) A static hotkey for accepting suggestions. 
     acceptanceHotkey?: string;
+    //(Optional) A static hotkey for manually triggering suggestions.
+    triggerHotkey?: string;
     // A function that returns current options.
     getOptions: () => InlineCompletionOptions;
 }
@@ -300,7 +302,8 @@ const suggestionRenderer = ViewPlugin.fromClass(
 // Creates a debounced fetcher for suggestions.
 const createDebouncedFetcher = (
     fetch: (state: EditorState) => AsyncGenerator<Suggestion>,
-    getDelay: () => number
+    getDelay: () => number,
+    autoTriggerEnabled: boolean = true
 ) => {
     let activeRequest = true;
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -315,6 +318,12 @@ const createDebouncedFetcher = (
         if (activeRequest) yield* fetch(state);
     };
 
+    // Immediate fetch without debounce (for manual triggers).
+    const immediateFetch = async function* (state: EditorState) {
+        activeRequest = true;
+        if (activeRequest) yield* fetch(state);
+    };
+
     // Plugin that initiates suggestion fetching on document changes.
     const fetcherPlugin = ViewPlugin.fromClass(
         class {
@@ -322,8 +331,8 @@ const createDebouncedFetcher = (
 
             async update(update: ViewUpdate) {
                 const state = update.state;
-                // Only trigger fetch if there is no active suggestion.
-                if (!update.docChanged || state.field(suggestionSessionState).remainingText)
+                // Only trigger fetch if auto-trigger is enabled and there is no active suggestion.
+                if (!autoTriggerEnabled || !update.docChanged || state.field(suggestionSessionState).remainingText)
                     return;
 
                 const requestId = ++this.currentRequestId;
@@ -331,6 +340,33 @@ const createDebouncedFetcher = (
                     // Ignore stale requests.
                     if (requestId !== this.currentRequestId) return;
                     update.view.dispatch({
+                        effects: SuggestionUpdateEffect.of({
+                            content: suggestion.text,
+                            document: state.doc,
+                            anchor: state.selection.main.head,
+                        }),
+                    });
+                }
+            }
+
+            // Method to manually trigger suggestions (exposed for hotkey use).
+            async triggerSuggestion(view: EditorView) {
+                const state = view.state;
+                // Cancel any active suggestion first.
+                view.dispatch({
+                    effects: SuggestionUpdateEffect.of({
+                        content: null,
+                        document: null,
+                        anchor: null,
+                    }),
+                });
+
+
+                const requestId = ++this.currentRequestId;
+                for await (const suggestion of immediateFetch(state)) {
+                    // Ignore stale requests.
+                    if (requestId !== this.currentRequestId) return;
+                    view.dispatch({
                         effects: SuggestionUpdateEffect.of({
                             content: suggestion.text,
                             document: state.doc,
@@ -394,6 +430,28 @@ const createAcceptanceHandler = (
         ])
     );
 
+// Returns a key binding that manually triggers suggestions.
+const createTriggerHandler = (
+    fetcherPlugin: ViewPlugin<any>,
+    hotkey: string
+) =>
+    Prec.highest(
+        keymap.of([
+            {
+                key: hotkey,
+                run: (view: EditorView) => {
+                    // Get the fetcher plugin instance and trigger suggestion.
+                    const pluginInstance = view.plugin(fetcherPlugin);
+                    if (pluginInstance && 'triggerSuggestion' in pluginInstance) {
+                        (pluginInstance as any).triggerSuggestion(view);
+                        return true;
+                    }
+                    return false;
+                },
+            },
+        ])
+    );
+
 // Helper to create a transaction that inserts completion text.
 const insertCompletion = (state: EditorState, text: string) => {
     const cursorPos = state.selection.main.head;
@@ -418,6 +476,8 @@ export function inlineSuggestions(config: InlineCompletionConfig) {
     const { fetchFunc, getOptions } = config;
     // Use the hotkey from the config if provided; otherwise, default to "Tab".
     const staticHotkey = config.acceptanceHotkey || 'Tab';
+    // Determine if auto-trigger should be disabled when trigger hotkey is set.
+    const autoTriggerEnabled = !config.triggerHotkey;
 
     // Normalize the fetch function to always return an async generator.
     const normalizeFetch = async function* (state: EditorState) {
@@ -431,13 +491,21 @@ export function inlineSuggestions(config: InlineCompletionConfig) {
 
     // Use getOptions() to obtain the current debounce delay.
     const getDelay = () => getOptions().delayMs ?? 300;
-    const { fetcherPlugin, terminate } = createDebouncedFetcher(normalizeFetch, getDelay);
+    const { fetcherPlugin, terminate } = createDebouncedFetcher(normalizeFetch, getDelay, autoTriggerEnabled);
     const acceptanceHandler = createAcceptanceHandler(terminate, staticHotkey, getOptions);
 
-    return [
+    // Only include trigger handler if trigger hotkey is specified.
+    const extensions = [
         suggestionSessionState,
         fetcherPlugin,
         suggestionRenderer,
         acceptanceHandler,
     ];
+
+    if (config.triggerHotkey) {
+        const triggerHandler = createTriggerHandler(fetcherPlugin, config.triggerHotkey);
+        extensions.push(triggerHandler);
+    }
+
+    return extensions;
 }
