@@ -23,6 +23,7 @@ export interface Profile {
     provider: ProviderType,
     completionOptions: CompletionOptions,
     delayMs: number,
+    // depracated, use SuggestionSettings instead
     splitStrategy: SplitStrategy
 }
 
@@ -30,9 +31,15 @@ export type ProfileId = string;
 export type Profiles = Record<ProfileId, Profile>
 export type Path = string;
 export type PathConfig = { profile: ProfileId, enabled: boolean };
+export type SuggestionSettings = {
+    acceptanceHotkey: string,
+    manualActivationKey?: string,
+    splitStrategy: SplitStrategy,
+}
+
 export interface Settings {
     enabled: boolean,
-    acceptanceHotkey: string,
+    suggestionSettings: SuggestionSettings,
     // available providers
     providers: {
         ollama: OllamaSettings,
@@ -50,7 +57,10 @@ export const DEFAULT_PROFILE: ProfileId = "default";
 export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
     enabled: false,
-    acceptanceHotkey: "Tab",
+    suggestionSettings: {
+        acceptanceHotkey: "Tab",
+        splitStrategy: "sentence",
+    },
     providers: {
         openai: {
             integration: ProviderType.OPENAI,

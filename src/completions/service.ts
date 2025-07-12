@@ -57,7 +57,7 @@ export default class CompletionService {
 
         const lastChar = currentLine[cursor.ch - 1];
         // Check if the last character is not a space
-        // if (lastChar !== " ") return;
+        if (lastChar !== " ") return;
 
         const prompt = preparePrompt(activeEditor.editor, options.userPrompt);
         this.notifyCompletionStatus(true);

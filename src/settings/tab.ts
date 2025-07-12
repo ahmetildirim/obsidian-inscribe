@@ -9,6 +9,7 @@ import { createProfile } from ".";
 
 export default class InscribeSettingsTab extends PluginSettingTab {
     private generalSection: GeneralSection;
+    private suggestionSettingsSection: SuggestionSettingsSection;
     private providersSection: ProvidersSection;
     private profilesSection: ProfilesSection;
     private pathConfigsSection: PathConfigsSection;
@@ -24,6 +25,10 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         const generalContainer = document.createElement("div");
         this.containerEl.appendChild(generalContainer);
 
+        const suggestionSettingsContainer = document.createElement("div");
+        suggestionSettingsContainer.addClass("inscribe-section");
+        this.containerEl.appendChild(suggestionSettingsContainer);
+
         const providersContainer = document.createElement("div");
         providersContainer.addClass("inscribe-section");
         this.containerEl.appendChild(providersContainer);
@@ -37,11 +42,13 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         this.containerEl.appendChild(pathMappingsContainer);
 
         this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
+        this.suggestionSettingsSection = new SuggestionSettingsSection(suggestionSettingsContainer, this.plugin);
         this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
         this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
         this.profilesSection = new ProfilesSection(profilesContainer, this.plugin, this.pathConfigsSection.render.bind(this.pathConfigsSection));
 
         this.generalSection.render();
+        this.suggestionSettingsSection.render();
         this.providersSection.render();
         this.profilesSection.render();
         this.pathConfigsSection.render();
@@ -75,21 +82,6 @@ class GeneralSection {
                     });
             });
 
-        // Acceptance Hotkey
-        new Setting(this.container)
-            .setName("Acceptance hotkey")
-            .setDesc("Hotkey to accept the current suggestion")
-            .addText((text) => {
-                text
-                    .setPlaceholder("e.g. Tab")
-                    .setValue(this.plugin.settings.acceptanceHotkey)
-                    .onChange(async (value) => {
-                        this.plugin.settings.acceptanceHotkey = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.statusBarItem.render();
-                    });
-            });
-
         // Reset Settings
         new Setting(this.container)
             .setName("Reset settings")
@@ -105,6 +97,73 @@ class GeneralSection {
                         this.displayFunc();
                         this.plugin.statusBarItem.render();
                         new Notice("Settings reset to default");
+                    });
+            });
+    }
+}
+
+class SuggestionSettingsSection {
+    private container: HTMLElement;
+    private plugin: Inscribe;
+
+    constructor(container: HTMLElement, plugin: Inscribe) {
+        this.container = container;
+        this.plugin = plugin;
+    }
+
+    async render(): Promise<void> {
+        this.container.empty();
+
+        // Heading
+        new Setting(this.container)
+            .setHeading()
+            .setName("Suggestions experience")
+            .setDesc("Configure how completions are triggered and accepted");
+
+        // Acceptance Hotkey
+        new Setting(this.container)
+            .setName("Acceptance hotkey")
+            .setDesc("Hotkey to accept the current suggestion")
+            .addText((text) => {
+                text
+                    .setPlaceholder("e.g. Tab")
+                    .setValue(this.plugin.settings.suggestionSettings.acceptanceHotkey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionSettings.acceptanceHotkey = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.statusBarItem.render();
+                    });
+            });
+
+        // Manual Activation Key
+        new Setting(this.container)
+            .setName("Manual activation key")
+            .setDesc("Key to manually trigger suggestions (if enabled)")
+            .addText((text) => {
+                text
+                    .setPlaceholder("e.g. Ctrl+Space")
+                    .setValue(this.plugin.settings.suggestionSettings.manualActivationKey || "")
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionSettings.manualActivationKey = value || undefined;
+                        await this.plugin.saveSettings();
+                        this.plugin.statusBarItem.render();
+                    });
+            });
+
+        // Split Strategy
+        new Setting(this.container)
+            .setName("Completion strategy")
+            .setDesc(`Choose how completions should be split and accepted`)
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOption("word", "Word by Word")
+                    .addOption("sentence", "Sentence by Sentence")
+                    .addOption("paragraph", "Paragraph by Paragraph")
+                    .addOption("full", "Full Completion")
+                    .setValue(this.plugin.settings.suggestionSettings.splitStrategy)
+                    .onChange(async (value: SplitStrategy) => {
+                        this.plugin.settings.suggestionSettings.splitStrategy = value;
+                        await this.plugin.saveSettings();
                     });
             });
     }
@@ -282,23 +341,6 @@ class ProfilesSection {
                     .setValue(String(profile.delayMs))
                     .onChange(async (value) => {
                         profile.delayMs = parseInt(value);
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        // Split Strategy
-        new Setting(this.container)
-            .setName("Completion strategy")
-            .setDesc(`${profile.name} | Choose how completions should be split and accepted`)
-            .addDropdown((dropdown) => {
-                dropdown
-                    .addOption("word", "Word by Word")
-                    .addOption("sentence", "Sentence by Sentence")
-                    .addOption("paragraph", "Paragraph by Paragraph")
-                    .addOption("full", "Full Completion")
-                    .setValue(profile.splitStrategy)
-                    .onChange(async (value: SplitStrategy) => {
-                        profile.splitStrategy = value;
                         await this.plugin.saveSettings();
                     });
             });
