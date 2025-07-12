@@ -33,7 +33,7 @@ export default class Inscribe extends Plugin {
 			fetchFunc: () => this.completionService.fetchCompletion(),
 			getOptions: () => this.profileService.getOptions(),
 			acceptanceHotkey: this.settings.suggestionSettings.acceptanceHotkey,
-			manualActivationKey: this.settings.suggestionSettings.manualActivationKey,
+			triggerHotkey: "Shift-Ctrl-Enter",
 		});
 		this.registerEditorExtension(extension);
 	}

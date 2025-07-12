@@ -138,7 +138,7 @@ class SuggestionSettingsSection {
         // Manual Activation Key
         new Setting(this.container)
             .setName("Manual activation key")
-            .setDesc("Key to manually trigger suggestions (if enabled)")
+            .setDesc("Key to manually trigger suggestions (if enabled), disables auto-triggering")
             .addText((text) => {
                 text
                     .setPlaceholder("e.g. Ctrl+Space")
