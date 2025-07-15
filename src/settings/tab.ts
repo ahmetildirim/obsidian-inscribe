@@ -139,14 +139,67 @@ class SuggestionSettingsSection {
             .setName("Manual activation key")
             .setDesc("Key to manually trigger suggestions (if enabled), disables auto-triggering")
             .addText((text) => {
-                text
-                    .setPlaceholder("e.g. Ctrl+Space")
-                    .setValue(this.plugin.settings.suggestionSettings.manualActivationKey || "")
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionSettings.manualActivationKey = value || undefined;
+                text.setValue(this.plugin.settings.suggestionSettings.manualActivationKey || "")
+                    .inputEl.addEventListener("keydown", async (evt) => {
+                        // Prevent default behavior and event bubbling
+                        evt.preventDefault();
+                        evt.stopPropagation();
+
+                        // Skip if it's just a modifier key alone
+                        if (["Control", "Shift", "Alt", "Meta", "OS"].includes(evt.key)) {
+                            return;
+                        }
+
+                        // Build modifier array in consistent order
+                        const modifiers: string[] = [];
+                        if (evt.ctrlKey || evt.metaKey) { // Handle Ctrl/Cmd uniformly
+                            modifiers.push(navigator.platform.toLowerCase().includes('mac') ? 'Cmd' : 'Ctrl');
+                        }
+                        if (evt.altKey) modifiers.push('Alt');
+                        if (evt.shiftKey) modifiers.push('Shift');
+
+                        // Normalize key name
+                        let keyName = evt.key;
+
+                        // Handle special keys
+                        const specialKeys: Record<string, string> = {
+                            ' ': 'Space',
+                            'ArrowUp': 'Up',
+                            'ArrowDown': 'Down',
+                            'ArrowLeft': 'Left',
+                            'ArrowRight': 'Right',
+                            'Escape': 'Esc',
+                            'Delete': 'Del'
+                        };
+
+                        if (specialKeys[keyName]) {
+                            keyName = specialKeys[keyName];
+                        }
+
+                        // Capitalize single letters
+                        if (keyName.length === 1 && keyName.match(/[a-z]/)) {
+                            keyName = keyName.toUpperCase();
+                        }
+
+                        // Don't include modifier keys as the main key
+                        if (!["Control", "Shift", "Alt", "Meta", "OS"].includes(keyName)) {
+                            modifiers.push(keyName);
+                        }
+
+                        // Build hotkey string
+                        const hotkeyString = modifiers.join('+');
+
+                        // Validate the hotkey isn't empty or just modifiers
+                        if (modifiers.length === 0 || (modifiers.length === 1 && ['Ctrl', 'Cmd', 'Alt', 'Shift'].includes(modifiers[0]))) {
+                            return;
+                        }
+
+                        text.setValue(hotkeyString);
+                        this.plugin.settings.suggestionSettings.manualActivationKey = hotkeyString;
                         await this.plugin.saveSettings();
                     });
-            });
+            })
+
 
         // Split Strategy
         new Setting(this.container)
