@@ -60,6 +60,7 @@ export const DEFAULT_SETTINGS: Settings = {
     suggestionSettings: {
         acceptanceHotkey: "Tab",
         splitStrategy: "sentence",
+        manualActivationKey: "",
     },
     providers: {
         openai: {

@@ -131,7 +131,6 @@ class SuggestionSettingsSection {
                     .onChange(async (value) => {
                         this.plugin.settings.suggestionSettings.acceptanceHotkey = value;
                         await this.plugin.saveSettings();
-                        this.plugin.statusBarItem.render();
                     });
             });
 
@@ -146,7 +145,6 @@ class SuggestionSettingsSection {
                     .onChange(async (value) => {
                         this.plugin.settings.suggestionSettings.manualActivationKey = value || undefined;
                         await this.plugin.saveSettings();
-                        this.plugin.statusBarItem.render();
                     });
             });
 
