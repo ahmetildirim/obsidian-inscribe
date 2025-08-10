@@ -29,6 +29,7 @@ export default class Inscribe extends Plugin {
 	}
 
 	async setupExtension() {
+		debugger
 		const extension = inlineSuggestions({
 			fetchFunc: () => this.completionService.fetchCompletion(),
 			getOptions: () => this.profileService.getOptions(),
