@@ -1,5 +1,5 @@
 import { Editor } from "obsidian";
-import { CompletionOptions } from "src/settings/settings";
+import { ProviderOptions } from "src/settings/settings";
 
 export enum ProviderType {
     OLLAMA = "ollama",
@@ -11,7 +11,7 @@ export enum ProviderType {
 // Completer interface for ai integrations
 export interface Provider {
     settings: any
-    generate: (editor: Editor, prompt: string, options: CompletionOptions) => AsyncGenerator<string>;
+    generate: (editor: Editor, prompt: string, options: ProviderOptions) => AsyncGenerator<string>;
     abort: () => Promise<void>;
     fetchModels(): Promise<string[]> | string[];
     connectionTest(): Promise<boolean>;

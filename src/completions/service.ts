@@ -2,7 +2,7 @@ import { App, Editor } from "obsidian";
 import { ProfileService } from "src/profile/service";
 import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
-import { CompletionOptions, Settings } from "src/settings/settings";
+import { ProviderOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 import preparePrompt from "src/completions/prompt";
 import { isVimEnabled, isVimInsertMode } from "src/completions/vim";
@@ -79,7 +79,7 @@ export default class CompletionService {
         }
     }
 
-    private async *complete(editor: Editor, provider: Provider, prompt: string, options: CompletionOptions): AsyncGenerator<Suggestion> {
+    private async *complete(editor: Editor, provider: Provider, prompt: string, options: ProviderOptions): AsyncGenerator<Suggestion> {
         for await (let text of provider.generate(editor, prompt, options)) {
             text = text.trim();
 

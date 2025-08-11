@@ -29,12 +29,11 @@ export default class Inscribe extends Plugin {
 	}
 
 	async setupExtension() {
-		debugger
 		const extension = inlineSuggestions({
 			fetchFunc: () => this.completionService.fetchCompletion(),
 			getOptions: () => this.profileService.getOptions(),
-			acceptanceHotkey: this.settings.suggestionSettings.acceptanceHotkey,
-			triggerHotkey: this.settings.suggestionSettings.manualActivationKey,
+			acceptanceHotkey: this.settings.suggestionControl.acceptanceHotkey,
+			triggerHotkey: this.settings.suggestionControl.manualActivationKey,
 		});
 		this.registerEditorExtension(extension);
 	}
