@@ -6,7 +6,7 @@ import { OpenAICompatibleSettings } from "src/providers/openai-compat";
 import { GeminiSettings } from "src/providers/gemini";
 
 // Completion options for a profile
-export interface ProviderOptions {
+export interface ProfileOptions {
     model: string,
     userPrompt: string,
     systemPrompt: string,
@@ -17,7 +17,7 @@ export interface ProviderOptions {
 export interface Profile {
     name: string,
     provider: ProviderType,
-    completionOptions: ProviderOptions,
+    completionOptions: ProfileOptions,
 }
 
 export type ProfileId = string;

@@ -2,7 +2,7 @@ import { App, Editor } from "obsidian";
 import { ProfileService } from "src/profile/service";
 import { ProviderFactory } from "src/providers/factory";
 import { Suggestion } from "src/extension";
-import { ProviderOptions, Settings } from "src/settings/settings";
+import { ProfileOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 import preparePrompt from "src/completions/prompt";
 import { isVimEnabled, isVimInsertMode } from "src/completions/vim";
@@ -79,15 +79,15 @@ export default class CompletionService {
         }
     }
 
-    private async *complete(editor: Editor, provider: Provider, prompt: string, options: ProviderOptions): AsyncGenerator<Suggestion> {
+    private async *complete(editor: Editor, provider: Provider, prompt: string, options: ProfileOptions): AsyncGenerator<Suggestion> {
         for await (let text of provider.generate(editor, prompt, options)) {
             text = text.trim();
 
-            if (options.outputLimit.enabled) {
+            if (this.settings.suggestionControl.outputLimit.enabled) {
                 const sentences = nlp(text).sentences().out('array');
-                if (sentences.length > options.outputLimit.sentences) {
+                if (sentences.length > this.settings.suggestionControl.outputLimit.sentences) {
                     // Take only the first N sentences
-                    text = sentences.slice(0, options.outputLimit.sentences).join(' ');
+                    text = sentences.slice(0, this.settings.suggestionControl.outputLimit.sentences).join(' ');
                     yield { text: text };
                     break;
                 }

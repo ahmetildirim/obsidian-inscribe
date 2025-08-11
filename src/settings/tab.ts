@@ -9,7 +9,7 @@ import { createProfile } from ".";
 
 export default class InscribeSettingsTab extends PluginSettingTab {
     private generalSection: GeneralSection;
-    private suggestionSettingsSection: SuggestionSettingsSection;
+    private suggestionControlSection: SuggestionControlSection;
     private providersSection: ProvidersSection;
     private profilesSection: ProfilesSection;
     private pathConfigsSection: PathConfigsSection;
@@ -25,9 +25,9 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         const generalContainer = document.createElement("div");
         this.containerEl.appendChild(generalContainer);
 
-        const suggestionSettingsContainer = document.createElement("div");
-        suggestionSettingsContainer.addClass("inscribe-section");
-        this.containerEl.appendChild(suggestionSettingsContainer);
+        const suggestionControlContainer = document.createElement("div");
+        suggestionControlContainer.addClass("inscribe-section");
+        this.containerEl.appendChild(suggestionControlContainer);
 
         const providersContainer = document.createElement("div");
         providersContainer.addClass("inscribe-section");
@@ -42,13 +42,13 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         this.containerEl.appendChild(pathMappingsContainer);
 
         this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
-        this.suggestionSettingsSection = new SuggestionSettingsSection(suggestionSettingsContainer, this.plugin);
+        this.suggestionControlSection = new SuggestionControlSection(suggestionControlContainer, this.plugin);
         this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
         this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
         this.profilesSection = new ProfilesSection(profilesContainer, this.plugin, this.pathConfigsSection.render.bind(this.pathConfigsSection));
 
         this.generalSection.render();
-        this.suggestionSettingsSection.render();
+        this.suggestionControlSection.render();
         this.providersSection.render();
         this.profilesSection.render();
         this.pathConfigsSection.render();
@@ -102,7 +102,7 @@ class GeneralSection {
     }
 }
 
-class SuggestionSettingsSection {
+class SuggestionControlSection {
     private container: HTMLElement;
     private plugin: Inscribe;
 
@@ -117,7 +117,7 @@ class SuggestionSettingsSection {
         // Heading
         new Setting(this.container)
             .setHeading()
-            .setName("Suggestions experience")
+            .setName("Suggestion control")
             .setDesc("Configure how completions are triggered and accepted");
 
         // Acceptance Hotkey
@@ -127,9 +127,9 @@ class SuggestionSettingsSection {
             .addText((text) => {
                 text
                     .setPlaceholder("e.g. Tab")
-                    .setValue(this.plugin.settings.suggestionSettings.acceptanceHotkey)
+                    .setValue(this.plugin.settings.suggestionControl.acceptanceHotkey)
                     .onChange(async (value) => {
-                        this.plugin.settings.suggestionSettings.acceptanceHotkey = value;
+                        this.plugin.settings.suggestionControl.acceptanceHotkey = value;
                         await this.plugin.saveSettings();
                     });
             });
@@ -141,9 +141,9 @@ class SuggestionSettingsSection {
             .addText((text) => {
                 text
                     .setPlaceholder("e.g. Ctrl+Space")
-                    .setValue(this.plugin.settings.suggestionSettings.manualActivationKey || "")
+                    .setValue(this.plugin.settings.suggestionControl.manualActivationKey || "")
                     .onChange(async (value) => {
-                        this.plugin.settings.suggestionSettings.manualActivationKey = value || undefined;
+                        this.plugin.settings.suggestionControl.manualActivationKey = value || undefined;
                         await this.plugin.saveSettings();
                     });
             });
@@ -158,10 +158,49 @@ class SuggestionSettingsSection {
                     .addOption("sentence", "Sentence by Sentence")
                     .addOption("paragraph", "Paragraph by Paragraph")
                     .addOption("full", "Full Completion")
-                    .setValue(this.plugin.settings.suggestionSettings.splitStrategy)
+                    .setValue(this.plugin.settings.suggestionControl.splitStrategy)
                     .onChange(async (value: SplitStrategy) => {
-                        this.plugin.settings.suggestionSettings.splitStrategy = value;
+                        this.plugin.settings.suggestionControl.splitStrategy = value;
                         await this.plugin.saveSettings();
+                    });
+            });
+
+        // Suggestion Delay
+        new Setting(this.container)
+            .setName("Suggestion delay")
+            .setDesc("Delay in milliseconds before fetching suggestions")
+            .addText((text) => {
+                text.inputEl.setAttr("type", "number");
+                text
+                    .setPlaceholder("500")
+                    .setValue(String(this.plugin.settings.suggestionControl.delayMs))
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.delayMs = parseInt(value) || 0;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        // Output Limit
+        new Setting(this.container)
+            .setName("Output limit")
+            .setDesc("Limit the number of sentences in the output")
+            .addText((text) => {
+                text.inputEl.setAttr("type", "number");
+                text.inputEl.setAttr("min", "1");
+                text
+                    .setValue(String(this.plugin.settings.suggestionControl.outputLimit.sentences))
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.outputLimit.sentences = parseInt(value) || 1;
+                        await this.plugin.saveSettings();
+                    });
+            })
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.suggestionControl.outputLimit.enabled)
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.outputLimit.enabled = value;
+                        await this.plugin.saveSettings();
+                        await this.render();
                     });
             });
     }
@@ -328,21 +367,6 @@ class ProfilesSection {
                     });
             });
 
-        // Suggestion Delay
-        new Setting(this.container)
-            .setName("Suggestion delay")
-            .setDesc(`${profile.name} | Delay in milliseconds before fetching suggestions`)
-            .addText((text) => {
-                text.inputEl.setAttr("type", "number");
-                text
-                    .setPlaceholder("1000")
-                    .setValue(String(profile.delayMs))
-                    .onChange(async (value) => {
-                        profile.delayMs = parseInt(value);
-                        await this.plugin.saveSettings();
-                    });
-            });
-
         // System Prompt
         new Setting(this.container)
             .setName("System prompt")
@@ -385,30 +409,6 @@ class ProfilesSection {
                     }
                 );
             });
-
-        // Output Limit
-        new Setting(this.container)
-            .setName("Output limit")
-            .setDesc(`${profile.name} | Limit the number of sentences in the output`)
-            .addText((text) => {
-                text.inputEl.setAttr("type", "number");
-                text.inputEl.setAttr("min", "1");
-                text
-                    .setValue(String(profile.completionOptions.outputLimit.sentences))
-                    .onChange(async (value) => {
-                        profile.completionOptions.outputLimit.sentences = parseInt(value);
-                        await this.plugin.saveSettings();
-                    });
-            })
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(profile.completionOptions.outputLimit.enabled)
-                    .onChange(async (value) => {
-                        profile.completionOptions.outputLimit.enabled = value;
-                        await this.plugin.saveSettings();
-                        await this.render();
-                    });
-            })
 
     }
 
