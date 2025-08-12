@@ -120,37 +120,31 @@ class SuggestionControlSection {
             .setName("Suggestion control")
             .setDesc("Configure how completions are triggered and accepted");
 
-        // Acceptance Hotkey
-        new Setting(this.container)
-            .setName("Acceptance hotkey")
-            .setDesc("Hotkey to accept the current suggestion")
-            .addText((text) => {
-                text
-                    .setPlaceholder("e.g. Tab")
-                    .setValue(this.plugin.settings.suggestionControl.acceptanceHotkey)
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.acceptanceHotkey = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
+        // Acceptance Hotkey (capturable)
+        this.buildHotkeySetting(
+            "Acceptance hotkey",
+            "Hotkey to accept the current suggestion, autocompletion is disabled if set",
+            this.plugin.settings.suggestionControl.acceptanceHotkey,
+            async (value) => {
+                this.plugin.settings.suggestionControl.acceptanceHotkey = value || "Tab";
+                await this.plugin.saveSettings();
+            }
+        );
 
-        // Manual Activation Key
-        new Setting(this.container)
-            .setName("Manual activation key")
-            .setDesc("Key to manually trigger suggestions (if enabled), disables auto-triggering")
-            .addText((text) => {
-                text
-                    .setPlaceholder("e.g. Ctrl+Space")
-                    .setValue(this.plugin.settings.suggestionControl.manualActivationKey || "")
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.manualActivationKey = value || undefined;
-                        await this.plugin.saveSettings();
-                    });
-            });
+        // Manual Activation Key (capturable)
+        this.buildHotkeySetting(
+            "Manual activation key",
+            "Hotkey to manually trigger suggestions. Autocompletion is disabled if set. Full restart of the app is required to take effect.",
+            this.plugin.settings.suggestionControl.manualActivationKey || "",
+            async (value) => {
+                this.plugin.settings.suggestionControl.manualActivationKey = value || undefined;
+                await this.plugin.saveSettings();
+            }
+        );
 
         // Split Strategy
         new Setting(this.container)
-            .setName("Completion strategy")
+            .setName("Split strategy")
             .setDesc(`Choose how completions should be split and accepted`)
             .addDropdown((dropdown) => {
                 dropdown
@@ -204,6 +198,88 @@ class SuggestionControlSection {
                         await this.render();
                     });
             });
+    }
+
+    private buildHotkeySetting(name: string, desc: string, current: string, onSet: (v: string) => Promise<void>): void {
+        let captureInput: HTMLInputElement | undefined;
+        new Setting(this.container)
+            .setName(name)
+            .setDesc(desc)
+            .addText((text) => {
+                // Make read-only; we capture keydown events to build combination.
+                text.setPlaceholder("Click then press keys…");
+                text.setValue(current || "");
+                text.inputEl.readOnly = true;
+                captureInput = text.inputEl;
+
+                text.inputEl.addEventListener("keydown", async (e: KeyboardEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Handle escape -> clear
+                    if (e.key === "Escape") {
+                        text.setValue("");
+                        await onSet("");
+                        return;
+                    }
+                    const combo = this.formatCombo(e);
+                    // Ignore pure modifier presses (no base key)
+                    if (!combo) return;
+                    text.setValue(combo);
+                    await onSet(combo);
+                    // After capturing a full combo, blur to end recording except for Tab (since Tab might move focus)
+                    setTimeout(() => {
+                        if (document.activeElement === text.inputEl) {
+                            text.inputEl.blur();
+                        }
+                    }, 10);
+                });
+            })
+            .addExtraButton((btn) => {
+                btn
+                    .setIcon("cross")
+                    .setTooltip("Clear hotkey")
+                    .onClick(async () => {
+                        await onSet("");
+                        // Re-render to show cleared value
+                        await this.render();
+                    });
+            })
+            .addExtraButton((btn) => {
+                btn
+                    .setIcon("refresh-ccw")
+                    .setTooltip("Re-record: focus input then press keys")
+                    .onClick(() => {
+                        captureInput?.focus();
+                    });
+            });
+    }
+
+    private formatCombo(e: KeyboardEvent): string {
+        const parts: string[] = [];
+        if (e.metaKey) parts.push("Meta");
+        if (e.ctrlKey) parts.push("Ctrl");
+        if (e.altKey) parts.push("Alt");
+        if (e.shiftKey) parts.push("Shift");
+        // Exclude modifier-only keys
+        const key = this.normalizeKey(e.key);
+        if (!key) return ""; // ignore pure modifiers
+        parts.push(key);
+        return parts.join("-");
+    }
+
+    private normalizeKey(key: string): string | undefined {
+        const lower = key.toLowerCase();
+        // Ignore standalone modifier keys
+        if (["shift", "meta", "alt", "control", "ctrl"].includes(lower)) return undefined;
+        if (lower === " ") return "Space";
+        if (lower === "arrowup") return "ArrowUp";
+        if (lower === "arrowdown") return "ArrowDown";
+        if (lower === "arrowleft") return "ArrowLeft";
+        if (lower === "arrowright") return "ArrowRight";
+        if (lower === "escape") return "Esc";
+        if (lower === "tab") return "Tab";
+        if (key.length === 1) return key.toUpperCase();
+        return key;
     }
 }
 
