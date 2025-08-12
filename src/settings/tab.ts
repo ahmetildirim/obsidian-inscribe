@@ -187,6 +187,7 @@ class SuggestionControlSection {
             .addText((text) => {
                 text.inputEl.setAttr("type", "number");
                 text.inputEl.setAttr("min", "1");
+                text.setDisabled(!this.plugin.settings.suggestionControl.outputLimit.enabled);
                 text
                     .setValue(String(this.plugin.settings.suggestionControl.outputLimit.sentences))
                     .onChange(async (value) => {
