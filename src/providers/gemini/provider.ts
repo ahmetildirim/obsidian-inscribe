@@ -54,7 +54,11 @@ export class GeminiProvider implements Provider {
     }
 
     async fetchModels(): Promise<string[]> {
-        return this.settings.models;
+        const models = (await this.client.models.list()).page;
+
+        return models
+            .map(model => model.name?.replace("models/", ""))
+            .filter((name): name is string => typeof name === "string");
     }
 
     async connectionTest(): Promise<boolean> {
