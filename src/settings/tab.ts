@@ -9,6 +9,7 @@ import { createProfile } from ".";
 
 export default class InscribeSettingsTab extends PluginSettingTab {
     private generalSection: GeneralSection;
+    private suggestionControlSection: SuggestionControlSection;
     private providersSection: ProvidersSection;
     private profilesSection: ProfilesSection;
     private pathConfigsSection: PathConfigsSection;
@@ -24,6 +25,10 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         const generalContainer = document.createElement("div");
         this.containerEl.appendChild(generalContainer);
 
+        const suggestionControlContainer = document.createElement("div");
+        suggestionControlContainer.addClass("inscribe-section");
+        this.containerEl.appendChild(suggestionControlContainer);
+
         const providersContainer = document.createElement("div");
         providersContainer.addClass("inscribe-section");
         this.containerEl.appendChild(providersContainer);
@@ -37,11 +42,13 @@ export default class InscribeSettingsTab extends PluginSettingTab {
         this.containerEl.appendChild(pathMappingsContainer);
 
         this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
+        this.suggestionControlSection = new SuggestionControlSection(suggestionControlContainer, this.plugin);
         this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
         this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
         this.profilesSection = new ProfilesSection(profilesContainer, this.plugin, this.pathConfigsSection.render.bind(this.pathConfigsSection));
 
         this.generalSection.render();
+        this.suggestionControlSection.render();
         this.providersSection.render();
         this.profilesSection.render();
         this.pathConfigsSection.render();
@@ -75,21 +82,6 @@ class GeneralSection {
                     });
             });
 
-        // Acceptance Hotkey
-        new Setting(this.container)
-            .setName("Acceptance hotkey")
-            .setDesc("Hotkey to accept the current suggestion")
-            .addText((text) => {
-                text
-                    .setPlaceholder("e.g. Tab")
-                    .setValue(this.plugin.settings.acceptanceHotkey)
-                    .onChange(async (value) => {
-                        this.plugin.settings.acceptanceHotkey = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.statusBarItem.render();
-                    });
-            });
-
         // Reset Settings
         new Setting(this.container)
             .setName("Reset settings")
@@ -107,6 +99,187 @@ class GeneralSection {
                         new Notice("Settings reset to default");
                     });
             });
+    }
+}
+
+class SuggestionControlSection {
+    private container: HTMLElement;
+    private plugin: Inscribe;
+
+    constructor(container: HTMLElement, plugin: Inscribe) {
+        this.container = container;
+        this.plugin = plugin;
+    }
+
+    async render(): Promise<void> {
+        this.container.empty();
+
+        // Heading
+        new Setting(this.container)
+            .setHeading()
+            .setName("Suggestion control")
+            .setDesc("Configure how completions are triggered and accepted");
+
+        // Acceptance Hotkey (capturable)
+        this.buildHotkeySetting(
+            "Acceptance hotkey",
+            "Hotkey to accept the current suggestion, autocompletion is disabled if set",
+            this.plugin.settings.suggestionControl.acceptanceHotkey,
+            async (value) => {
+                this.plugin.settings.suggestionControl.acceptanceHotkey = value || "Tab";
+                await this.plugin.saveSettings();
+            }
+        );
+
+        // Manual Activation Key (capturable)
+        this.buildHotkeySetting(
+            "Manual activation key",
+            "Hotkey to manually trigger suggestions. Autocompletion is disabled if set. Full restart of the app is required to take effect.",
+            this.plugin.settings.suggestionControl.manualActivationKey || "",
+            async (value) => {
+                this.plugin.settings.suggestionControl.manualActivationKey = value || undefined;
+                await this.plugin.saveSettings();
+            }
+        );
+
+        // Split Strategy
+        new Setting(this.container)
+            .setName("Split strategy")
+            .setDesc(`Choose how completions should be split and accepted`)
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOption("word", "Word by Word")
+                    .addOption("sentence", "Sentence by Sentence")
+                    .addOption("paragraph", "Paragraph by Paragraph")
+                    .addOption("full", "Full Completion")
+                    .setValue(this.plugin.settings.suggestionControl.splitStrategy)
+                    .onChange(async (value: SplitStrategy) => {
+                        this.plugin.settings.suggestionControl.splitStrategy = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        // Suggestion Delay
+        new Setting(this.container)
+            .setName("Suggestion delay")
+            .setDesc("Delay in milliseconds before fetching suggestions")
+            .addText((text) => {
+                text.inputEl.setAttr("type", "number");
+                text
+                    .setPlaceholder("500")
+                    .setValue(String(this.plugin.settings.suggestionControl.delayMs))
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.delayMs = parseInt(value) || 0;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        // Output Limit
+        new Setting(this.container)
+            .setName("Output limit")
+            .setDesc("Limit the number of sentences in the output")
+            .addText((text) => {
+                text.inputEl.setAttr("type", "number");
+                text.inputEl.setAttr("min", "1");
+                text.setDisabled(!this.plugin.settings.suggestionControl.outputLimit.enabled);
+                text
+                    .setValue(String(this.plugin.settings.suggestionControl.outputLimit.sentences))
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.outputLimit.sentences = parseInt(value) || 1;
+                        await this.plugin.saveSettings();
+                    });
+            })
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.suggestionControl.outputLimit.enabled)
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.outputLimit.enabled = value;
+                        await this.plugin.saveSettings();
+                        await this.render();
+                    });
+            });
+    }
+
+    private buildHotkeySetting(name: string, desc: string, current: string, onSet: (v: string) => Promise<void>): void {
+        let captureInput: HTMLInputElement | undefined;
+        new Setting(this.container)
+            .setName(name)
+            .setDesc(desc)
+            .addText((text) => {
+                // Make read-only; we capture keydown events to build combination.
+                text.setPlaceholder("Click then press keys…");
+                text.setValue(current || "");
+                text.inputEl.readOnly = true;
+                captureInput = text.inputEl;
+
+                text.inputEl.addEventListener("keydown", async (e: KeyboardEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Handle escape -> clear
+                    if (e.key === "Escape") {
+                        text.setValue("");
+                        await onSet("");
+                        return;
+                    }
+                    const combo = this.formatCombo(e);
+                    // Ignore pure modifier presses (no base key)
+                    if (!combo) return;
+                    text.setValue(combo);
+                    await onSet(combo);
+                    // After capturing a full combo, blur to end recording except for Tab (since Tab might move focus)
+                    setTimeout(() => {
+                        if (document.activeElement === text.inputEl) {
+                            text.inputEl.blur();
+                        }
+                    }, 10);
+                });
+            })
+            .addExtraButton((btn) => {
+                btn
+                    .setIcon("cross")
+                    .setTooltip("Clear hotkey")
+                    .onClick(async () => {
+                        await onSet("");
+                        // Re-render to show cleared value
+                        await this.render();
+                    });
+            })
+            .addExtraButton((btn) => {
+                btn
+                    .setIcon("refresh-ccw")
+                    .setTooltip("Re-record: focus input then press keys")
+                    .onClick(() => {
+                        captureInput?.focus();
+                    });
+            });
+    }
+
+    private formatCombo(e: KeyboardEvent): string {
+        const parts: string[] = [];
+        if (e.metaKey) parts.push("Meta");
+        if (e.ctrlKey) parts.push("Ctrl");
+        if (e.altKey) parts.push("Alt");
+        if (e.shiftKey) parts.push("Shift");
+        // Exclude modifier-only keys
+        const key = this.normalizeKey(e.key);
+        if (!key) return ""; // ignore pure modifiers
+        parts.push(key);
+        return parts.join("-");
+    }
+
+    private normalizeKey(key: string): string | undefined {
+        const lower = key.toLowerCase();
+        // Ignore standalone modifier keys
+        if (["shift", "meta", "alt", "control", "ctrl"].includes(lower)) return undefined;
+        if (lower === " ") return "Space";
+        if (lower === "arrowup") return "ArrowUp";
+        if (lower === "arrowdown") return "ArrowDown";
+        if (lower === "arrowleft") return "ArrowLeft";
+        if (lower === "arrowright") return "ArrowRight";
+        if (lower === "escape") return "Esc";
+        if (lower === "tab") return "Tab";
+        if (key.length === 1) return key.toUpperCase();
+        return key;
     }
 }
 
@@ -271,38 +444,6 @@ class ProfilesSection {
                     });
             });
 
-        // Suggestion Delay
-        new Setting(this.container)
-            .setName("Suggestion delay")
-            .setDesc(`${profile.name} | Delay in milliseconds before fetching suggestions`)
-            .addText((text) => {
-                text.inputEl.setAttr("type", "number");
-                text
-                    .setPlaceholder("1000")
-                    .setValue(String(profile.delayMs))
-                    .onChange(async (value) => {
-                        profile.delayMs = parseInt(value);
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        // Split Strategy
-        new Setting(this.container)
-            .setName("Completion strategy")
-            .setDesc(`${profile.name} | Choose how completions should be split and accepted`)
-            .addDropdown((dropdown) => {
-                dropdown
-                    .addOption("word", "Word by Word")
-                    .addOption("sentence", "Sentence by Sentence")
-                    .addOption("paragraph", "Paragraph by Paragraph")
-                    .addOption("full", "Full Completion")
-                    .setValue(profile.splitStrategy)
-                    .onChange(async (value: SplitStrategy) => {
-                        profile.splitStrategy = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
-
         // System Prompt
         new Setting(this.container)
             .setName("System prompt")
@@ -345,30 +486,6 @@ class ProfilesSection {
                     }
                 );
             });
-
-        // Output Limit
-        new Setting(this.container)
-            .setName("Output limit")
-            .setDesc(`${profile.name} | Limit the number of sentences in the output`)
-            .addText((text) => {
-                text.inputEl.setAttr("type", "number");
-                text.inputEl.setAttr("min", "1");
-                text
-                    .setValue(String(profile.completionOptions.outputLimit.sentences))
-                    .onChange(async (value) => {
-                        profile.completionOptions.outputLimit.sentences = parseInt(value);
-                        await this.plugin.saveSettings();
-                    });
-            })
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(profile.completionOptions.outputLimit.enabled)
-                    .onChange(async (value) => {
-                        profile.completionOptions.outputLimit.enabled = value;
-                        await this.plugin.saveSettings();
-                        await this.render();
-                    });
-            })
 
     }
 

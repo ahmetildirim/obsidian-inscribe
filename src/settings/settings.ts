@@ -6,33 +6,39 @@ import { OpenAICompatibleSettings } from "src/providers/openai-compat";
 import { GeminiSettings } from "src/providers/gemini";
 
 // Completion options for a profile
-export interface CompletionOptions {
+export interface ProfileOptions {
     model: string,
     userPrompt: string,
     systemPrompt: string,
     temperature: number,
-    outputLimit: {
-        enabled: boolean,
-        sentences: number,
-    }
 }
 
 // Profile settings
 export interface Profile {
     name: string,
     provider: ProviderType,
-    completionOptions: CompletionOptions,
-    delayMs: number,
-    splitStrategy: SplitStrategy
+    completionOptions: ProfileOptions,
 }
 
 export type ProfileId = string;
 export type Profiles = Record<ProfileId, Profile>
 export type Path = string;
 export type PathConfig = { profile: ProfileId, enabled: boolean };
+export type SuggestionControl = {
+    acceptanceHotkey: string,
+    manualActivationKey?: string,
+    splitStrategy: SplitStrategy,
+    delayMs: number,
+    outputLimit: {
+        enabled: boolean,
+        sentences: number,
+    },
+}
+
 export interface Settings {
     enabled: boolean,
-    acceptanceHotkey: string,
+    // settings for controlling suggestions
+    suggestionControl: SuggestionControl,
     // available providers
     providers: {
         ollama: OllamaSettings,
@@ -50,7 +56,16 @@ export const DEFAULT_PROFILE: ProfileId = "default";
 export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
     enabled: false,
-    acceptanceHotkey: "Tab",
+    suggestionControl: {
+        acceptanceHotkey: "Tab",
+        splitStrategy: "sentence",
+        manualActivationKey: "",
+        outputLimit: {
+            enabled: true,
+            sentences: 1,
+        },
+        delayMs: 500,
+    },
     providers: {
         openai: {
             integration: ProviderType.OPENAI,
@@ -97,17 +112,11 @@ export const DEFAULT_SETTINGS: Settings = {
         default: {
             name: "Default profile",
             provider: ProviderType.OLLAMA,
-            delayMs: 500,
-            splitStrategy: "sentence",
             completionOptions: {
                 model: "gemma3:12b",
                 userPrompt: 'If the last sentence is incomplete, only complete the sentence and nothing else. If the last sentence is complete, generate a new sentence that follows logically:\n---\n{{{pre_cursor}}}',
                 systemPrompt: "You are a writing assistant that predicts and completes sentences in a natural, context-aware manner. Your goal is to continue the user’s text smoothly, maintaining coherence, fluency, and style. Adapt to the user’s writing tone, whether formal, informal, creative, or technical. Ensure that completions feel intuitive, useful, and free of unnecessary repetition. Do not generate completion that includes the prompt itself.",
                 temperature: 0.5,
-                outputLimit: {
-                    enabled: false,
-                    sentences: 1,
-                },
             }
         },
     },

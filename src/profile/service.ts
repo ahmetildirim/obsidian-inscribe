@@ -48,8 +48,8 @@ export class ProfileService {
 
     getOptions(): InlineCompletionOptions {
         return {
-            delayMs: this.activeProfile.delayMs,
-            splitStrategy: this.activeProfile.splitStrategy
+            delayMs: this.settings.suggestionControl.delayMs,
+            splitStrategy: this.settings.suggestionControl.splitStrategy
         };
     }
 

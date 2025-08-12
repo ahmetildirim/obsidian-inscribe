@@ -1,7 +1,7 @@
 import { Provider } from "..";
 import { Editor } from "obsidian";
 import { OpenAISettings } from ".";
-import { CompletionOptions } from "src/settings/settings";
+import { ProfileOptions } from "src/settings/settings";
 import OpenAI from "openai";
 
 export class OpenAIProvider implements Provider {
@@ -18,7 +18,7 @@ export class OpenAIProvider implements Provider {
         });
     }
 
-    async *generate(editor: Editor, prompt: string, options: CompletionOptions): AsyncGenerator<string> {
+    async *generate(editor: Editor, prompt: string, options: ProfileOptions): AsyncGenerator<string> {
         this.aborted = false;
         this.abortcontroller = new AbortController();
 

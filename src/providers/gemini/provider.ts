@@ -1,7 +1,7 @@
 import { GeminiSettings } from "./settings";
 import { Provider } from "..";
 import { Editor } from "obsidian";
-import { CompletionOptions } from "src/settings/settings";
+import { ProfileOptions } from "src/settings/settings";
 import { GoogleGenAI } from "@google/genai";
 
 export class GeminiProvider implements Provider {
@@ -16,7 +16,7 @@ export class GeminiProvider implements Provider {
         });
     }
 
-    async * generate(editor: Editor, prompt: string, options: CompletionOptions): AsyncGenerator<string> {
+    async * generate(editor: Editor, prompt: string, options: ProfileOptions): AsyncGenerator<string> {
         this.aborted = false;
 
         const response = await this.client.models.generateContentStream({
@@ -54,7 +54,11 @@ export class GeminiProvider implements Provider {
     }
 
     async fetchModels(): Promise<string[]> {
-        return this.settings.models;
+        const models = (await this.client.models.list()).page;
+
+        return models
+            .map(model => model.name?.replace("models/", ""))
+            .filter((name): name is string => typeof name === "string");
     }
 
     async connectionTest(): Promise<boolean> {

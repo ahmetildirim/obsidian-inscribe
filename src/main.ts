@@ -32,7 +32,8 @@ export default class Inscribe extends Plugin {
 		const extension = inlineSuggestions({
 			fetchFunc: () => this.completionService.fetchCompletion(),
 			getOptions: () => this.profileService.getOptions(),
-			acceptanceHotkey: this.settings.acceptanceHotkey,
+			acceptanceHotkey: this.settings.suggestionControl.acceptanceHotkey,
+			triggerHotkey: this.settings.suggestionControl.manualActivationKey,
 		});
 		this.registerEditorExtension(extension);
 	}
