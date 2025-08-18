@@ -35,12 +35,7 @@ export default class CompletionService {
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
-        // Check if the editor is in Vim insert mode
-        if (isVimEnabled(activeEditor.editor)) {
-            if (!isVimInsertMode(activeEditor.editor)) {
-                return;
-            }
-        }
+        if (!this.shouldGenerate(activeEditor.editor)) return;
 
         const profile = this.profileService.getActiveProfile();
         const provider = this.providerFactory.getProvider(profile.provider);
@@ -95,5 +90,27 @@ export default class CompletionService {
 
             yield { text: text };
         }
+    }
+
+    private shouldGenerate(editor: Editor): boolean {
+        // Check if the editor is in Vim insert mode
+        if (isVimEnabled(editor) && !isVimInsertMode(editor)) {
+            return false;
+        }
+
+        const cursor = editor.getCursor();
+        const currentLine = editor.getLine(cursor.line);
+
+        // Line must not be empty
+        if (!currentLine || currentLine.length === 0) return false;
+
+        // Cursor must not be at column 0
+        if (cursor.ch === 0) return false;
+
+        // Last character before cursor must be a space
+        const lastChar = currentLine[cursor.ch - 1];
+        if (lastChar !== " ") return false;
+
+        return true;
     }
 }
