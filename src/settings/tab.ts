@@ -198,6 +198,47 @@ class SuggestionControlSection {
                         await this.render();
                     });
             });
+
+        new Setting(this.container)
+            .setHeading()
+            .setName("Auto Trigger Rules")
+            .setDesc("Configure rules for when suggestions should be automatically triggered. Rules are skipped if manual activation is enabled.")
+
+        new Setting(this.container)
+            .setName("Require non-empty line")
+            .setDesc("Only trigger when the current line has content")
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.suggestionControl.activationRules.requireNonEmptyLine)
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.activationRules.requireNonEmptyLine = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(this.container)
+            .setName("Require cursor not at start")
+            .setDesc("Don’t trigger when the cursor is at the start of a line")
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.suggestionControl.activationRules.requireCursorNotAtStart)
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.activationRules.requireCursorNotAtStart = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(this.container)
+            .setName("Require space before cursor")
+            .setDesc("Auto trigger only if there’s a space right before the cursor")
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.suggestionControl.activationRules.requireSpaceBeforeCursor)
+                    .onChange(async (value) => {
+                        this.plugin.settings.suggestionControl.activationRules.requireSpaceBeforeCursor = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
     }
 
     private buildHotkeySetting(name: string, desc: string, current: string, onSet: (v: string) => Promise<void>): void {

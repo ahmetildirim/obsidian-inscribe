@@ -33,6 +33,15 @@ export type SuggestionControl = {
         enabled: boolean,
         sentences: number,
     },
+    // Rules that determine when suggestions should auto-trigger
+    activationRules: {
+        // Require the current line to be non-empty
+        requireNonEmptyLine: boolean,
+        // Disallow triggering at column 0 (line start)
+        requireCursorNotAtStart: boolean,
+        // Require a space character immediately before the cursor
+        requireSpaceBeforeCursor: boolean,
+    },
 }
 
 export interface Settings {
@@ -65,6 +74,11 @@ export const DEFAULT_SETTINGS: Settings = {
             sentences: 1,
         },
         delayMs: 500,
+        activationRules: {
+            requireNonEmptyLine: true,
+            requireCursorNotAtStart: true,
+            requireSpaceBeforeCursor: true,
+        },
     },
     providers: {
         openai: {

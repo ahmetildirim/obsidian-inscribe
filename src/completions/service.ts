@@ -44,16 +44,6 @@ export default class CompletionService {
         // Stop any previous generation
         await provider.abort();
 
-        const cursor = activeEditor.editor.getCursor();
-        const currentLine = activeEditor.editor.getLine(cursor.line);
-
-        // Check if the current line is empty
-        if (!currentLine.length) return;
-
-        const lastChar = currentLine[cursor.ch - 1];
-        // Check if the last character is not a space
-        if (lastChar !== " ") return;
-
         const prompt = preparePrompt(activeEditor.editor, options.userPrompt);
         this.notifyCompletionStatus(true);
         yield* this.complete(activeEditor.editor, provider, prompt, options);
@@ -93,6 +83,11 @@ export default class CompletionService {
     }
 
     private shouldGenerate(editor: Editor): boolean {
+        if (this.settings.suggestionControl.manualActivationKey) {
+            // If manual activation is enabled, skip auto-trigger rules
+            return true;
+        }
+
         // Check if the editor is in Vim insert mode
         if (isVimEnabled(editor) && !isVimInsertMode(editor)) {
             return false;
@@ -101,15 +96,20 @@ export default class CompletionService {
         const cursor = editor.getCursor();
         const currentLine = editor.getLine(cursor.line);
 
-        // Line must not be empty
-        if (!currentLine || currentLine.length === 0) return false;
+        const rules = this.settings.suggestionControl.activationRules;
 
-        // Cursor must not be at column 0
-        if (cursor.ch === 0) return false;
+        if (rules.requireNonEmptyLine) {
+            if (!currentLine || currentLine.length === 0) return false;
+        }
 
-        // Last character before cursor must be a space
-        const lastChar = currentLine[cursor.ch - 1];
-        if (lastChar !== " ") return false;
+        if (rules.requireCursorNotAtStart) {
+            if (cursor.ch === 0) return false;
+        }
+
+        if (rules.requireSpaceBeforeCursor) {
+            const lastChar = currentLine[cursor.ch - 1];
+            if (lastChar !== " ") return false;
+        }
 
         return true;
     }
