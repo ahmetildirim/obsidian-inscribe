@@ -201,7 +201,7 @@ class SuggestionControlSection {
 
         new Setting(this.container)
             .setHeading()
-            .setName("Auto Trigger Rules")
+            .setName("Auto trigger rules")
             .setDesc("Configure rules for when suggestions should be automatically triggered. Rules are skipped if manual activation is enabled.")
 
         new Setting(this.container)
