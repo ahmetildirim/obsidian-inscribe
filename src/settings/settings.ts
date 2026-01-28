@@ -86,9 +86,9 @@ export const DEFAULT_SETTINGS: Settings = {
             name: "Open AI",
             description: "Use OpenAI APIs to generate text.",
             apiKey: "api-key",
-            models: ["gpt-4o", "gpt-4o-mini"],
+            models: ["gpt-5", "gpt-5-nano"],
             configured: false,
-            temperature_range: { min: 0, max: 1 },
+            temperature_range: { min: 1, max: 1 },
         },
         ollama: {
             integration: ProviderType.OLLAMA,
