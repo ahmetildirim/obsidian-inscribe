@@ -23,18 +23,16 @@ export class OpenAIProvider implements Provider {
         this.abortcontroller = new AbortController();
 
         const initialPosition = editor.getCursor();
-        const stream = await this.client.chat.completions.create({
+        const stream = await this.client.responses.create({
             model: options.model,
-            messages: [
-                { role: "system", content: options.systemPrompt },
-                { role: "user", content: prompt }
-            ],
+            instructions: options.systemPrompt,
+            input: prompt,
             temperature: options.temperature,
             stream: true,
         }, { signal: this.abortcontroller.signal });
 
         let completion = "";
-        for await (const chunk of stream) {
+        for await (const event of stream) {
             if (this.aborted) {
                 return;
             }
@@ -44,7 +42,11 @@ export class OpenAIProvider implements Provider {
                 return;
             }
 
-            const content = chunk.choices[0]?.delta?.content || "";
+            if (event.type !== "response.output_text.delta") {
+                continue;
+            }
+
+            const content = event.delta || "";
             completion += content;
             yield completion;
         }
