@@ -5,12 +5,14 @@ import { OllamaProvider } from "./ollama";
 import { OpenAIProvider } from "./openai";
 import { OpenAICompatibleProvider } from "./openai-compat";
 import { GeminiProvider } from "./gemini";
+import { GrokProvider } from "./grok";
 
 interface Providers {
     [ProviderType.OLLAMA]: OllamaProvider,
     [ProviderType.OPENAI]: OpenAIProvider,
     [ProviderType.OPENAI_COMPATIBLE]: OpenAICompatibleProvider,
     [ProviderType.GEMINI]: GeminiProvider,
+    [ProviderType.GROK]: GrokProvider,
 }
 
 export class ProviderFactory {
@@ -44,6 +46,7 @@ export class ProviderFactory {
             [ProviderType.OPENAI]: new OpenAIProvider(settings.providers.openai),
             [ProviderType.OPENAI_COMPATIBLE]: new OpenAICompatibleProvider(settings.providers.openai_compatible),
             [ProviderType.GEMINI]: new GeminiProvider(settings.providers.gemini),
+            [ProviderType.GROK]: new GrokProvider(settings.providers.grok),
         }
     }
 }

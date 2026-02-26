@@ -4,6 +4,7 @@ import { OllamaSettings } from "src/providers/ollama";
 import { OpenAISettings } from "src/providers/openai";
 import { OpenAICompatibleSettings } from "src/providers/openai-compat";
 import { GeminiSettings } from "src/providers/gemini";
+import { GrokSettings } from "src/providers/grok";
 
 // Completion options for a profile
 export interface ProfileOptions {
@@ -54,6 +55,7 @@ export interface Settings {
         openai: OpenAISettings,
         openai_compatible: OpenAICompatibleSettings,
         gemini: GeminiSettings,
+        grok: GrokSettings,
     },
     // profiles
     profiles: Profiles,
@@ -120,6 +122,15 @@ export const DEFAULT_SETTINGS: Settings = {
             ],
             configured: false,
             temperature_range: { min: 0, max: 2 },
+        },
+        grok: {
+            integration: ProviderType.GROK,
+            name: "Grok",
+            description: "Use xAI Grok models to generate text.",
+            apiKey: "api-key",
+            models: ["grok-3-mini", "grok-3"],
+            configured: false,
+            temperature_range: { min: 0, max: 1 },
         },
     },
     profiles: {

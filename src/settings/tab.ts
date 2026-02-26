@@ -369,6 +369,15 @@ class ProvidersSection {
                 ProviderType.GEMINI,
                 this.plugin.settings.providers.gemini.configured));
 
+        // Grok Provider
+        new Setting(this.container)
+            .setName("Grok")
+            .setDesc("xAI Grok API")
+            .addButton((button: ButtonComponent) => this.createConfigureButton(
+                button,
+                ProviderType.GROK,
+                this.plugin.settings.providers.grok.configured));
+
         // OpenAI Compatible Provider
         new Setting(this.container)
             .setName("OpenAI compatible API")
@@ -444,6 +453,7 @@ class ProfilesSection {
                     .addOption(ProviderType.OLLAMA, "Ollama")
                     .addOption(ProviderType.OPENAI, "OpenAI")
                     .addOption(ProviderType.GEMINI, "Gemini")
+                    .addOption(ProviderType.GROK, "Grok")
                     .addOption(ProviderType.OPENAI_COMPATIBLE, "OpenAI Compatible")
                     .setValue(profile.provider)
                     .onChange(async (value: ProviderType) => {

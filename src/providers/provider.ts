@@ -6,6 +6,7 @@ export enum ProviderType {
     OPENAI = "openai",
     OPENAI_COMPATIBLE = "openai_compatible",
     GEMINI = "gemini",
+    GROK = "grok",
 }
 
 // Completer interface for ai integrations

@@ -36,6 +36,9 @@ export class ProviderSettingsModal extends Modal {
             case ProviderType.GEMINI:
                 this.renderGeminiSettings();
                 break;
+            case ProviderType.GROK:
+                this.renderGrokSettings();
+                break;
             default:
                 contentEl.createEl('h2', { text: 'Unknown provider type' });
                 break;
@@ -135,6 +138,27 @@ export class ProviderSettingsModal extends Modal {
             });
         this.renderModelSettings(this.plugin.settings.providers.gemini);
         this.renderConnectionStatus(this.plugin.settings.providers.gemini);
+    }
+
+    async renderGrokSettings() {
+        const { contentEl } = this;
+        contentEl.empty();
+        this.setTitle('Grok');
+
+        new Setting(contentEl)
+            .setName("Grok API key")
+            .setDesc("The API key for xAI Grok")
+            .addText((text) => {
+                text
+                    .setValue(this.plugin.settings.providers.grok.apiKey)
+                    .onChange(async (value) => {
+                        this.plugin.settings.providers.grok.apiKey = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        this.renderModelSettings(this.plugin.settings.providers.grok);
+        this.renderConnectionStatus(this.plugin.settings.providers.grok);
     }
 
     private renderModelSettings(provider: { models: string[] }) {
