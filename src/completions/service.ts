@@ -6,6 +6,7 @@ import { ProfileOptions, Settings } from "src/settings/settings";
 import { Provider } from "src/providers/provider";
 import preparePrompt from "src/completions/prompt";
 import { isVimEnabled, isVimInsertMode } from "src/completions/vim";
+import { removeStreamingOverlap } from "src/completions/overlap";
 import nlp from "compromise";
 
 export default class CompletionService {
@@ -65,7 +66,8 @@ export default class CompletionService {
     }
 
     private async *complete(editor: Editor, provider: Provider, prompt: string, options: ProfileOptions): AsyncGenerator<Suggestion> {
-        for await (let text of provider.generate(editor, prompt, options)) {
+        const beforeCursor = editor.getRange({ line: 0, ch: 0 }, editor.getCursor());
+        for await (let text of removeStreamingOverlap(beforeCursor, provider.generate(editor, prompt, options))) {
             text = text.trim();
 
             if (this.settings.suggestionControl.outputLimit.enabled) {
