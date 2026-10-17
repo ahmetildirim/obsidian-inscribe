@@ -28,7 +28,6 @@ export class OpenAIProvider implements Provider {
             model: options.model,
             instructions: options.systemPrompt,
             input: prompt,
-            temperature: options.temperature,
             stream: true,
         }, { signal: abortcontroller.signal });
 
