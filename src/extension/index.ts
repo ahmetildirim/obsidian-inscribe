@@ -7,27 +7,39 @@
 // - Non-invasive suggestion rendering
 
 // Slim orchestrator that wires together modular components.
-import { EditorState } from '@codemirror/state';
+import { EditorState, Extension } from '@codemirror/state';
+import { EditorView, ViewPlugin } from '@codemirror/view';
 import { suggestionRenderer } from './renderer';
 import { createDebouncedFetcher } from './fetcher';
-import { createAcceptanceHandler, createTriggerHandler } from './handlers';
+import { acceptSuggestion, createAcceptanceHandler } from './handlers';
 import { suggestionSessionState } from './session';
-import type { InlineCompletionConfig, Suggestion } from './types';
+import type { InlineCompletionConfig } from './types';
+
+const ACCEPTANCE_HOTKEY = 'Tab';
+
+export interface InlineSuggestions {
+    extension: Extension[];
+    // Editor views the extension is currently attached to.
+    views: ReadonlySet<EditorView>;
+    hasSuggestion(view: EditorView): boolean;
+    // Accepts the next segment of the current suggestion. Returns false if there is none.
+    accept(view: EditorView): boolean;
+    // Fetches a suggestion immediately, regardless of the auto trigger setting.
+    trigger(view: EditorView): void;
+}
 
 // The main extension function. It wires up session state management,
 // suggestion fetching, rendering, and user interaction.
-export function inlineSuggestions(config: InlineCompletionConfig) {
+export function inlineSuggestions(config: InlineCompletionConfig): InlineSuggestions {
     const { fetchFunc, getOptions } = config;
-    const staticHotkey = config.acceptanceHotkey || 'Tab';
-    const autoTriggerEnabled = !config.triggerHotkey;
 
     // Normalize the fetch function to always return an async generator.
-    const normalizeFetch = async function* (state: EditorState) {
-        const result = await fetchFunc(state);
-        if (Symbol.asyncIterator in (result as any)) {
-            yield* (result as AsyncGenerator<Suggestion>);
+    const normalizeFetch = async function* (state: EditorState, manual: boolean) {
+        const result = await fetchFunc(state, manual);
+        if (Symbol.asyncIterator in result) {
+            yield* result;
         } else {
-            yield result as Suggestion;
+            yield result;
         }
     };
 
@@ -35,30 +47,39 @@ export function inlineSuggestions(config: InlineCompletionConfig) {
     const { fetcherPlugin, terminate } = createDebouncedFetcher(
         normalizeFetch,
         getDelay,
-        autoTriggerEnabled
+        () => getOptions().autoTrigger ?? true
     );
     const acceptanceHandler = createAcceptanceHandler(
         terminate,
-        staticHotkey,
+        ACCEPTANCE_HOTKEY,
         getOptions
     );
 
-    const extensions = [
-        suggestionSessionState,
-        fetcherPlugin,
-        suggestionRenderer,
-        acceptanceHandler,
-    ];
+    const views = new Set<EditorView>();
+    const viewTracker = ViewPlugin.define((view) => {
+        views.add(view);
+        return {
+            destroy: () => {
+                views.delete(view);
+            },
+        };
+    });
 
-    if (config.triggerHotkey) {
-        const triggerHandler = createTriggerHandler(
+    return {
+        extension: [
+            suggestionSessionState,
             fetcherPlugin,
-            config.triggerHotkey
-        );
-        extensions.push(triggerHandler);
-    }
-
-    return extensions;
+            suggestionRenderer,
+            acceptanceHandler,
+            viewTracker,
+        ],
+        views,
+        hasSuggestion: (view) => Boolean(view.state.field(suggestionSessionState, false)?.remainingText),
+        accept: (view) => acceptSuggestion(view, terminate, getOptions),
+        trigger: (view) => {
+            void view.plugin(fetcherPlugin)?.triggerSuggestion(view);
+        },
+    };
 }
 
 export type {

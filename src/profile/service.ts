@@ -49,8 +49,14 @@ export class ProfileService {
     getOptions(): InlineCompletionOptions {
         return {
             delayMs: this.settings.suggestionControl.delayMs,
-            splitStrategy: this.settings.suggestionControl.splitStrategy
+            splitStrategy: this.settings.suggestionControl.splitStrategy,
+            autoTrigger: this.settings.suggestionControl.autoTrigger,
         };
+    }
+
+    // Re-resolve the active profile after settings change
+    refresh() {
+        this.update(this.getActiveFilePath());
     }
 
     onProfileChange(callback: (profile: Profile) => void) {

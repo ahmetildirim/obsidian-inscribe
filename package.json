@@ -7,28 +7,32 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"test": "node --test tests/*.test.mjs",
+		"lint": "eslint .",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [],
 	"author": "",
 	"license": "MIT",
 	"devDependencies": {
-		"@types/mustache": "^4.2.5",
-		"@types/node": "^16.11.6",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
-		"@typescript-eslint/parser": "5.29.0",
-		"builtin-modules": "3.3.0",
-		"esbuild": "0.25.1",
-		"obsidian": "latest",
-		"tslib": "2.4.0",
-		"typescript": "6.0.2"
+		"@codemirror/state": "^6.7.6",
+		"@codemirror/view": "^6.43.13",
+		"@eslint/js": "^10.0.1",
+		"@types/mustache": "^4.2.6",
+		"@types/node": "^22.20.5",
+		"esbuild": "0.28.2",
+		"eslint": "^10.13.0",
+		"eslint-plugin-obsidianmd": "^0.4.2",
+		"obsidian": "^1.14.4",
+		"tslib": "^2.8.1",
+		"typescript": "~6.0",
+		"typescript-eslint": "^8.72.0"
 	},
 	"dependencies": {
-		"@google/genai": "^1.41.0",
-		"compromise": "^14.14.4",
+		"@google/genai": "^2.31.0",
+		"compromise": "^14.19.0",
 		"mustache": "^4.2.0",
-		"ollama": "^0.5.12",
-		"openai": "^6.22.0"
+		"ollama": "^0.6.4",
+		"openai": "^7.43.0"
 	},
 	"resolutions": {
 		"@types/eslint": "8.4.3"

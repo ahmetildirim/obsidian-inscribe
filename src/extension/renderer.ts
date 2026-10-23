@@ -10,10 +10,7 @@ class SuggestionWidget extends WidgetType {
     }
 
     toDOM(): HTMLElement {
-        const span = document.createElement('span');
-        span.classList.add(...SuggestionWidget.CSS_CLASSES);
-        span.textContent = this.content;
-        return span;
+        return createSpan({ cls: SuggestionWidget.CSS_CLASSES, text: this.content });
     }
 }
 

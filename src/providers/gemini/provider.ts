@@ -9,10 +9,10 @@ export class GeminiProvider implements Provider {
     settings: GeminiSettings;
     aborted: boolean = false;
 
-    constructor(settings: GeminiSettings) {
+    constructor(settings: GeminiSettings, apiKey: string) {
         this.settings = settings;
         this.client = new GoogleGenAI({
-            apiKey: settings.apiKey,
+            apiKey: apiKey,
         });
     }
 
@@ -35,7 +35,7 @@ export class GeminiProvider implements Provider {
                 return;
             }
             if (this.cursorMoved(editor, initialPosition)) {
-                this.abort();
+                await this.abort();
                 return;
             }
             completion += chunk.text

@@ -1,714 +1,626 @@
-import { App, PluginSettingTab, Setting, ButtonComponent, ExtraButtonComponent, DropdownComponent, TextComponent, ToggleComponent, Notice } from "obsidian";
+import {
+    AbstractInputSuggest,
+    App,
+    Modal,
+    Notice,
+    PluginSettingTab,
+    Setting,
+    SettingDefinition,
+    SettingDefinitionGroup,
+    SettingDefinitionItem,
+    SettingDefinitionList,
+    SettingDefinitionPage,
+    SettingGroupItem,
+    TFolder,
+} from "obsidian";
 import { TEMPLATE_VARIABLES } from "src/completions/prompt";
-import { SplitStrategy } from "src/extension";
+import { openSettingsTab } from "src/internal";
 import Inscribe from "src/main";
 import { ProviderType } from "src/providers";
-import { createPathConfig, DEFAULT_PATH, DEFAULT_PROFILE, isDefaultProfile, Profile, resetSettings } from "./settings";
-import { ProviderSettingsModal } from './provider';
-import { createProfile } from ".";
+import { isObject } from "./load";
+import { createPathConfig, createProfile, DEFAULT_PATH, DEFAULT_PROFILE, deleteProfile, isDefaultProfile, resetSettings, Settings } from "./settings";
+
+// Display order and names of the providers
+const PROVIDER_NAMES: Record<ProviderType, string> = {
+    [ProviderType.OLLAMA]: "Ollama",
+    [ProviderType.OPENAI]: "OpenAI",
+    [ProviderType.GEMINI]: "Gemini",
+    [ProviderType.GROK]: "Grok",
+    [ProviderType.OPENAI_COMPATIBLE]: "OpenAI compatible",
+};
+
+const PROVIDER_DESCRIPTIONS: Record<ProviderType, string> = {
+    [ProviderType.OLLAMA]: "Local models running on your machine",
+    [ProviderType.OPENAI]: "OpenAI API",
+    [ProviderType.GEMINI]: "Google Gemini API",
+    [ProviderType.GROK]: "xAI Grok API",
+    [ProviderType.OPENAI_COMPATIBLE]: "Any API that follows the OpenAI format",
+};
+
+const TEMPLATE_VARIABLE_DESCRIPTIONS: Record<string, string> = {
+    pre_cursor: "text before the cursor",
+    post_cursor: "text after the cursor",
+    active_sentence: "the current sentence",
+    last_line: "the last line of the note",
+};
+
+// Settings edited as JSON text in textarea controls
+const JSON_FIELDS = new Set(["models", "extraParams"]);
+
+// Control keys are JSON arrays of property names, so paths with dots or slashes work as keys
+function key(...path: string[]): string {
+    return JSON.stringify(path);
+}
+
+function parseKey(controlKey: string): string[] {
+    const path: unknown = JSON.parse(controlKey);
+    if (!Array.isArray(path) || !path.every((part) => typeof part === "string")) {
+        throw new Error(`Invalid setting key: ${controlKey}`);
+    }
+    return path;
+}
 
 export default class InscribeSettingsTab extends PluginSettingTab {
-    private generalSection!: GeneralSection;
-    private suggestionControlSection!: SuggestionControlSection;
-    private providersSection!: ProvidersSection;
-    private profilesSection!: ProfilesSection;
-    private pathConfigsSection!: PathConfigsSection;
+    icon = "feather";
 
     constructor(private plugin: Inscribe) {
         super(plugin.app, plugin);
     }
 
-    display(): void {
-        this.containerEl.empty();
-
-        // General Section
-        const generalContainer = document.createElement("div");
-        this.containerEl.appendChild(generalContainer);
-
-        const suggestionControlContainer = document.createElement("div");
-        suggestionControlContainer.addClass("inscribe-section");
-        this.containerEl.appendChild(suggestionControlContainer);
-
-        const providersContainer = document.createElement("div");
-        providersContainer.addClass("inscribe-section");
-        this.containerEl.appendChild(providersContainer);
-
-        const profilesContainer = document.createElement("div");
-        profilesContainer.addClass("inscribe-section");
-        this.containerEl.appendChild(profilesContainer);
-
-        const pathMappingsContainer = document.createElement("div");
-        pathMappingsContainer.addClass("inscribe-section");
-        this.containerEl.appendChild(pathMappingsContainer);
-
-        this.generalSection = new GeneralSection(generalContainer, this.plugin, this.display.bind(this));
-        this.suggestionControlSection = new SuggestionControlSection(suggestionControlContainer, this.plugin);
-        this.providersSection = new ProvidersSection(providersContainer, this.app, this.plugin);
-        this.pathConfigsSection = new PathConfigsSection(pathMappingsContainer, this.plugin);
-        this.profilesSection = new ProfilesSection(profilesContainer, this.plugin, this.pathConfigsSection.render.bind(this.pathConfigsSection));
-
-        this.generalSection.render();
-        this.suggestionControlSection.render();
-        this.providersSection.render();
-        this.profilesSection.render();
-        this.pathConfigsSection.render();
-    }
-}
-
-class GeneralSection {
-    private container: HTMLElement;
-    private plugin: Inscribe;
-    private displayFunc: () => void;
-
-    constructor(container: HTMLElement, plugin: Inscribe, displayFunc: () => void) {
-        this.container = container;
-        this.plugin = plugin;
-        this.displayFunc = displayFunc;
+    getSettingDefinitions(): SettingDefinitionItem[] {
+        return [
+            {
+                name: "Enabled",
+                desc: "Show AI suggestions while you write",
+                control: { type: "toggle", key: key("enabled") },
+            },
+            this.suggestionsGroup(),
+            this.autoTriggerGroup(),
+            this.providersGroup(),
+            this.profilesList(),
+            this.pathConfigsList(),
+            this.advancedGroup(),
+        ];
     }
 
-    async render(): Promise<void> {
-        this.container.empty();
-        // Enabled
-        new Setting(this.container)
-            .setName("Enabled")
-            .setDesc("Enable or disable completions globally")
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.enabled)
-                    .onChange(async (value) => {
-                        this.plugin.settings.enabled = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.statusBarItem.render();
-                    });
+    getControlValue(controlKey: string): unknown {
+        const path = parseKey(controlKey);
+        const value = path.reduce<unknown>((obj, part) => isObject(obj) ? obj[part] : undefined, this.settings);
+        return JSON_FIELDS.has(path[path.length - 1]) ? JSON.stringify(value, null, 2) : value;
+    }
+
+    async setControlValue(controlKey: string, value: unknown): Promise<void> {
+        const path = parseKey(controlKey);
+        const field = path.pop();
+        const parent = path.reduce<unknown>((obj, part) => isObject(obj) ? obj[part] : undefined, this.settings);
+        if (!field || !isObject(parent)) return;
+
+        parent[field] = JSON_FIELDS.has(field) && typeof value === "string" ? JSON.parse(value) : value;
+        await this.plugin.saveSettings();
+
+        if (path[0] === undefined || path[0] === "path_configs") this.plugin.statusBarItem.render();
+        // The provider decides which models and temperatures a profile offers
+        if (field === "provider") this.update();
+    }
+
+    hide(): void {
+        super.hide();
+        // Pick up API keys edited in secret storage
+        this.plugin.providerFactory.rebuildProviders();
+    }
+
+    private get settings(): Settings {
+        return this.plugin.settings;
+    }
+
+    private suggestionsGroup(): SettingDefinitionGroup {
+        const control = () => this.settings.suggestionControl;
+        return {
+            type: "group",
+            heading: "Suggestions",
+            items: [
+                {
+                    name: "Show suggestions automatically",
+                    desc: "Suggest as you type. When off, suggestions only appear when you run the Trigger suggestion command.",
+                    control: { type: "toggle", key: key("suggestionControl", "autoTrigger") },
+                },
+                {
+                    name: "Delay",
+                    desc: "Milliseconds to wait after you stop typing before suggesting",
+                    control: {
+                        type: "number",
+                        key: key("suggestionControl", "delayMs"),
+                        placeholder: "500",
+                        min: 0,
+                        disabled: () => !control().autoTrigger,
+                    },
+                },
+                {
+                    name: "Accept",
+                    desc: "How much of a suggestion Tab accepts at a time",
+                    control: {
+                        type: "dropdown",
+                        key: key("suggestionControl", "splitStrategy"),
+                        options: {
+                            word: "Word by word",
+                            sentence: "Sentence by sentence",
+                            paragraph: "Paragraph by paragraph",
+                            full: "Whole suggestion",
+                        },
+                    },
+                },
+                {
+                    name: "Limit length",
+                    desc: "Cut suggestions off after a number of sentences",
+                    control: { type: "toggle", key: key("suggestionControl", "outputLimit", "enabled") },
+                },
+                {
+                    name: "Maximum sentences",
+                    desc: "Number of sentences to keep when the length is limited",
+                    control: {
+                        type: "number",
+                        key: key("suggestionControl", "outputLimit", "sentences"),
+                        min: 1,
+                        step: 1,
+                        validate: (value) => value >= 1 ? undefined : "Must be at least 1",
+                        disabled: () => !control().outputLimit.enabled,
+                    },
+                },
+                buttonSetting(
+                    "Hotkeys",
+                    "Tab accepts suggestions. Bind other keys to the Accept suggestion and Trigger suggestion commands.",
+                    "Open hotkeys",
+                    () => openSettingsTab(this.app, "hotkeys"),
+                ),
+            ],
+        };
+    }
+
+    private autoTriggerGroup(): SettingDefinitionGroup {
+        return {
+            type: "group",
+            heading: "Auto trigger rules",
+            visible: () => this.settings.suggestionControl.autoTrigger,
+            items: [
+                {
+                    name: "Require non-empty line",
+                    desc: "Only suggest when the current line has content",
+                    control: { type: "toggle", key: key("suggestionControl", "activationRules", "requireNonEmptyLine") },
+                },
+                {
+                    name: "Require cursor not at start",
+                    desc: "Don’t suggest when the cursor is at the start of a line",
+                    control: { type: "toggle", key: key("suggestionControl", "activationRules", "requireCursorNotAtStart") },
+                },
+                {
+                    name: "Require space before cursor",
+                    desc: "Only suggest if there’s a space right before the cursor",
+                    control: { type: "toggle", key: key("suggestionControl", "activationRules", "requireSpaceBeforeCursor") },
+                },
+            ],
+        };
+    }
+
+    private providersGroup(): SettingDefinitionGroup {
+        const types = Object.keys(PROVIDER_NAMES) as ProviderType[];
+        return {
+            type: "group",
+            heading: "Providers",
+            items: types.map((type) => this.providerPage(type)),
+        };
+    }
+
+    private providerPage(type: ProviderType): SettingDefinitionPage {
+        const items: SettingGroupItem[] = [];
+
+        if (type === ProviderType.OLLAMA) {
+            items.push({
+                name: "Host",
+                desc: "Address of your Ollama server",
+                control: { type: "text", key: key("providers", type, "host"), placeholder: "http://localhost:11434" },
             });
-
-        // Reset Settings
-        new Setting(this.container)
-            .setName("Reset settings")
-            .setDesc("Reset all settings to default")
-            .addButton((button: ButtonComponent) => {
-                button
-                    .setWarning()
-                    .setButtonText("Reset")
-                    .setTooltip("Reset settings to default")
-                    .onClick(async () => {
-                        resetSettings(this.plugin.settings);
-                        await this.plugin.saveSettings();
-                        this.displayFunc();
-                        this.plugin.statusBarItem.render();
-                        new Notice("Settings reset to default");
-                    });
+        } else {
+            items.push({
+                name: "API key",
+                desc: `Secret that holds your ${PROVIDER_NAMES[type]} API key`,
+                control: { type: "secret", key: key("providers", type, "apiKeySecret") },
             });
-    }
-}
+        }
 
-class SuggestionControlSection {
-    private container: HTMLElement;
-    private plugin: Inscribe;
+        if (type === ProviderType.OPENAI_COMPATIBLE) {
+            items.push(
+                {
+                    name: "Base URL",
+                    desc: "Address of the API",
+                    control: { type: "text", key: key("providers", type, "baseUrl"), placeholder: "https://api.openai.com/v1" },
+                },
+                {
+                    name: "Extra parameters",
+                    desc: "JSON object sent with every request, e.g. {\"chat_template_kwargs\": {\"enable_thinking\": false}}",
+                    control: { type: "textarea", key: key("providers", type, "extraParams"), rows: 4, placeholder: "{}", validate: validateJsonObject },
+                },
+            );
+        }
 
-    constructor(container: HTMLElement, plugin: Inscribe) {
-        this.container = container;
-        this.plugin = plugin;
-    }
-
-    async render(): Promise<void> {
-        this.container.empty();
-
-        // Heading
-        new Setting(this.container)
-            .setHeading()
-            .setName("Suggestion control")
-            .setDesc("Configure how completions are triggered and accepted");
-
-        // Acceptance Hotkey (capturable)
-        this.buildHotkeySetting(
-            "Acceptance hotkey",
-            "Hotkey to accept the current suggestion, autocompletion is disabled if set",
-            this.plugin.settings.suggestionControl.acceptanceHotkey,
-            async (value) => {
-                this.plugin.settings.suggestionControl.acceptanceHotkey = value || "Tab";
-                await this.plugin.saveSettings();
-            }
+        items.push(
+            buttonSetting(
+                "Connection",
+                "Check that the provider is reachable with these settings",
+                "Test",
+                () => void this.testConnection(type),
+            ),
+            buttonSetting(
+                "Refresh models",
+                "Load the list of models from the provider",
+                "Refresh",
+                () => void this.refreshModels(type),
+            ),
+            {
+                name: "Models",
+                desc: "JSON list of the models that profiles can use",
+                control: { type: "textarea", key: key("providers", type, "models"), rows: 6, validate: validateModels },
+            },
         );
 
-        // Manual Activation Key (capturable)
-        this.buildHotkeySetting(
-            "Manual activation key",
-            "Hotkey to manually trigger suggestions. Autocompletion is disabled if set. Full restart of the app is required to take effect.",
-            this.plugin.settings.suggestionControl.manualActivationKey || "",
-            async (value) => {
-                this.plugin.settings.suggestionControl.manualActivationKey = value || undefined;
-                await this.plugin.saveSettings();
-            }
-        );
-
-        // Split Strategy
-        new Setting(this.container)
-            .setName("Split strategy")
-            .setDesc(`Choose how completions should be split and accepted`)
-            .addDropdown((dropdown) => {
-                dropdown
-                    .addOption("word", "Word by Word")
-                    .addOption("sentence", "Sentence by Sentence")
-                    .addOption("paragraph", "Paragraph by Paragraph")
-                    .addOption("full", "Full Completion")
-                    .setValue(this.plugin.settings.suggestionControl.splitStrategy)
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.splitStrategy = value as SplitStrategy;
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        // Suggestion Delay
-        new Setting(this.container)
-            .setName("Suggestion delay")
-            .setDesc("Delay in milliseconds before fetching suggestions")
-            .addText((text) => {
-                text.inputEl.setAttr("type", "number");
-                text
-                    .setPlaceholder("500")
-                    .setValue(String(this.plugin.settings.suggestionControl.delayMs))
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.delayMs = parseInt(value) || 0;
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        // Output Limit
-        new Setting(this.container)
-            .setName("Output limit")
-            .setDesc("Limit the number of sentences in the output")
-            .addText((text) => {
-                text.inputEl.setAttr("type", "number");
-                text.inputEl.setAttr("min", "1");
-                text.setDisabled(!this.plugin.settings.suggestionControl.outputLimit.enabled);
-                text
-                    .setValue(String(this.plugin.settings.suggestionControl.outputLimit.sentences))
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.outputLimit.sentences = parseInt(value) || 1;
-                        await this.plugin.saveSettings();
-                    });
-            })
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.suggestionControl.outputLimit.enabled)
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.outputLimit.enabled = value;
-                        await this.plugin.saveSettings();
-                        await this.render();
-                    });
-            });
-
-        new Setting(this.container)
-            .setHeading()
-            .setName("Auto trigger rules")
-            .setDesc("Configure rules for when suggestions should be automatically triggered. Rules are skipped if manual activation is enabled.")
-
-        new Setting(this.container)
-            .setName("Require non-empty line")
-            .setDesc("Only trigger when the current line has content")
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.suggestionControl.activationRules.requireNonEmptyLine)
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.activationRules.requireNonEmptyLine = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        new Setting(this.container)
-            .setName("Require cursor not at start")
-            .setDesc("Don’t trigger when the cursor is at the start of a line")
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.suggestionControl.activationRules.requireCursorNotAtStart)
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.activationRules.requireCursorNotAtStart = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        new Setting(this.container)
-            .setName("Require space before cursor")
-            .setDesc("Auto trigger only if there’s a space right before the cursor")
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.suggestionControl.activationRules.requireSpaceBeforeCursor)
-                    .onChange(async (value) => {
-                        this.plugin.settings.suggestionControl.activationRules.requireSpaceBeforeCursor = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
+        return {
+            type: "page",
+            name: PROVIDER_NAMES[type],
+            desc: PROVIDER_DESCRIPTIONS[type],
+            displayValue: () => this.settings.providers[type].configured ? "Connected" : "Not connected",
+            status: () => this.settings.providers[type].configured ? null : "warning",
+            items,
+        };
     }
 
-    private buildHotkeySetting(name: string, desc: string, current: string, onSet: (v: string) => Promise<void>): void {
-        let captureInput: HTMLInputElement | undefined;
-        new Setting(this.container)
-            .setName(name)
-            .setDesc(desc)
-            .addText((text) => {
-                // Make read-only; we capture keydown events to build combination.
-                text.setPlaceholder("Click then press keys…");
-                text.setValue(current || "");
-                text.inputEl.readOnly = true;
-                captureInput = text.inputEl;
-
-                text.inputEl.addEventListener("keydown", async (e: KeyboardEvent) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // Handle escape -> clear
-                    if (e.key === "Escape") {
-                        text.setValue("");
-                        await onSet("");
-                        return;
-                    }
-                    const combo = this.formatCombo(e);
-                    // Ignore pure modifier presses (no base key)
-                    if (!combo) return;
-                    text.setValue(combo);
-                    await onSet(combo);
-                    // After capturing a full combo, blur to end recording except for Tab (since Tab might move focus)
-                    setTimeout(() => {
-                        if (document.activeElement === text.inputEl) {
-                            text.inputEl.blur();
-                        }
-                    }, 10);
-                });
-            })
-            .addExtraButton((btn) => {
-                btn
-                    .setIcon("cross")
-                    .setTooltip("Clear hotkey")
-                    .onClick(async () => {
-                        await onSet("");
-                        // Re-render to show cleared value
-                        await this.render();
-                    });
-            })
-            .addExtraButton((btn) => {
-                btn
-                    .setIcon("refresh-ccw")
-                    .setTooltip("Re-record: focus input then press keys")
-                    .onClick(() => {
-                        captureInput?.focus();
-                    });
-            });
+    private profilesList(): SettingDefinitionList {
+        const ids = Object.keys(this.settings.profiles)
+            .sort((a, b) => Number(isDefaultProfile(b)) - Number(isDefaultProfile(a)));
+        return {
+            type: "list",
+            heading: "Profiles",
+            addItem: { name: "New profile", action: () => void this.addProfile() },
+            onDelete: (index) => void this.removeProfile(ids[index]),
+            items: ids.map((id) => this.profilePage(id)),
+        };
     }
 
-    private formatCombo(e: KeyboardEvent): string {
-        const parts: string[] = [];
-        if (e.metaKey) parts.push("Meta");
-        if (e.ctrlKey) parts.push("Ctrl");
-        if (e.altKey) parts.push("Alt");
-        if (e.shiftKey) parts.push("Shift");
-        // Exclude modifier-only keys
-        const key = this.normalizeKey(e.key);
-        if (!key) return ""; // ignore pure modifiers
-        parts.push(key);
-        return parts.join("-");
+    private profilePage(id: string): SettingDefinitionPage {
+        const profile = this.settings.profiles[id];
+        const provider = this.settings.providers[profile.provider];
+        const models = [...new Set([...provider.models, profile.completionOptions.model])];
+
+        return {
+            type: "page",
+            name: profile.name,
+            displayValue: () => {
+                const current = this.settings.profiles[id];
+                return current ? `${PROVIDER_NAMES[current.provider]} · ${current.completionOptions.model}` : "";
+            },
+            items: [
+                {
+                    name: "Name",
+                    desc: isDefaultProfile(id) ? "The default profile can't be renamed" : undefined,
+                    control: {
+                        type: "text",
+                        key: key("profiles", id, "name"),
+                        disabled: isDefaultProfile(id),
+                        validate: (value) => this.validateProfileName(id, value),
+                    },
+                },
+                {
+                    name: "Provider",
+                    control: { type: "dropdown", key: key("profiles", id, "provider"), options: PROVIDER_NAMES },
+                },
+                {
+                    name: "Model",
+                    desc: "Missing a model? Refresh the provider's models.",
+                    control: {
+                        type: "dropdown",
+                        key: key("profiles", id, "completionOptions", "model"),
+                        options: Object.fromEntries(models.map((model) => [model, model])),
+                    },
+                },
+                {
+                    name: "Temperature",
+                    desc: "Lower is more predictable, higher is more creative",
+                    control: {
+                        type: "slider",
+                        key: key("profiles", id, "completionOptions", "temperature"),
+                        min: provider.temperature_range.min,
+                        max: provider.temperature_range.max,
+                        step: 0.1,
+                    },
+                },
+                {
+                    name: "System prompt",
+                    desc: "Instructions that set how the model writes",
+                    control: { type: "textarea", key: key("profiles", id, "completionOptions", "systemPrompt"), rows: 6 },
+                },
+                {
+                    name: "User prompt",
+                    desc: templateVariablesDescription(),
+                    control: { type: "textarea", key: key("profiles", id, "completionOptions", "userPrompt"), rows: 6 },
+                },
+                buttonSetting(
+                    "Insert all variables",
+                    "Append every template variable to the user prompt",
+                    "Insert",
+                    () => void this.insertTemplateVariables(id),
+                ),
+            ],
+        };
     }
 
-    private normalizeKey(key: string): string | undefined {
-        const lower = key.toLowerCase();
-        // Ignore standalone modifier keys
-        if (["shift", "meta", "alt", "control", "ctrl"].includes(lower)) return undefined;
-        if (lower === " ") return "Space";
-        if (lower === "arrowup") return "ArrowUp";
-        if (lower === "arrowdown") return "ArrowDown";
-        if (lower === "arrowleft") return "ArrowLeft";
-        if (lower === "arrowright") return "ArrowRight";
-        if (lower === "escape") return "Esc";
-        if (lower === "tab") return "Tab";
-        if (key.length === 1) return key.toUpperCase();
-        return key;
-    }
-}
-
-class ProvidersSection {
-    private container: HTMLElement;
-    private plugin: Inscribe;
-    private app: App;
-
-    constructor(container: HTMLElement, app: App, plugin: Inscribe) {
-        this.app = app;
-        this.container = container;
-        this.plugin = plugin;
+    private pathConfigsList(): SettingDefinitionList {
+        const paths = Object.keys(this.settings.path_configs)
+            .sort((a, b) => Number(b === DEFAULT_PATH) - Number(a === DEFAULT_PATH));
+        return {
+            type: "list",
+            heading: "Per-path profiles",
+            addItem: {
+                name: "Add path",
+                action: () => new PathConfigModal(this.app, this.plugin, () => this.update()).open(),
+            },
+            onDelete: (index) => void this.removePathConfig(paths[index]),
+            items: paths.map((path) => this.pathConfigPage(path)),
+        };
     }
 
-    async render(): Promise<void> {
-        this.container.empty();
-        new Setting(this.container)
-            .setHeading()
-            .setName("Providers")
-            .setDesc("Configure your AI providers");
-
-        // Ollama Provider
-        new Setting(this.container)
-            .setName("Ollama")
-            .setDesc("Local AI provider running on your machine")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
-                button,
-                ProviderType.OLLAMA,
-                this.plugin.settings.providers.ollama.configured));
-
-        // OpenAI Provider
-        new Setting(this.container)
-            .setName("OpenAI")
-            .setDesc("OpenAI API")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
-                button,
-                ProviderType.OPENAI,
-                this.plugin.settings.providers.openai.configured));
-
-        // Gemini Provider
-        new Setting(this.container)
-            .setName("Gemini")
-            .setDesc("Google Gemini API")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
-                button,
-                ProviderType.GEMINI,
-                this.plugin.settings.providers.gemini.configured));
-
-        // Grok Provider
-        new Setting(this.container)
-            .setName("Grok")
-            .setDesc("xAI Grok API")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
-                button,
-                ProviderType.GROK,
-                this.plugin.settings.providers.grok.configured));
-
-        // OpenAI Compatible Provider
-        new Setting(this.container)
-            .setName("OpenAI compatible API")
-            .setDesc("Use any OpenAI compatible provider")
-            .addButton((button: ButtonComponent) => this.createConfigureButton(
-                button,
-                ProviderType.OPENAI_COMPATIBLE,
-                this.plugin.settings.providers.openai_compatible.configured));
-
+    private pathConfigPage(path: string): SettingDefinitionPage {
+        const isDefault = path === DEFAULT_PATH;
+        return {
+            type: "page",
+            name: isDefault ? "All other notes" : path,
+            desc: isDefault ? "Used when no other path matches" : undefined,
+            displayValue: () => {
+                const pathConfig = this.settings.path_configs[path];
+                if (!pathConfig) return "";
+                return pathConfig.enabled ? this.settings.profiles[pathConfig.profile]?.name ?? "" : "Off";
+            },
+            items: [
+                {
+                    name: "Profile",
+                    desc: isDefault ? "Profile for notes that match no other path" : "Profile for notes in this path",
+                    control: { type: "dropdown", key: key("path_configs", path, "profile"), options: profileOptions(this.settings) },
+                },
+                {
+                    name: "Suggestions",
+                    desc: isDefault ? "Show suggestions in notes that match no other path" : "Show suggestions in notes in this path",
+                    control: { type: "toggle", key: key("path_configs", path, "enabled") },
+                },
+            ],
+        };
     }
 
-    private createConfigureButton(button: ButtonComponent, type: ProviderType, configured: boolean): void {
-        if (!configured) { button.setWarning(); }
-        button
-            .setButtonText(configured ? "Configured" : "Configure")
-            .setTooltip(configured ? "Provider configured" : "Provider not configured")
-            .onClick(() => {
-                new ProviderSettingsModal(this.app, this.plugin, type, () => {
-                    this.render();
-                }).open();
-            });
+    private advancedGroup(): SettingDefinitionGroup {
+        return {
+            type: "group",
+            heading: "Advanced",
+            items: [
+                buttonSetting(
+                    "Reset settings",
+                    "Restore all settings to their defaults. API keys stay in secret storage.",
+                    "Reset",
+                    () => new ConfirmModal(
+                        this.app,
+                        "Reset settings?",
+                        "All Inscribe settings, profiles and path assignments will be restored to their defaults.",
+                        "Reset",
+                        () => void this.resetSettings(),
+                    ).open(),
+                    true,
+                ),
+            ],
+        };
+    }
+
+    private validateProfileName(id: string, value: string): string | undefined {
+        const name = value.trim();
+        if (!name) return "Name can't be empty";
+        const taken = Object.entries(this.settings.profiles).some(([otherId, profile]) => otherId !== id && profile.name === name);
+        return taken ? "Another profile has this name" : undefined;
+    }
+
+    private async refreshModels(type: ProviderType): Promise<void> {
+        try {
+            this.settings.providers[type].models = await this.plugin.providerFactory.fetchModels(type);
+        } catch (error) {
+            console.error("Error fetching models:", error);
+            new Notice("Failed to fetch models");
+            return;
+        }
+        await this.plugin.saveSettings();
+        new Notice("Models refreshed");
+        this.update();
+    }
+
+    private async testConnection(type: ProviderType): Promise<void> {
+        new Notice("Testing connection…");
+        const provider = this.settings.providers[type];
+        provider.configured = await this.plugin.providerFactory.connectionTest(type);
+        await this.plugin.saveSettings();
+        new Notice(provider.configured ? "Connected!" : "Failed to connect");
+        this.update();
+    }
+
+    private async addProfile(): Promise<void> {
+        createProfile(this.settings);
+        await this.plugin.saveSettings();
+        this.update();
+    }
+
+    private async removeProfile(id: string): Promise<void> {
+        if (isDefaultProfile(id)) {
+            new Notice("The default profile can't be deleted");
+        } else {
+            deleteProfile(this.settings, id);
+            await this.plugin.saveSettings();
+        }
+        this.update();
+    }
+
+    private async removePathConfig(path: string): Promise<void> {
+        if (path === DEFAULT_PATH) {
+            new Notice("The default path can't be deleted");
+        } else {
+            delete this.settings.path_configs[path];
+            await this.plugin.saveSettings();
+            this.plugin.statusBarItem.render();
+        }
+        this.update();
+    }
+
+    private async insertTemplateVariables(id: string): Promise<void> {
+        const options = this.settings.profiles[id].completionOptions;
+        options.userPrompt = `${options.userPrompt}\n${TEMPLATE_VARIABLES}`;
+        await this.plugin.saveSettings();
+        this.update();
+    }
+
+    private async resetSettings(): Promise<void> {
+        resetSettings(this.settings);
+        await this.plugin.saveSettings();
+        this.plugin.statusBarItem.render();
+        this.update();
+        new Notice("Settings reset to defaults");
     }
 }
 
-class ProfilesSection {
-    private container: HTMLElement;
-    private plugin: Inscribe;
-    private onProfileUpdate: () => void;
-    private selectedProfileId: string = DEFAULT_PROFILE;
+class PathConfigModal extends Modal {
+    private path = "";
+    private profile = DEFAULT_PROFILE;
 
-    constructor(container: HTMLElement, plugin: Inscribe, onProfileUpdate: () => void) {
-        this.container = container;
-        this.plugin = plugin;
-        this.onProfileUpdate = onProfileUpdate;
+    constructor(app: App, private plugin: Inscribe, private onSave: () => void) {
+        super(app);
     }
 
-    async render(): Promise<void> {
-        // Clear main container and re-append sub-containers
-        this.container.empty();
+    onOpen() {
+        this.setTitle("Add path");
 
-        // Heading
-        new Setting(this.container)
-            .setHeading()
-            .setName("Profiles")
-            .setDesc("Create and manage profiles for different use cases. Profiles can be assigned to specific paths.");
-
-        new Setting(this.container)
-            .setName("Manage profile")
-            .setDesc("Select a profile to configure its settings")
-            .addDropdown((dropdown: DropdownComponent) => this.profileDropdown(dropdown))
-            .addExtraButton((button: ExtraButtonComponent) => this.createNewProfileButton(button))
-            .addExtraButton((button: ExtraButtonComponent) => this.createDeleteProfileButton(button));
-
-        // Profile Name
-        const profile = this.plugin.settings.profiles[this.selectedProfileId];
-        new Setting(this.container)
-            .setName("Profile name")
-            .setDesc(`${profile.name} | Name of the profile`)
+        new Setting(this.contentEl)
+            .setName("Path")
+            .setDesc("Notes whose path starts with this use the profile. Longer paths take precedence.")
             .addText((text) => {
-                text.setDisabled(isDefaultProfile(this.selectedProfileId));
-                text.setValue(profile.name).onChange(async (value) => {
-                    profile.name = value;
-                    await this.plugin.saveSettings();
+                text.setPlaceholder("Folder path").onChange((value) => this.path = value.trim());
+                new FolderSuggest(this.app, text.inputEl).onSelect((folder) => {
+                    text.setValue(folder.path);
+                    this.path = folder.path;
                 });
             });
 
-        // Provider Selection
-        new Setting(this.container)
-            .setName("AI provider")
-            .setDesc(`${profile.name} | Choose your preferred AI provider`)
-            .addDropdown((dropdown) => {
-                dropdown
-                    .addOption(ProviderType.OLLAMA, "Ollama")
-                    .addOption(ProviderType.OPENAI, "OpenAI")
-                    .addOption(ProviderType.GEMINI, "Gemini")
-                    .addOption(ProviderType.GROK, "Grok")
-                    .addOption(ProviderType.OPENAI_COMPATIBLE, "OpenAI Compatible")
-                    .setValue(profile.provider)
-                    .onChange(async (value) => {
-                        profile.provider = value as ProviderType;
-                        await this.plugin.saveSettings();
-                        await this.render();
-                    });
-            });
+        new Setting(this.contentEl)
+            .setName("Profile")
+            .addDropdown((dropdown) => dropdown
+                .addOptions(profileOptions(this.plugin.settings))
+                .setValue(this.profile)
+                .onChange((value) => this.profile = value));
 
-        // Model Selection
-        new Setting(this.container)
-            .setName("Model")
-            .setDesc(`${profile.name} | Select the model to use for completions`)
-            .addDropdown(async (dropdown) => {
-                const models = this.plugin.settings.providers[profile.provider].models;
-                dropdown
-                    .addOptions(Object.fromEntries(models.map((model) => [model, model])))
-                    .setValue(profile.completionOptions.model)
-                    .onChange(async (value) => {
-                        profile.completionOptions.model = value;
-                        await this.plugin.saveSettings();
-                    });
-
-            });
-
-        // Temperature Setting
-        const temperatureRange = this.plugin.settings.providers[profile.provider].temperature_range;
-        new Setting(this.container)
-            .setName("Temperature")
-            .setDesc(`${profile.name} | Control the randomness of completions (0 = deterministic, 1 = creative)`)
-            .addSlider((slider) => {
-                slider
-                    .setLimits(temperatureRange.min, temperatureRange.max, 0.1)
-                    .setValue(profile.completionOptions.temperature)
-                    .setDynamicTooltip()
-                    .onChange(async (value) => {
-                        profile.completionOptions.temperature = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        // System Prompt
-        new Setting(this.container)
-            .setName("System prompt")
-            .setDesc(`${profile.name} | Set system prompt`)
-            .addTextArea((text) => {
-                text.inputEl.addClass("inscribe-prompt-textarea");
-                text.inputEl.rows = 7;
-                text.setValue(profile.completionOptions.systemPrompt).onChange(
-                    async (value) => {
-                        profile.completionOptions.systemPrompt = value;
-                        await this.plugin.saveSettings();
-                    }
-                );
-            });
-        // User Prompt
-        new Setting(this.container)
-            .setName("User prompt")
-            .setDesc(`${profile.name} | User prompt template`)
-            .addExtraButton((button) => {
-                button
-                    .setIcon("list")
-                    .setTooltip("Insert mustache template variables")
-                    .onClick(async () => {
-                        const text =
-                            profile.completionOptions.userPrompt +
-                            "\n" +
-                            TEMPLATE_VARIABLES;
-                        profile.completionOptions.userPrompt = text;
-                        await this.plugin.saveSettings();
-                        await this.render();
-                    });
-            })
-            .addTextArea((text) => {
-                text.inputEl.addClass("inscribe-prompt-textarea");
-                text.inputEl.rows = 7;
-                text.setValue(profile.completionOptions.userPrompt).onChange(
-                    async (value) => {
-                        profile.completionOptions.userPrompt = value;
-                        await this.plugin.saveSettings();
-                    }
-                );
-            });
-
+        new Setting(this.contentEl)
+            .addButton((button) => button
+                .setButtonText("Cancel")
+                .onClick(() => this.close()))
+            .addButton((button) => button
+                .setCta()
+                .setButtonText("Add")
+                .onClick(() => void this.save()));
     }
 
-    private profileDropdown(dropdown: DropdownComponent): void {
-        Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
-            dropdown.addOption(id, profile.name);
-        });
-        dropdown
-            .setValue(this.selectedProfileId)
-            .onChange(async (value) => {
-                this.selectedProfileId = value;
-                await this.render();
-            });
+    onClose() {
+        this.contentEl.empty();
     }
 
-    private createNewProfileButton(button: ExtraButtonComponent): void {
-        button
-            .setIcon("plus")
-            .setTooltip("Create new profile")
-            .onClick(async () => {
-                this.selectedProfileId = createProfile(this.plugin.settings);
-                await this.plugin.saveSettings();
-                await this.render();
-                this.onProfileUpdate();
-            });
-    }
-
-    private createDeleteProfileButton(button: ExtraButtonComponent): void {
-        const isDefault = this.selectedProfileId === DEFAULT_PROFILE;
-        button
-            .setDisabled(isDefault)
-            .setIcon("trash")
-            .setTooltip(isDefault ? "Cannot delete default profile" : "Delete profile")
-            .onClick(async () => {
-                delete this.plugin.settings.profiles[this.selectedProfileId];
-                this.selectedProfileId = DEFAULT_PROFILE;
-                await this.plugin.saveSettings();
-                await this.render();
-                this.onProfileUpdate();
-            });
+    private async save(): Promise<void> {
+        if (!this.path) {
+            new Notice("Path can't be empty");
+            return;
+        }
+        if (this.plugin.settings.path_configs[this.path]) {
+            new Notice("This path already has a profile");
+            return;
+        }
+        createPathConfig(this.plugin.settings, this.path, this.profile);
+        await this.plugin.saveSettings();
+        this.plugin.statusBarItem.render();
+        this.close();
+        this.onSave();
     }
 }
 
-/* --------------------------------------------------------------------------
- * Path Configs Section
- * ------------------------------------------------------------------------ */
-class PathConfigsSection {
-    private container: HTMLElement;
-    private plugin: Inscribe;
-    private tableContainer: HTMLElement;
+class ConfirmModal extends Modal {
+    constructor(app: App, title: string, message: string, confirmText: string, onConfirm: () => void) {
+        super(app);
+        this.setTitle(title);
+        this.setContent(message);
+        new Setting(this.contentEl)
+            .addButton((button) => button
+                .setButtonText("Cancel")
+                .onClick(() => this.close()))
+            .addButton((button) => button
+                .setDestructive()
+                .setButtonText(confirmText)
+                .onClick(() => {
+                    this.close();
+                    onConfirm();
+                }));
+    }
+}
 
-    constructor(container: HTMLElement, plugin: Inscribe) {
-        this.container = container;
-        this.plugin = plugin;
-        this.tableContainer = document.createElement("div");
-        this.tableContainer.addClass("setting-item");
+class FolderSuggest extends AbstractInputSuggest<TFolder> {
+    protected getSuggestions(query: string): TFolder[] {
+        const lowerQuery = query.toLowerCase();
+        return this.app.vault.getAllFolders(false)
+            .filter((folder) => folder.path.toLowerCase().includes(lowerQuery));
     }
 
-    async render(): Promise<void> {
-        this.container.empty();
-
-        // Heading
-        new Setting(this.container)
-            .setHeading()
-            .setName("Per-Path profile assignments")
-            .setDesc("You can assign profiles to paths. Paths are matched by prefix, with longer paths taking precedence. For example, '/Daily' will match all files in the Daily folder.");
-        this.container.appendChild(this.tableContainer);
-        await this.renderMappingsTable();
+    renderSuggestion(folder: TFolder, el: HTMLElement): void {
+        el.setText(folder.path);
     }
+}
 
-    private async renderMappingsTable(): Promise<void> {
-        this.tableContainer.empty();
-
-        const table = this.tableContainer.createEl("table", { cls: "inscribe-mapping-table" });
-        const header = table.createEl("tr");
-        header.createEl("th", { text: "Path" });
-        header.createEl("th", { text: "Profile" });
-        header.createEl("th", { text: "" });
-        header.createEl("th", { text: "" });
-
-        // Add New Mapping Row
-        const newRow = table.createEl("tr");
-        let pathInput = "";
-        let selectedProfile = DEFAULT_PROFILE;
-
-        // Path input cell
-        const pathCell = newRow.createEl("td");
-
-        new TextComponent(pathCell)
-            .setPlaceholder("Enter path (e.g., Daily/Work)")
-            .onChange((value) => {
-                pathInput = value;
+// A row with a regular button; `action` definitions render as link-styled rows
+function buttonSetting(name: string, desc: string, buttonText: string, onClick: () => void, destructive = false): SettingDefinition {
+    return {
+        name,
+        desc,
+        render: (setting) => {
+            setting.addButton((button) => {
+                button.setButtonText(buttonText).onClick(onClick);
+                if (destructive) button.setDestructive();
             });
+        },
+    };
+}
 
-        // Profile dropdown cell
-        const profileCell = newRow.createEl("td");
-        const profileDropdown = new DropdownComponent(profileCell)
-            .setValue(selectedProfile);
+function templateVariablesDescription(): DocumentFragment {
+    return createFragment((fragment) => {
+        fragment.appendText("Template for the request. Variables:");
+        const list = fragment.createEl("ul");
+        for (const [name, description] of Object.entries(TEMPLATE_VARIABLE_DESCRIPTIONS)) {
+            const item = list.createEl("li");
+            item.createEl("code", { text: `{{${name}}}` });
+            item.appendText(` ${description}`);
+        }
+    });
+}
 
-        Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
-            profileDropdown.addOption(id, profile.name);
-        });
+function profileOptions(settings: Settings): Record<string, string> {
+    return Object.fromEntries(Object.entries(settings.profiles).map(([id, profile]) => [id, profile.name]));
+}
 
-        profileDropdown.onChange((value) => {
-            selectedProfile = value;
-        });
+function validateModels(value: string): string | undefined {
+    try {
+        const models: unknown = JSON.parse(value);
+        if (Array.isArray(models) && models.every((model) => typeof model === "string")) return undefined;
+    } catch {
+        return "Invalid JSON";
+    }
+    return "Must be a JSON list of model names";
+}
 
-        // Add button cell
-        newRow.createEl("td");
-        const actionCell = newRow.createEl("td");
-        new ButtonComponent(actionCell)
-            .setIcon("plus")
-            .setTooltip("Add profile mapping")
-            .onClick(async () => {
-                if (!pathInput) {
-                    new Notice("Path cannot be empty");
-                    return;
-                }
-
-                createPathConfig(this.plugin.settings, pathInput, selectedProfile);
-                await this.plugin.saveSettings();
-                await this.render();
-            });
-
-        // Existing Mappings
-        Object.entries(this.plugin.settings.path_configs).forEach(([path, mapping]) => {
-            const row = table.createEl("tr");
-            const isDefaultMapping = path === DEFAULT_PATH;
-            row.createEl("td", { text: isDefaultMapping ? "Default (all paths)" : path });
-
-            // Create profile cell with dropdown
-            const profileCell = row.createEl("td");
-
-            // For other mappings, show editable dropdown
-            const profileDropdown = new DropdownComponent(profileCell);
-            // Add profile options
-            Object.entries(this.plugin.settings.profiles).forEach(([id, profile]) => {
-                profileDropdown.addOption(id, profile.name);
-            });
-
-            profileDropdown.setValue(mapping.profile);
-
-            // Handle profile change
-            profileDropdown.onChange(async (value) => {
-                createPathConfig(this.plugin.settings, path, value);
-                await this.plugin.saveSettings();
-            });
-
-            const deleteCell = row.createEl("td");
-            new ExtraButtonComponent(deleteCell)
-                .setIcon("trash")
-                .setDisabled(isDefaultMapping)
-                .setTooltip("Delete mapping")
-                .onClick(async () => {
-                    delete this.plugin.settings.path_configs[path];
-                    await this.plugin.saveSettings();
-                    await this.render();
-                });
-
-            // Add enabled checkbox cell
-            const enabledCell = row.createEl("td");
-            // Create a wrapper div for the toggle with flexbox centering
-            const toggleWrapper = enabledCell.createDiv();
-            toggleWrapper.addClass("mapping-toggle-wrapper");
-            new ToggleComponent(toggleWrapper)
-                .setTooltip("Enable/disable mapping")
-                .setValue(mapping.enabled)
-                .onChange(async (value: boolean) => {
-                    this.plugin.settings.path_configs[path].enabled = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.statusBarItem.render();
-                });
-        });
+function validateJsonObject(value: string): string | undefined {
+    try {
+        return isObject(JSON.parse(value)) ? undefined : "Must be a JSON object";
+    } catch {
+        return "Invalid JSON";
     }
 }

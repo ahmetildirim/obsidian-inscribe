@@ -11,11 +11,11 @@ export class GrokProvider implements Provider {
     aborted: boolean = false;
     abortcontroller?: AbortController;
 
-    constructor(settings: GrokSettings) {
+    constructor(settings: GrokSettings, apiKey: string) {
         this.settings = settings;
         this.client = new OpenAI({
             baseURL: GrokProvider.BASE_URL,
-            apiKey: this.settings.apiKey,
+            apiKey: apiKey,
             dangerouslyAllowBrowser: true,
         });
     }
@@ -41,7 +41,7 @@ export class GrokProvider implements Provider {
                 return;
             }
             if (this.cursorMoved(editor, initialPosition)) {
-                this.abort();
+                await this.abort();
                 return;
             }
 

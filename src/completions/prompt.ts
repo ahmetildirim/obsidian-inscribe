@@ -15,7 +15,7 @@ export default function preparePrompt(editor: Editor, template: string = TEMPLAT
     const cursor = editor.getCursor();
     const preCursor = editor.getRange({ line: 0, ch: 0 }, cursor);
     const postCursor = editor.getRange(cursor, { line: editor.lastLine(), ch: editor.getLine(editor.lastLine()).length });
-    const activeSentence = nlp(preCursor).fullSentences().last().out('text');
+    const activeSentence = nlp(preCursor).fullSentences().last().out('text') as string;
     const lastLine = editor.getLine(editor.lastLine());
 
     return renderTemplate(template, {

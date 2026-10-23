@@ -10,13 +10,11 @@ export interface Suggestion {
 
 // Inline completion configuration.
 export interface InlineCompletionConfig {
+    // `manual` is true when the user explicitly asked for a suggestion.
     fetchFunc: (
-        state: EditorState
+        state: EditorState,
+        manual: boolean
     ) => AsyncGenerator<Suggestion> | Promise<Suggestion>;
-    // (Optional) A static hotkey for accepting suggestions.
-    acceptanceHotkey?: string;
-    // (Optional) A static hotkey for manually triggering suggestions.
-    triggerHotkey?: string;
     // A function that returns current options.
     getOptions: () => InlineCompletionOptions;
 }
@@ -24,4 +22,6 @@ export interface InlineCompletionConfig {
 export interface InlineCompletionOptions {
     delayMs?: number;
     splitStrategy?: SplitStrategy;
+    // Fetch suggestions as the user types. Defaults to true.
+    autoTrigger?: boolean;
 }

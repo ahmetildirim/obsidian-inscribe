@@ -26,8 +26,8 @@ export type Profiles = Record<ProfileId, Profile>
 export type Path = string;
 export type PathConfig = { profile: ProfileId, enabled: boolean };
 export type SuggestionControl = {
-    acceptanceHotkey: string,
-    manualActivationKey?: string,
+    // Fetch suggestions as the user types; otherwise only via the trigger command
+    autoTrigger: boolean,
     splitStrategy: SplitStrategy,
     delayMs: number,
     outputLimit: {
@@ -68,9 +68,8 @@ export const DEFAULT_PATH = "/";
 export const DEFAULT_SETTINGS: Settings = {
     enabled: false,
     suggestionControl: {
-        acceptanceHotkey: "Tab",
+        autoTrigger: true,
         splitStrategy: "sentence",
-        manualActivationKey: "",
         outputLimit: {
             enabled: true,
             sentences: 1,
@@ -87,7 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
             integration: ProviderType.OPENAI,
             name: "Open AI",
             description: "Use OpenAI APIs to generate text.",
-            apiKey: "api-key",
+            apiKeySecret: "",
             models: ["gpt-5", "gpt-5-nano"],
             configured: false,
             temperature_range: { min: 1, max: 1 },
@@ -105,7 +104,7 @@ export const DEFAULT_SETTINGS: Settings = {
             integration: ProviderType.OPENAI_COMPATIBLE,
             name: "OpenAI compatible",
             description: "Use OpenAI compatible APIs to generate completions.",
-            apiKey: "api-key",
+            apiKeySecret: "",
             baseUrl: "https://api.openai.com/v1",
             models: ["gpt-4o", "gpt-4o-mini"],
             configured: false,
@@ -116,7 +115,7 @@ export const DEFAULT_SETTINGS: Settings = {
             integration: ProviderType.GEMINI,
             name: "Gemini",
             description: "Use Gemini APIs to generate text.",
-            apiKey: "api-key",
+            apiKeySecret: "",
             models: [
                 "gemini-2.0-flash",
                 "gemini-2.0-flash-lite",
@@ -128,7 +127,7 @@ export const DEFAULT_SETTINGS: Settings = {
             integration: ProviderType.GROK,
             name: "Grok",
             description: "Use xAI Grok models to generate text.",
-            apiKey: "api-key",
+            apiKeySecret: "",
             models: ["grok-3-mini", "grok-3"],
             configured: false,
             temperature_range: { min: 0, max: 1 },
@@ -171,11 +170,8 @@ export function createProfile(settings: Settings): string {
     });
 
     // copy the default profile
-    const defaultProfile = profiles[DEFAULT_PROFILE];
-    const profile = {
-        ...defaultProfile,
-        name: name,
-    };
+    const profile = structuredClone(profiles[DEFAULT_PROFILE]);
+    profile.name = name;
 
     // add the new profile
     profiles[id] = profile;
@@ -192,8 +188,16 @@ export function createPathConfig(settings: Settings, path: string, profile: Prof
     settings.path_configs[path] = { profile: profile, enabled: true };
 }
 
+// Delete a profile and move its path configs to the default profile
+export function deleteProfile(settings: Settings, id: ProfileId): void {
+    delete settings.profiles[id];
+    for (const pathConfig of Object.values(settings.path_configs)) {
+        if (pathConfig.profile === id) pathConfig.profile = DEFAULT_PROFILE;
+    }
+}
+
 export function resetSettings(settings: Settings): void {
-    Object.assign(settings, DEFAULT_SETTINGS);
+    Object.assign(settings, structuredClone(DEFAULT_SETTINGS));
 }
 
 export const isDefaultProfile = (profile: ProfileId): boolean => {

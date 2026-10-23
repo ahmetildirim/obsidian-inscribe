@@ -1,4 +1,4 @@
-import { ModelResponse, Ollama } from "ollama";
+import { ModelResponse, Ollama } from "ollama/browser";
 import { OllamaSettings } from "./settings";
 import { Provider } from "..";
 import { Editor } from "obsidian";
@@ -34,7 +34,7 @@ export class OllamaProvider implements Provider {
                 return;
             }
             if (this.cursorMoved(editor, initialPosition)) {
-                this.abort();
+                await this.abort();
                 return;
             }
             completion += response.response;

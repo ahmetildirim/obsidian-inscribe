@@ -28,7 +28,8 @@ export default class CompletionService {
         this.providerFactory = providerFactory;
     }
 
-    async *fetchCompletion(): AsyncGenerator<Suggestion> {
+    // `manual` requests skip the auto trigger rules
+    async *fetchCompletion(manual: boolean): AsyncGenerator<Suggestion> {
         this.notifyCompletionStatus(false);
         if (!this.completionEnabled()) return;
 
@@ -36,7 +37,7 @@ export default class CompletionService {
         if (!activeEditor) return;
         if (!activeEditor.editor) return;
 
-        if (!this.shouldGenerate(activeEditor.editor)) return;
+        if (!manual && !this.shouldGenerate(activeEditor.editor)) return;
 
         const profile = this.profileService.getActiveProfile();
         const provider = this.providerFactory.getProvider(profile.provider);
@@ -71,7 +72,7 @@ export default class CompletionService {
             text = text.trim();
 
             if (this.settings.suggestionControl.outputLimit.enabled) {
-                const sentences = nlp(text).sentences().out('array');
+                const sentences = nlp(text).sentences().out('array') as string[];
                 if (sentences.length > this.settings.suggestionControl.outputLimit.sentences) {
                     // Take only the first N sentences
                     text = sentences.slice(0, this.settings.suggestionControl.outputLimit.sentences).join(' ');
@@ -85,11 +86,6 @@ export default class CompletionService {
     }
 
     private shouldGenerate(editor: Editor): boolean {
-        if (this.settings.suggestionControl.manualActivationKey) {
-            // If manual activation is enabled, skip auto-trigger rules
-            return true;
-        }
-
         // Check if the editor is in Vim insert mode
         if (isVimEnabled(editor) && !isVimInsertMode(editor)) {
             return false;

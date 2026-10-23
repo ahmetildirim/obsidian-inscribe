@@ -10,11 +10,11 @@ export class OpenAICompatibleProvider implements Provider {
     aborted: boolean = false;
     abortcontroller?: AbortController;
 
-    constructor(settings: OpenAICompatibleSettings) {
+    constructor(settings: OpenAICompatibleSettings, apiKey: string) {
         this.settings = settings;
         this.client = new OpenAI({
             baseURL: this.settings.baseUrl,
-            apiKey: this.settings.apiKey,
+            apiKey: apiKey,
             dangerouslyAllowBrowser: true,
         });
     }
@@ -42,7 +42,7 @@ export class OpenAICompatibleProvider implements Provider {
                 return;
             }
             if (this.cursorMoved(editor, initialPosition)) {
-                this.abort();
+                await this.abort();
                 return;
             }
 
@@ -83,5 +83,3 @@ export class OpenAICompatibleProvider implements Provider {
     }
 }
 
-// Import this at the end to avoid circular dependency issues
-import preparePrompt from "src/completions/prompt";

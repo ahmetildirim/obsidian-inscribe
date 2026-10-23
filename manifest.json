@@ -2,7 +2,7 @@
 	"id": "inscribe",
 	"name": "Inscribe",
 	"version": "1.2.3",
-	"minAppVersion": "0.15.0",
+	"minAppVersion": "1.14.4",
 	"description": "Inline autocompletion powered by AI.",
 	"author": "Ahmet Ildirim",
 	"authorUrl": "https://github.com/ahmetildirim",

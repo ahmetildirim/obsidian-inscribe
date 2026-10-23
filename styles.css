@@ -3,43 +3,6 @@
     opacity: 0.5;
 }
 
-.inscribe-prompt-textarea {
-    width: 100%;
-    resize: vertical;
-    position: relative;
-}
-
-.inscribe-section {
-    margin-top: 1.75em;
-}
-
-/* Path Mapping Styles */
-.inscribe-mapping-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.inscribe-mapping-table th {
-    text-align: left;
-    padding: 8px 0px;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.inscribe-mapping-table td {
-    text-align: left;
-    padding: 8px 0px;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.inscribe-mapping-table .mapping-toggle-wrapper {
-    display: flex;
-}
-
-/* Style provider modal */
-.inscribe-provider-settings-modal {
-    width: 500px;
-}
-
 /* Status Bar Styles */
 
 /* Writing animation with rotation */

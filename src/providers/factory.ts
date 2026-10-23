@@ -43,10 +43,15 @@ export class ProviderFactory {
     private buildProviders(settings: Settings): Providers {
         return {
             [ProviderType.OLLAMA]: new OllamaProvider(settings.providers.ollama),
-            [ProviderType.OPENAI]: new OpenAIProvider(settings.providers.openai),
-            [ProviderType.OPENAI_COMPATIBLE]: new OpenAICompatibleProvider(settings.providers.openai_compatible),
-            [ProviderType.GEMINI]: new GeminiProvider(settings.providers.gemini),
-            [ProviderType.GROK]: new GrokProvider(settings.providers.grok),
+            [ProviderType.OPENAI]: new OpenAIProvider(settings.providers.openai, this.getApiKey(settings.providers.openai.apiKeySecret)),
+            [ProviderType.OPENAI_COMPATIBLE]: new OpenAICompatibleProvider(settings.providers.openai_compatible, this.getApiKey(settings.providers.openai_compatible.apiKeySecret)),
+            [ProviderType.GEMINI]: new GeminiProvider(settings.providers.gemini, this.getApiKey(settings.providers.gemini.apiKeySecret)),
+            [ProviderType.GROK]: new GrokProvider(settings.providers.grok, this.getApiKey(settings.providers.grok.apiKeySecret)),
         }
+    }
+
+    private getApiKey(secretId: string): string {
+        if (!secretId) return "";
+        return this.plugin.app.secretStorage.getSecret(secretId) ?? "";
     }
 }

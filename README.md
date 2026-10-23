@@ -40,6 +40,9 @@ Given the high frequency of API calls, using Ollama is highly recommended to red
 
 Also, Google Gemini is a great option. It is fast and free tier is generous.
 
+### Hotkeys
+Press Tab to accept a suggestion. To use other keys, bind the **Accept suggestion** and **Trigger suggestion** commands in Settings → Hotkeys. If you turn off **Show suggestions automatically**, suggestions only appear when you run **Trigger suggestion**.
+
 ### Disable completions using path config
 Using per-path profile config, you can enable completions only for specific paths. This way, you can avoid annoying interruptions in notes where autocompletion isn't desired.
 

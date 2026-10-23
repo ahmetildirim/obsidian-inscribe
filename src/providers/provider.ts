@@ -11,7 +11,7 @@ export enum ProviderType {
 
 // Completer interface for ai integrations
 export interface Provider {
-    settings: any
+    settings: unknown
     generate: (editor: Editor, prompt: string, options: ProfileOptions) => AsyncGenerator<string>;
     abort: () => Promise<void>;
     fetchModels(): Promise<string[]> | string[];

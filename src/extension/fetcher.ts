@@ -1,42 +1,51 @@
 import { EditorState } from '@codemirror/state';
-import { EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view';
+import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view';
 import { SuggestionUpdateEffect, suggestionSessionState } from './session';
 import { Suggestion } from './types';
 
+// View plugin instance that fetches suggestions and can be triggered manually.
+export interface SuggestionFetcher extends PluginValue {
+    triggerSuggestion(view: EditorView): Promise<void>;
+}
+
 // Creates a debounced fetcher for suggestions.
 export const createDebouncedFetcher = (
-    fetch: (state: EditorState) => AsyncGenerator<Suggestion>,
+    fetch: (state: EditorState, manual: boolean) => AsyncGenerator<Suggestion>,
     getDelay: () => number,
-    autoTriggerEnabled: boolean = true
+    isAutoTriggerEnabled: () => boolean
 ) => {
     let activeRequest = true;
-    let timeoutId: ReturnType<typeof setTimeout>;
+    let timeoutId: number | undefined;
 
     // Throttled fetch that waits for the debounce interval.
     const throttledFetch = async function* (state: EditorState) {
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
         activeRequest = true;
         await new Promise((resolve) => {
-            timeoutId = setTimeout(resolve, getDelay());
+            timeoutId = window.setTimeout(resolve, getDelay());
         });
-        if (activeRequest) yield* fetch(state);
+        if (activeRequest) yield* fetch(state, false);
     };
 
     // Immediate fetch without debounce (for manual triggers).
     const immediateFetch = async function* (state: EditorState) {
         activeRequest = true;
-        if (activeRequest) yield* fetch(state);
+        yield* fetch(state, true);
     };
 
     // Plugin that initiates suggestion fetching on document changes.
-    const fetcherPlugin = ViewPlugin.fromClass(
-        class {
+    const fetcherPlugin: ViewPlugin<SuggestionFetcher> = ViewPlugin.fromClass(
+        class implements SuggestionFetcher {
             private currentRequestId = 0;
 
-            async update(update: ViewUpdate) {
+            update(update: ViewUpdate) {
+                void this.fetchOnUpdate(update);
+            }
+
+            private async fetchOnUpdate(update: ViewUpdate) {
                 const state = update.state;
                 // Only trigger fetch if auto-trigger is enabled and there is no active suggestion.
-                if (!autoTriggerEnabled || !update.docChanged || state.field(suggestionSessionState).remainingText)
+                if (!isAutoTriggerEnabled() || !update.docChanged || state.field(suggestionSessionState).remainingText)
                     return;
 
                 const requestId = ++this.currentRequestId;
@@ -53,7 +62,7 @@ export const createDebouncedFetcher = (
                 }
             }
 
-            // Method to manually trigger suggestions (exposed for hotkey use).
+            // Method to manually trigger suggestions (exposed for the trigger command).
             async triggerSuggestion(view: EditorView) {
                 const state = view.state;
                 // Cancel any active suggestion first.
@@ -85,7 +94,7 @@ export const createDebouncedFetcher = (
         fetcherPlugin,
         terminate: () => {
             activeRequest = false;
-            clearTimeout(timeoutId);
+            window.clearTimeout(timeoutId);
         },
     };
 };

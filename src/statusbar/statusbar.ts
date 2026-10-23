@@ -4,6 +4,7 @@ import { ProfileService } from 'src/profile/service';
 import CompletionService from 'src/completions/service';
 import { findPathConfig } from 'src/settings';
 import type { Profile } from 'src/settings';
+import { openSettingsTab } from 'src/internal';
 
 export default class StatusBarItem {
     private plugin: Inscribe;
@@ -64,7 +65,7 @@ export default class StatusBarItem {
                 .onClick(() => {
                     const pathConfig = findPathConfig(this.plugin.settings, path);
                     pathConfig.enabled = !pathCompletionEnabled;
-                    this.plugin.saveSettings();
+                    void this.plugin.saveSettings();
                     this.render();
                 });
         });
@@ -73,7 +74,7 @@ export default class StatusBarItem {
                 .setChecked(globalCompletionEnabled)
                 .onClick(() => {
                     this.plugin.settings.enabled = !globalCompletionEnabled;
-                    this.plugin.saveSettings();
+                    void this.plugin.saveSettings();
                     this.render();
                 });
         });
@@ -81,9 +82,7 @@ export default class StatusBarItem {
         menu.addItem((item) => {
             item.setTitle("Open settings")
                 .onClick(() => {
-                    const setting = (this.plugin.app as any).setting;
-                    setting.open();
-                    setting.openTabById(this.plugin.manifest.id);
+                    openSettingsTab(this.plugin.app, this.plugin.manifest.id);
                 })
         });
 
