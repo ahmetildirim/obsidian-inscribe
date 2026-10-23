@@ -7,6 +7,10 @@ import { OpenAICompatibleProvider } from "./openai-compat";
 import { GeminiProvider } from "./gemini";
 import { GrokProvider } from "./grok";
 
+// The OpenAI and Gemini SDKs throw on an empty API key, so unset keys use a placeholder.
+// Requests then fail with an authentication error instead of breaking plugin load.
+const MISSING_API_KEY = "api-key-not-set";
+
 interface Providers {
     [ProviderType.OLLAMA]: OllamaProvider,
     [ProviderType.OPENAI]: OpenAIProvider,
@@ -51,7 +55,7 @@ export class ProviderFactory {
     }
 
     private getApiKey(secretId: string): string {
-        if (!secretId) return "";
-        return this.plugin.app.secretStorage.getSecret(secretId) ?? "";
+        const apiKey = secretId ? this.plugin.app.secretStorage.getSecret(secretId) : null;
+        return apiKey || MISSING_API_KEY;
     }
 }
